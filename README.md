@@ -1,0 +1,1 @@
+# Double Dummy Resolver Cordova Plugin

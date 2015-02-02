@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="com.telerik.plugins.mapbox"
+        version="0.0.1">
+
+  <name>Mapbox</name>
+
+  <description>Need native maps? Look no further!</description>
+
+  <author>Telerik / Eddy Verbruggen</author>
+
+  <license>MIT</license>
+
+  <keywords>Mapsbox, Maps, Mapping</keywords>
+
+  <repo>https://bitbucket.org/EddyVerbruggen/cordova-plugin-mapbox</repo>
+
+  <engines>
+    <engine name="cordova" version=">=3.3.0"/>
+  </engines>
+
+  <js-module src="www/Mapbox.js" name="Mapbox">
+    <clobbers target="window.plugins.mapbox" />
+  </js-module>
+
+  <!-- android
+  <platform name="android">
+
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="DoubleDummySolver">
+        <param name="android-package" value="nl.xservices.plugins.DoubleDummySolver" />
+      </feature>
+    </config-file>
+
+    <source-file src="src/android/libs/libdds-wrapper.so" target-dir="libs/armeabi/" />
+
+    <source-file src="src/android/DealPBN.java" target-dir="src/se/bahnhof/lib/dds/android"/>
+    <source-file src="src/android/FutureTricks.java" target-dir="src/se/bahnhof/lib/dds/android"/>
+    <source-file src="src/android/DdsWrapper.java" target-dir="src/se/bahnhof/lib/dds/android"/>
+
+    <source-file src="src/android/DoubleDummySolver.java" target-dir="src/nl/xservices/plugins"/>
+  </platform-->
+
+  <!-- iOS -->
+  <platform name="ios">
+
+    <config-file parent="/*" target="config.xml">
+      <feature name="Mapbox">
+        <param name="ios-package" value="Mapbox" />
+      </feature>
+    </config-file>
+
+    <header-file src="src/ios/Mapbox.h" />
+    <source-file src="src/ios/Mapbox.m" />
+
+    <header-file src="src/ios/Headers/MGLMapView.h" />
+    <header-file src="src/ios/Headers/MGLStyleFunctionValue.h" />
+    <header-file src="src/ios/Headers/MGLTypes.h" />
+    <header-file src="src/ios/Headers/NSArray+MGLAdditions.h" />
+    <header-file src="src/ios/Headers/NSDictionary+MGLAdditions.h" />
+    <header-file src="src/ios/Headers/UIColor+MGLAdditions.h" />
+
+    <source-file src="src/ios/libs/libMapboxGL.a" framework="true"/>
+    <resource-file src="src/ios/libs/MapboxGL.bundle" />
+
+    <framework src="CoreGraphics.framework" weak="true" />
+    <framework src="CoreLocation.framework" weak="true" />
+    <framework src="GLKit.framework" weak="true" />
+    <framework src="OpenGLES.framework" weak="true" />
+    <framework src="SystemConfiguration.framework" weak="true" />
+    <framework src="UIKit.framework" weak="true" />
+    <framework src="libc++.dylib" weak="true" />
+    <framework src="libz.dylib" weak="true" />
+    <framework src="libsqlite3.dylib" weak="true" />
+  </platform>
+
+</plugin>
