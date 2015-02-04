@@ -1,1 +1,1 @@
-# Double Dummy Resolver Cordova Plugin
+# Mapbox - work in progress
