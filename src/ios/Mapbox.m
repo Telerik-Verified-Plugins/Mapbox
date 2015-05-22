@@ -16,15 +16,7 @@
 
   [self.view addSubview:mapView];
 
-
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
-  NSString *cards = [args objectForKey:@"cards"];
-  if (cards == nil) {
-    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"cards is required"];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    return;
-  } else {
-  }
 
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
