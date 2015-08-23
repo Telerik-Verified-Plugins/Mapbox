@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="format-detection" content="telephone=no"/>
+  <meta name="msapplication-tap-highlight" content="no"/>
+  <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+  <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"/>
+  <link rel="stylesheet" type="text/css" href="css/index.css"/>
+  <title>Mapbox test</title>
+</head>
+<body>
+<div class="app">
+  <h1>Mapbox test</h1>
+
+  <div id="deviceready" class="blink">
+    <p class="event listening">Connecting to Device</p>
+
+    <p class="event received">Device is Ready</p>
+    <br/>
+    <button onclick="showMap()">Show</button>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <button onclick="addAnnotations()">Add Annotations</button>
+    <button onclick="hideMap()">Hide</button>
+  </div>
+</div>
+<script type="text/javascript" src="cordova.js"></script>
+<script type="text/javascript" src="js/index.js"></script>
+<script>
+  window.onerror = function (a, b, c) {
+    alert(a);
+  }
+
+  function showMap() {
+    window.plugins.mapbox.show({},
+        function (result) {
+          console.log(JSON.stringify(result))
+        },
+        function (error) {
+          alert(error)
+        }
+    )
+  }
+  function hideMap() {
+    window.plugins.mapbox.hide({},
+        function (result) {
+          console.log(JSON.stringify(result))
+        },
+        function (error) {
+          alert(error)
+        }
+    )
+  }
+  function addAnnotations() {
+    window.plugins.mapbox.addAnnotations([
+          {
+            'lat': 52.3602160,
+            'lng': 4.8891680,
+            'title': 'One-line title here', // no popup unless set
+            'subtitle': 'This line can\'t span multiple lines either',
+            'image': 'www/img/annotations/hi.jpg' // TODO support this on a rainy day
+          },
+          {
+            'lat': 52.3702160,
+            'lng': 4.8911680,
+            'title': 'One-line title here 2', // no popup unless set
+            'subtitle': 'This line can\'t span multiple lines either 2'
+          }
+        ],
+        function (result) {
+          console.log(JSON.stringify(result))
+        },
+        function (error) {
+          alert(error)
+        }
+    )
+  }
+
+</script>
+</body>
+</html>

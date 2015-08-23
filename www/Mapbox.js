@@ -1,8 +1,16 @@
 function Mapbox() {
 }
 
-Mapbox.prototype.test = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Mapbox", "test", [options]);
+Mapbox.prototype.show = function (options, successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "Mapbox", "show", [options]);
+};
+
+Mapbox.prototype.hide = function (options, successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
+};
+
+Mapbox.prototype.addAnnotations = function (options, successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "Mapbox", "addAnnotations", [options]);
 };
 
 Mapbox.install = function () {

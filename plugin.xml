@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-        id="com.telerik.plugins.mapbox"
-        version="0.0.1">
+        id="cordova-plugin-mapbox"
+        version="0.0.2">
 
   <name>Mapbox</name>
 
@@ -43,35 +43,53 @@
 
   <!-- iOS -->
   <platform name="ios">
-
     <config-file parent="/*" target="config.xml">
       <feature name="Mapbox">
         <param name="ios-package" value="Mapbox" />
       </feature>
     </config-file>
 
+    <!-- TODO the MGLMapboxAccessToken must become a preference during plugin install -->
+    <config-file target="*-Info.plist" parent="CFBundleURLTypes">
+      <key>MGLMapboxAccessToken</key>
+      <string>sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw</string>
+      <key>MGLMapboxMetricsEnabledSettingShownInApp</key>
+      <true/>
+    </config-file>
+
     <header-file src="src/ios/Mapbox.h" />
     <source-file src="src/ios/Mapbox.m" />
 
+    <header-file src="src/ios/Headers/MapboxGL.h" />
+    <header-file src="src/ios/Headers/MGLAccountManager.h" />
+    <header-file src="src/ios/Headers/MGLAnnotation.h" />
+    <header-file src="src/ios/Headers/MGLAnnotationImage.h" />
+    <header-file src="src/ios/Headers/MGLGeometry.h" />
+    <header-file src="src/ios/Headers/MGLMapView+IBAdditions.h" />
     <header-file src="src/ios/Headers/MGLMapView.h" />
-    <header-file src="src/ios/Headers/MGLStyleFunctionValue.h" />
+    <header-file src="src/ios/Headers/MGLMultiPoint.h" />
+    <header-file src="src/ios/Headers/MGLOverlay.h" />
+    <header-file src="src/ios/Headers/MGLPointAnnotation.h" />
+    <header-file src="src/ios/Headers/MGLPolygon.h" />
+    <header-file src="src/ios/Headers/MGLPolyline.h" />
+    <header-file src="src/ios/Headers/MGLShape.h" />
     <header-file src="src/ios/Headers/MGLTypes.h" />
-    <header-file src="src/ios/Headers/NSArray+MGLAdditions.h" />
-    <header-file src="src/ios/Headers/NSDictionary+MGLAdditions.h" />
-    <header-file src="src/ios/Headers/UIColor+MGLAdditions.h" />
+    <header-file src="src/ios/Headers/MGLUserLocation.h" />
 
     <source-file src="src/ios/libs/libMapboxGL.a" framework="true"/>
     <resource-file src="src/ios/libs/MapboxGL.bundle" />
+    <!-- This bundle adds a mandatory opt-out switch for Mapbox Metrics to the iOS Settings app  -->
+    <resource-file src="src/ios/libs/Settings.bundle" />
 
-    <framework src="CoreGraphics.framework" weak="true" />
-    <framework src="CoreLocation.framework" weak="true" />
+    <framework src="CoreTelephony.framework" weak="true" />
     <framework src="GLKit.framework" weak="true" />
-    <framework src="OpenGLES.framework" weak="true" />
+    <framework src="ImageIO.framework" weak="true" />
+    <framework src="MobileCoreServices.framework" weak="true" />
+    <framework src="QuartzCore.framework" weak="true" />
     <framework src="SystemConfiguration.framework" weak="true" />
-    <framework src="UIKit.framework" weak="true" />
     <framework src="libc++.dylib" weak="true" />
-    <framework src="libz.dylib" weak="true" />
     <framework src="libsqlite3.dylib" weak="true" />
+    <framework src="libz.dylib" weak="true" />
   </platform>
 
 </plugin>
