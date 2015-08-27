@@ -26,7 +26,6 @@
      }
    ]
  }
- 
 */
 
 // TODO loc services for starter plan:https://www.mapbox.com/guides/first-steps-gl-ios/
@@ -87,12 +86,8 @@
   // TODO pass in, default YES
   _mapView.zoomEnabled = YES;
 
-  
   [self.webView addSubview:_mapView];
 
-//  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
-
-  
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   // keep the callback because there are various events the developer may be interested in
   pluginResult.keepCallback = [NSNumber numberWithBool:YES];
@@ -146,7 +141,7 @@
 //  return annotationImage;
 //}
 
-// TODO make sure this is invoked at all
+// TODO make sure this is invoked at all.. doesn't look like it in 0.5.1
 - (void)mapViewDidFinishLoadingMap:(MGLMapView *)mapView {
   // process any queued annotations
   if (_queuedAnnotations != nil) {

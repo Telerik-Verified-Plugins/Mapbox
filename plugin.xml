@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-mapbox"
-        version="0.0.2">
+        version="0.0.4">
 
   <name>Mapbox</name>
 
@@ -16,30 +17,39 @@
   <repo>https://bitbucket.org/EddyVerbruggen/cordova-plugin-mapbox</repo>
 
   <engines>
-    <engine name="cordova" version=">=3.3.0"/>
+    <engine name="cordova" version=">=3.5.0"/>
+    <engine name="cordova-android" version=">=4" />
+    <engine name="cordova-plugman" version=">=4.2.0" /><!-- needed for gradleReference support -->
   </engines>
 
   <js-module src="www/Mapbox.js" name="Mapbox">
     <clobbers target="window.plugins.mapbox" />
   </js-module>
 
-  <!-- android
+  <!-- android -->
   <platform name="android">
-
     <config-file target="res/xml/config.xml" parent="/*">
-      <feature name="DoubleDummySolver">
-        <param name="android-package" value="nl.xservices.plugins.DoubleDummySolver" />
+      <feature name="Mapbox">
+        <param name="android-package" value="com.telerik.plugins.mapbox.Mapbox" />
       </feature>
     </config-file>
 
-    <source-file src="src/android/libs/libdds-wrapper.so" target-dir="libs/armeabi/" />
+    <config-file target="AndroidManifest.xml" parent="/*">
+      <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+      <uses-permission android:name="android.permission.INTERNET" />
+      <!--<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />-->
 
-    <source-file src="src/android/DealPBN.java" target-dir="src/se/bahnhof/lib/dds/android"/>
-    <source-file src="src/android/FutureTricks.java" target-dir="src/se/bahnhof/lib/dds/android"/>
-    <source-file src="src/android/DdsWrapper.java" target-dir="src/se/bahnhof/lib/dds/android"/>
+      <!-- these are for Location services only, you can comment them out if you don't need them -->
+      <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+      <!--<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
+      <!--<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />-->
+    </config-file>
 
-    <source-file src="src/android/DoubleDummySolver.java" target-dir="src/nl/xservices/plugins"/>
-  </platform-->
+    <!-- jar is here btw: http://repo1.maven.org/maven2/com/mapbox/mapboxsdk/mapbox-android-sdk/0.7.4/ -->
+    <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
+
+    <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
+  </platform>
 
   <!-- iOS -->
   <platform name="ios">
@@ -50,10 +60,12 @@
     </config-file>
 
     <!-- TODO the MGLMapboxAccessToken must become a preference during plugin install -->
-    <config-file target="*-Info.plist" parent="CFBundleURLTypes">
+    <config-file target="*-Info.plist">
       <key>MGLMapboxAccessToken</key>
       <string>sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw</string>
       <key>MGLMapboxMetricsEnabledSettingShownInApp</key>
+      <true/>
+      <key>NSLocationWhenInUseUsageDescription</key>
       <true/>
     </config-file>
 
