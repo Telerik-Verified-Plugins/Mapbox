@@ -31,6 +31,7 @@
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="Mapbox">
         <param name="android-package" value="com.telerik.plugins.mapbox.Mapbox" />
+        <!--<param name="onload" value="true"/>-->
       </feature>
     </config-file>
 
@@ -45,10 +46,19 @@
       <!--<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />-->
     </config-file>
 
-    <!-- jar is here btw: http://repo1.maven.org/maven2/com/mapbox/mapboxsdk/mapbox-android-sdk/0.7.4/ -->
-    <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
 
+    <!-- Mapbox SDK (non-GL) -->
+    <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
     <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
+
+
+    <!-- Mapbox GL -->
+    <!-- downloads from here: https://oss.sonatype.org/content/repositories/snapshots/com/mapbox/mapboxgl/mapbox-gl-android-sdk/0.0.1-SNAPSHOT/ -->
+    <!--<framework src="src/android/mapboxgl.gradle" custom="true" type="gradleReference"/>-->
+    <!--<source-file src="src/android/Mapboxgl.java" target-dir="src/com/telerik/plugins/mapbox"/>-->
+    <!-- TODO an instruction or hook setting minsdk version to 15 in case of the mapboxgl version -->
+    <!-- TODO platforms/android/project.properties: target=android-23 is required -->
+
   </platform>
 
   <!-- iOS -->

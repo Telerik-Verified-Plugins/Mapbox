@@ -3,27 +3,44 @@ package com.telerik.plugins.mapbox;
 import android.content.Context;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import com.mapbox.mapboxsdk.overlay.Icon;
-import com.mapbox.mapboxsdk.overlay.Marker;
-import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.views.MapView;
-import com.mapbox.mapboxsdk.tileprovider.tilesource.MapboxTileLayer;
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaArgs;
-import org.apache.cordova.CordovaPlugin;
+import com.mapbox.mapboxgl.annotations.MarkerOptions;
+import com.mapbox.mapboxgl.geometry.LatLng;
+import com.mapbox.mapboxgl.views.MapView;
+import org.apache.cordova.*;
 import org.json.JSONException;
 import org.json.JSONObject;
+import android.opengl.GLSurfaceView;
+
+
+
+
+
+// TODO not using this because the current release is too unstable and requires newer devices
+
+
+
+
+
+
 
 // TODO for screen rotation, see https://www.mapbox.com/mapbox-android-sdk/#screen-rotation
 // TODO fox Xwalk compat, see nativepagetransitions plugin
-public class Mapbox extends CordovaPlugin {
+
+// TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
+public class Mapboxgl extends CordovaPlugin {
 
   private static final String ACTION_SHOW = "show";
   private static final String ACTION_HIDE = "hide";
   private static final String ACTION_ADD_GEOJSON = "addGeoJson";
   private static final String ACTION_ADD_ANNOTATIONS = "addAnnotations";
 
-  private MapView mapView;
+  private static MapView mapView;
+
+  @Override
+  public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+    super.initialize(cordova, webView);
+    mapView = new MapView(webView.getContext());
+  }
 
   @Override
   public boolean execute(String action, CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
@@ -36,15 +53,14 @@ public class Mapbox extends CordovaPlugin {
           public void run() {
 
             mapView = new MapView(webView.getContext());
-            mapView.setZoom(5);
-            mapView.setCenter(new LatLng(55.94629, -3.20777));
-
-
             // TODO get from strings.xml via plugin.xml
             mapView.setAccessToken("sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw");
 
-            // streets | outdoors | satellite | run-bike-hike | pencil
-            mapView.setTileSource(new MapboxTileLayer("mapbox.run-bike-hike"));
+//            mapView.setZoomLevel(5.0);
+//            mapView.setCenterCoordinate(new LatLng(55.94629, -3.20777));
+
+            // supported styles: https://github.com/mapbox/mapbox-gl-native/issues/1264
+//            mapView.setStyleUrl("asset://styles/mapbox-streets-v8.json");
 
             // TODO show the user on the map based on a boolean, also for iOS
             if (true) {
@@ -65,9 +81,21 @@ public class Mapbox extends CordovaPlugin {
             final FrameLayout layout = (FrameLayout) webView.getView().getParent();
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth-left-right, webViewHeight-top-bottom);
             params.setMargins(left, top, right, bottom);
-            mapView.setLayoutParams(params);
-            layout.addView(mapView);
-            callbackContext.success("OK");
+            //       mapView.setLayoutParams(params);
+            // this crashes the gl version -- emulator problem?
+
+/*
+            GLSurfaceView surfaceView = new GLSurfaceView(cordova.getActivity());
+            surfaceView.addView(mapView);
+            ViewGroup parent = (ViewGroup)webView.getParent();
+            parent.addView(surfaceView);
+                            parent.getChildAt(0).bringToFront();
+                parent.requestLayout();
+*/
+
+            cordova.getActivity().addContentView(mapView, params);
+            //layout.addView(mapView);
+            //callbackContext.success("OK");
           }
         });
 
@@ -89,7 +117,7 @@ public class Mapbox extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-            mapView.loadFromGeoJSONURL(url);
+//            mapView.loadFromGeoJSONURL(url);
             callbackContext.success("OK");
           }
         });
@@ -98,38 +126,14 @@ public class Mapbox extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-            Context ctx = webView.getContext();
-            Marker m = new Marker(mapView, "Edinburgh", "Scotland", new LatLng(55.94629, -3.20777));
-            m.setIcon(new Icon(ctx, Icon.Size.SMALL, "marker-stroked", "ee8a65"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Stockholm", "Sweden", new LatLng(59.32995, 18.06461));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Prague", "Czech Republic", new LatLng(50.08734, 14.42112));
-            m.setIcon(new Icon(ctx, Icon.Size.MEDIUM, "land-use", "3bb2d0"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Athens", "Greece", new LatLng(37.97885, 23.71399));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "land-use", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Tokyo", "Japan", new LatLng(35.70247, 139.71588));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Ayacucho", "Peru", new LatLng(-13.16658, -74.21608));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Nairobi", "Kenya", new LatLng(-1.26676, 36.83372));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Canberra", "Australia", new LatLng(-35.30952, 149.12430));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
+//            Context ctx = webView.getContext();
+//            Marker m = new Marker(); //mapView, "Edinburgh", "Scotland", new LatLng(55.94629, -3.20777));
+//            m.setMapView(mapView);
+//            m.setVisible(true);
+            MarkerOptions mo = new MarkerOptions();
+            mo.title("Title");
+            mo.position(new LatLng(59.32995, 18.06461));
+            mapView.addMarker(mo);
 
             callbackContext.success("OK");
           }
