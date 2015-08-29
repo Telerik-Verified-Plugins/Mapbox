@@ -28,7 +28,6 @@
     <br/>
     <br/>
     <br/>
-    <br/>
     <button onclick="addAnnotations()">Add Annotations</button>
     <button onclick="addGeoJson()">Add GeoJson</button>
     <button onclick="hideMap()">Hide</button>
@@ -42,9 +41,37 @@
   };
 
   function showMap() {
-    window.plugins.mapbox.show({},
+    window.plugins.mapbox.show({
+          style: 'emerald',
+          margins: {
+            'left': 10,
+            'right': 10,
+            'top': 20,
+            'bottom': 50
+          },
+          showUserLocation: true, // default false
+          hideAttribution: true, // default false
+          hideLogo: true, // default false
+          hideCompass: false, // default false
+          disableRotation: false, // default false
+          disableScroll: false, // default false
+          disableZoom: false, // default false
+          annotations: [
+            {
+              'lat': 52.3732160,
+              'lng': 4.8941680,
+              'title': 'hi',
+              'subtitle': 'lo',
+              'image': 'www/img/annotations/hi.jpg' // TODO support this on a rainy day
+            }
+          ]
+        },
         function (result) {
           console.log(JSON.stringify(result))
+          // let's add a callback for these annotations
+          window.plugins.mapbox.addAnnotationCallback(function(selectedAnnotation) {
+            alert("Annotation selected on the map: " + JSON.stringify(selectedAnnotation));
+          });
         },
         function (error) {
           alert(error)
@@ -86,7 +113,7 @@
           }
         ],
         function (result) {
-          console.log(JSON.stringify(result))
+          console.log(JSON.stringify(result));
         },
         function (error) {
           alert(error)

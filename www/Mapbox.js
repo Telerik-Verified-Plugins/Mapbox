@@ -17,6 +17,10 @@ Mapbox.prototype.addGeoJson = function (options, successCallback, errorCallback)
   cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJson", [options]);
 };
 
+Mapbox.prototype.addAnnotationCallback = function (callback) {
+  cordova.exec(callback, null, "Mapbox", "addAnnotationCallback", []);
+};
+
 Mapbox.install = function () {
   if (!window.plugins) {
     window.plugins = {};

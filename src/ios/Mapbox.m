@@ -26,35 +26,48 @@
      }
    ]
  }
+ 
 */
 
 // TODO loc services for starter plan:https://www.mapbox.com/guides/first-steps-gl-ios/
+
+
+// mapping the passed-in style here so we are future-proof
+- (NSString*) getMapStyle:(NSString*) input {
+  if ([input isEqualToString:@"light"]) {
+    return @"light";
+  } else if ([input isEqualToString:@"dark"]) {
+    return @"dark";
+  } else if ([input isEqualToString:@"emerald"]) {
+    return @"emerald";
+  } else if ([input isEqualToString:@"satellite"]) {
+    return @"satellite";
+  } else {
+    // default
+    return @"mapbox-streets";
+  }
+}
 
 // TODO pass accesstoken as preference in plugin.xml, we've now set this .plist var manually: MGLMapboxAccessToken
 - (void) show:(CDVInvokedUrlCommand*)command {
   NSDictionary *args = [command.arguments objectAtIndex:0];
   // save annotations for later as the app will crash if we add it before the map is loaded
   _queuedAnnotations = [args objectForKey:@"annotations"];
-//  [self bundleImage:[dic valueForKey:@"image"] withCallbackId:command.callbackId];
 
-  // TODO pass in position in JS API
+  NSString* mapStyle = [self getMapStyle:[args objectForKey:@"style"]];
+
+  // where shall we show the map overlay?
+  NSDictionary *margins = [args objectForKey:@"margins"];
+  // note that these will correctly fall back to 0 if not passed in
+  int left = [[margins objectForKey:@"left"] intValue];
+  int right = [[margins objectForKey:@"right"] intValue];
+  int top = [[margins objectForKey:@"top"] intValue];
+  int bottom = [[margins objectForKey:@"bottom"] intValue];
+
   CGRect webviewFrame = self.webView.frame;
-  int left = 0;
-  int right = 0;
-  int top = 40;
-  int bottom = 40;
-  
-  //  x, y, width, height
   CGRect mapFrame = CGRectMake(left, top, webviewFrame.size.width - left - right, webviewFrame.size.height - top - bottom);
   
-  // TODO pass in, default don't set as it falls back to mapbox-streets
-  // dark
-  // emerald // quite pretty
-  // light
-  // mapbox-streets // default
-  // satellite
-  //[_mapView setStyleURL:[NSURL URLWithString:@"asset://styles/mapbox-streets-v7.json"]];
-  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame styleURL:[NSURL URLWithString:@"asset://styles/mapbox-streets-v7.json"]];
+  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame styleURL:[NSURL URLWithString:[NSString stringWithFormat:@"asset://styles/%@-v7.json", mapStyle]]];
 
   _mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
@@ -63,28 +76,28 @@
                      zoomLevel:13
                       animated:NO];
 
-  // note that this requires adding `NSLocationWhenInUseUsageDescription` or `NSLocationAlwaysUsageDescription` to the plist
-  _mapView.showsUserLocation = YES;
-
   _mapView.delegate = self;
-  
-  // TODO pass in, default NO
-  _mapView.attributionButton.hidden = YES;
 
-  // TODO pass in, default NO - required for the 'starter' plan
-  _mapView.logoView.hidden = YES;
-
-  // TODO pass in, default NO
-  _mapView.compassView.hidden = YES;
+  // default NO, note that this requires adding `NSLocationWhenInUseUsageDescription` or `NSLocationAlwaysUsageDescription` to the plist
+  _mapView.showsUserLocation = [[args objectForKey:@"showUserLocation"] boolValue];
   
-  // TODO pass in, default YES
-  _mapView.rotateEnabled = YES;
+  // default NO
+  _mapView.attributionButton.hidden = [[args objectForKey:@"hideAttribution"] boolValue];
 
-  // TODO pass in, default YES
-  _mapView.scrollEnabled = YES;
+  // default NO - required for the 'starter' plan
+  _mapView.logoView.hidden = [[args objectForKey:@"hideLogo"] boolValue];
+
+  // default NO
+  _mapView.compassView.hidden = [[args objectForKey:@"hideCompass"] boolValue];
   
-  // TODO pass in, default YES
-  _mapView.zoomEnabled = YES;
+  // default YES
+  _mapView.rotateEnabled = ![[args objectForKey:@"disableRotation"] boolValue];
+
+  // default YES
+  _mapView.scrollEnabled = ![[args objectForKey:@"disableScroll"] boolValue];
+  
+  // default YES
+  _mapView.zoomEnabled = ![[args objectForKey:@"disableZoom"] boolValue];
 
   [self.webView addSubview:_mapView];
 
@@ -104,6 +117,10 @@
 
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) addAnnotationCallback:(CDVInvokedUrlCommand*)command {
+  self.annotationCallbackId = command.callbackId;
 }
 
 - (void) putAnnotationsOnTheMap:(NSArray *)annotations {
@@ -141,8 +158,9 @@
 //  return annotationImage;
 //}
 
-// TODO make sure this is invoked at all.. doesn't look like it in 0.5.1
-- (void)mapViewDidFinishLoadingMap:(MGLMapView *)mapView {
+// TODO I'd rather use 'mapViewDidFinishLoadingMap' (because this one is invoked more than once) but that one isn't called in Mapbox 0.5.1..
+// TODO if you dont scroll this isnt fired... so better to just wrap it in a timeout of the show function
+- (void)mapViewDidFinishRenderingMap:(MGLMapView *)mapView fullyRendered:(BOOL)fullyRendered {
   // process any queued annotations
   if (_queuedAnnotations != nil) {
     [self putAnnotationsOnTheMap:_queuedAnnotations];
@@ -150,11 +168,21 @@
   }
 }
 
+- (void)mapViewDidFinishLoadingMap:(MGLMapView *)mapView {
+}
+
 - (void)mapView:(MGLMapView *)mapView didSelectAnnotation:(id <MGLAnnotation>)annotation {
-  NSString *title = annotation.title;
-  NSString *subtitle = annotation.subtitle;
-  CLLocationCoordinate2D coord = annotation.coordinate;
-  // TODO trigger the kept callback
+  if (self.annotationCallbackId != nil) {
+    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
+    [returnInfo setObject:annotation.title forKey:@"title"];
+    [returnInfo setObject:annotation.subtitle forKey:@"subtitle"];
+    [returnInfo setObject:[NSNumber numberWithDouble:annotation.coordinate.latitude] forKey:@"lat"];
+    [returnInfo setObject:[NSNumber numberWithDouble:annotation.coordinate.longitude] forKey:@"lng"];
+
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:self.annotationCallbackId];
+  }
 }
 
 @end
