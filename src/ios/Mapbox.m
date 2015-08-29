@@ -2,51 +2,7 @@
 
 @implementation Mapbox
 
-/* JS API, also compatible with Android and {N} implementations
-
- {
-   position: {
-     // this should make the map overlay the entire screen except for 40px at the top
-     'left': 0,
-     'right': 0,
-     'top': 40,
-     'bottom': 0
-   },
-   style: 'emerald',
-   annotations: [
-     {
-       'lat': 4.33434,
-       'lng': 7.23232,
-       'title': 'hi',
-       'subtitle': 'lo',
-       'image': 'www/img/annotations/hi.jpg' // TODO support this on a rainy day
-     },
-     {
-       ..
-     }
-   ]
- }
- 
-*/
-
 // TODO loc services for starter plan:https://www.mapbox.com/guides/first-steps-gl-ios/
-
-
-// mapping the passed-in style here so we are future-proof
-- (NSString*) getMapStyle:(NSString*) input {
-  if ([input isEqualToString:@"light"]) {
-    return @"light";
-  } else if ([input isEqualToString:@"dark"]) {
-    return @"dark";
-  } else if ([input isEqualToString:@"emerald"]) {
-    return @"emerald";
-  } else if ([input isEqualToString:@"satellite"]) {
-    return @"satellite";
-  } else {
-    // default
-    return @"mapbox-streets";
-  }
-}
 
 // TODO pass accesstoken as preference in plugin.xml, we've now set this .plist var manually: MGLMapboxAccessToken
 - (void) show:(CDVInvokedUrlCommand*)command {
@@ -71,11 +27,17 @@
 
   _mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
-  // TODO pass in lat, lng, zoom
-  [_mapView setCenterCoordinate:CLLocationCoordinate2DMake(52.3702160, 4.8951680)
-                     zoomLevel:13
-                      animated:NO];
-
+  NSNumber *zoom = [args valueForKey:@"zoom"];
+  NSDictionary *center = [args objectForKey:@"center"];
+  if (center != nil) {
+    // TODO can we set zoom independently?
+    NSNumber *clat = [center valueForKey:@"lat"];
+    NSNumber *clng = [center valueForKey:@"lng"];
+    [_mapView setCenterCoordinate:CLLocationCoordinate2DMake(clat.doubleValue, clng.doubleValue)
+                        zoomLevel:zoom.intValue
+                         animated:NO];
+  }
+  
   _mapView.delegate = self;
 
   // default NO, note that this requires adding `NSLocationWhenInUseUsageDescription` or `NSLocationAlwaysUsageDescription` to the plist
@@ -182,6 +144,22 @@
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:result callbackId:self.annotationCallbackId];
+  }
+}
+
+// mapping the passed-in style here so we are future-proof
+- (NSString*) getMapStyle:(NSString*) input {
+  if ([input isEqualToString:@"light"]) {
+    return @"light";
+  } else if ([input isEqualToString:@"dark"]) {
+    return @"dark";
+  } else if ([input isEqualToString:@"emerald"]) {
+    return @"emerald";
+  } else if ([input isEqualToString:@"satellite"]) {
+    return @"satellite";
+  } else {
+    // default
+    return @"mapbox-streets";
   }
 }
 
