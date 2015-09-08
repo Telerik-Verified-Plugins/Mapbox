@@ -19,9 +19,9 @@ iOS support only, but Android support is just around the corner!
 
 iOS
 
-<img src="screenshots/ios/ios-marker-amsterdam.png" width="250"/>&nbsp;
-<img src="screenshots/ios/ios-location-benelux.png" width="250"/>&nbsp;
-<img src="screenshots/ios/ios-location-europe-dark-boxed.png" width="250"/>
+<img src="screenshots/ios/ios-marker-amsterdam.png" width="235"/>&nbsp;
+<img src="screenshots/ios/ios-location-benelux.png" width="235"/>&nbsp;
+<img src="screenshots/ios/ios-location-europe-dark-boxed.png" width="235"/>
 
 
 ## 3. Installation
@@ -33,35 +33,9 @@ $ cordova prepare
 
 Mapbox.js is brought in automatically. There is no need to change or add anything in your html.
 
-
-2\. Grab a copy of ActionSheet.js, add it to your project and reference it in `index.html`:
-```html
-<script type="text/javascript" src="js/ActionSheet.js"></script>
-```
-
-3\. Download the source files and copy them to your project.
-
-iOS: Copy the `.h` and `.m` files to `platforms/ios/<ProjectName>/Plugins`
-
-Android: Copy `ActionSheet.java` to `platforms/android/src/nl/xservices/plugins/actionsheet/` (create the folders)
-
-WP8: Copy `ActionSheet.cs` to `platforms/wp8/Plugins/nl.x-services.plugins.actionsheet` (create the folders)
-
-### PhoneGap Build
-ActionSheet  works with PhoneGap build too! Just add the following xml to your `config.xml` to always use the latest version of this plugin:
-```xml
-<gap:plugin name="nl.x-services.plugins.actionsheet" />
-```
-
-ActionSheet.js is brought in automatically. Make sure though you include a reference to cordova.js in your index.html's head:
-```html
-<script type="text/javascript" src="cordova.js"></script>
-```
-
 ## 4. Usage
 
-Check the [demo code](demo) for all the tricks in the book!
-
+Check the [demo code](demo/index.html) for all the tricks in the book!
 
 ## 5. License
 
