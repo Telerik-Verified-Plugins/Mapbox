@@ -28,28 +28,58 @@
     <br/>
     <br/>
     <br/>
-    <button onclick="addAnnotations()">Add Annotations</button>
-    <button onclick="addGeoJson()">Add GeoJson</button>
+    <button onclick="addMarkers()">Markers</button>
+    <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
+    <button onclick="addPolygon()">Poly</button>
+    <button onclick="getZoomLevel()">getZoom</button>
+    <button onclick="zoomIn()">+</button>
+    <button onclick="zoomOut()">-</button>
+    <button onclick="setCenter()">setCtr</button>
+    <button onclick="getCenter()">getCtr</button>
     <button onclick="hideMap()">Hide</button>
   </div>
 </div>
 <script type="text/javascript" src="cordova.js"></script>
 <script type="text/javascript" src="js/index.js"></script>
 <script>
-  window.onerror = function (a, b, c) {
-    alert(a);
-  };
+  var zoom = 10;
 
-  // TODO implement
   function setCenter() {
+    Mapbox.setCenter({
+      'lat': 50.2222,
+      'lng': 5.2344,
+      'animated': true // default false
+    });
   }
 
-  // TODO implement (if possible)
-  function setZoom() {
+  function getCenter() {
+    Mapbox.getCenter(function (c) {
+      alert(JSON.stringify(c))
+    });
+  }
+
+  function getZoomLevel() {
+    Mapbox.getZoomLevel(function (zl) {
+      alert(zl)
+    });
+  }
+
+  function zoomIn() {
+    Mapbox.setZoomLevel({
+      'level': ++zoom,
+      'animated': true // default false
+    });
+  }
+
+  function zoomOut() {
+    Mapbox.setZoomLevel({
+      'level': --zoom,
+      'animated': true // default false
+    });
   }
 
   function showMap() {
-    window.plugins.mapbox.show({
+    Mapbox.show({
           style: 'emerald',
           margins: {
             'left': 10,
@@ -61,7 +91,7 @@
             lat: 52.3702160,
             lng: 4.8951680
           },
-          zoom: 12, // 0 (default, the entire world) to 20
+          zoomLevel: zoom, // 0 (the entire world) to 20, default 10
           showUserLocation: true, // default false
           hideAttribution: true, // default false
           hideLogo: true, // default false
@@ -69,21 +99,21 @@
           disableRotation: false, // default false
           disableScroll: false, // default false
           disableZoom: false, // default false
-          annotations: [
+          markers: [
             {
               'lat': 52.3732160,
               'lng': 4.8941680,
               'title': 'hi',
               'subtitle': 'lo',
-              'image': 'www/img/annotations/hi.jpg' // TODO support this on a rainy day
+              'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
             }
           ]
         },
         function (result) {
           console.log(JSON.stringify(result))
-          // let's add a callback for these annotations
-          window.plugins.mapbox.addAnnotationCallback(function(selectedAnnotation) {
-            alert("Annotation selected on the map: " + JSON.stringify(selectedAnnotation));
+          // let's add a callback for these markers
+          Mapbox.addMarkerCallback(function (selectedMarker) {
+            alert("Marker selected: " + JSON.stringify(selectedMarker));
           });
         },
         function (error) {
@@ -93,7 +123,7 @@
   }
 
   function hideMap() {
-    window.plugins.mapbox.hide({},
+    Mapbox.hide({},
         function (result) {
           console.log(JSON.stringify(result))
         },
@@ -103,20 +133,39 @@
     )
   }
 
-  function addGeoJson() {
-    window.plugins.mapbox.addGeoJson({
+  function addGeoJSON() {
+    Mapbox.addGeoJSON({
       'url': 'https://gist.githubusercontent.com/tmcw/10307131/raw/21c0a20312a2833afeee3b46028c3ed0e9756d4c/map.geojson'
     });
   }
 
-  function addAnnotations() {
-    window.plugins.mapbox.addAnnotations([
+  function addPolygon() {
+    Mapbox.addPolygon({
+      points: [
+        {
+          'lat': 52.3832160,
+          'lng': 4.8991680
+        },
+        {
+          'lat': 52.3632160,
+          'lng': 4.9011680
+        },
+        {
+          'lat': 52.3932160,
+          'lng': 4.8911680
+        }
+      ]
+    });
+  }
+
+  function addMarkers() {
+    Mapbox.addMarkers([
           {
             'lat': 52.3602160,
             'lng': 4.8891680,
             'title': 'One-line title here', // no popup unless set
             'subtitle': 'This line can\'t span multiple lines either',
-            'image': 'www/img/annotations/hi.jpg' // TODO support this on a rainy day
+            'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
           },
           {
             'lat': 52.3702160,

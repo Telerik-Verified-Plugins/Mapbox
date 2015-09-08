@@ -1,33 +1,43 @@
-function Mapbox() {
-}
+var exec = require("cordova/exec");
 
-Mapbox.prototype.show = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Mapbox", "show", [options]);
-};
+module.exports = {
+  show: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "show", [options]);
+  },
 
-Mapbox.prototype.hide = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
-};
+  hide: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
+  },
 
-Mapbox.prototype.addAnnotations = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Mapbox", "addAnnotations", [options]);
-};
+  addMarkers: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [options]);
+  },
 
-Mapbox.prototype.addGeoJson = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJson", [options]);
-};
+  addMarkerCallback: function (callback) {
+    cordova.exec(callback, null, "Mapbox", "addMarkerCallback", []);
+  },
 
-Mapbox.prototype.addAnnotationCallback = function (callback) {
-  cordova.exec(callback, null, "Mapbox", "addAnnotationCallback", []);
-};
+  addGeoJSON: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJSON", [options]);
+  },
 
-Mapbox.install = function () {
-  if (!window.plugins) {
-    window.plugins = {};
+  setCenter: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setCenter", [options]);
+  },
+
+  getCenter: function (successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getCenter", []);
+  },
+
+  getZoomLevel: function (successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getZoomLevel", []);
+  },
+
+  setZoomLevel: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setZoomLevel", [options]);
+  },
+
+  addPolygon: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addPolygon", [options]);
   }
-
-  window.plugins.mapbox = new Mapbox();
-  return window.plugins.mapbox;
 };
-
-cordova.addConstructor(Mapbox.install);

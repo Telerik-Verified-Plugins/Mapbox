@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-mapbox"
-        version="0.0.5">
+        version="0.5.0">
 
   <name>Mapbox</name>
 
@@ -12,44 +12,45 @@
 
   <license>MIT</license>
 
-  <keywords>Mapsbox, Maps, Mapping</keywords>
+  <keywords>Mapsbox, Maps, Mapping, Native maps</keywords>
 
-  <repo>https://bitbucket.org/EddyVerbruggen/cordova-plugin-mapbox</repo>
+  <repo>https://github.com/Telerik-Verified-Plugins/Mapbox</repo>
+
+  <preference name="ACCESS_TOKEN" />
 
   <engines>
     <engine name="cordova" version=">=3.5.0"/>
-    <engine name="cordova-android" version=">=4" />
-    <engine name="cordova-plugman" version=">=4.2.0" /><!-- needed for gradleReference support -->
+    <!--engine name="cordova-android" version=">=4" /-->
+    <!--engine name="cordova-plugman" version=">=4.2.0" /--><!-- needed for gradleReference support -->
   </engines>
 
   <js-module src="www/Mapbox.js" name="Mapbox">
-    <clobbers target="window.plugins.mapbox" />
+    <clobbers target="Mapbox" />
   </js-module>
 
-  <!-- android -->
+  <!-- android
   <platform name="android">
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="Mapbox">
         <param name="android-package" value="com.telerik.plugins.mapbox.Mapbox" />
-        <!--<param name="onload" value="true"/>-->
       </feature>
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/*">
       <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-      <uses-permission android:name="android.permission.INTERNET" />
+      <uses-permission android:name="android.permission.INTERNET" /-->
       <!--<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />-->
 
       <!-- these are for Location services only, you can comment them out if you don't need them -->
-      <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+      <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
       <!--<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
       <!--<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />-->
-    </config-file>
+    <!--</config-file>-->
 
 
     <!-- Mapbox SDK (non-GL) -->
-    <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
-    <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
+    <!--<framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>-->
+    <!--<source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>-->
 
 
     <!-- Mapbox GL -->
@@ -59,30 +60,31 @@
     <!-- TODO an instruction or hook setting minsdk version to 15 in case of the mapboxgl version -->
     <!-- TODO platforms/android/project.properties: target=android-23 is required -->
 
-  </platform>
+  <!--</platform>-->
 
   <!-- iOS -->
   <platform name="ios">
     <config-file parent="/*" target="config.xml">
       <feature name="Mapbox">
-        <param name="ios-package" value="Mapbox" />
+        <param name="ios-package" value="CDVMapbox" />
       </feature>
     </config-file>
 
-    <!-- TODO the MGLMapboxAccessToken must become a preference during plugin install -->
-    <config-file target="*-Info.plist">
-      <key>MGLMapboxAccessToken</key>
-      <string>sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw</string>
-      <key>MGLMapboxMetricsEnabledSettingShownInApp</key>
+    <config-file target="*-Info.plist" parent="MGLMapboxAccessToken">
+      <string>$ACCESS_TOKEN</string>
+    </config-file>
+    <config-file target="*-Info.plist" parent="MGLMapboxMetricsEnabledSettingShownInApp">
       <true/>
-      <key>NSLocationWhenInUseUsageDescription</key>
+    </config-file>
+    <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
       <true/>
     </config-file>
 
-    <header-file src="src/ios/Mapbox.h" />
-    <source-file src="src/ios/Mapbox.m" />
+    <header-file src="src/ios/CDVMapbox.h" />
+    <source-file src="src/ios/CDVMapbox.m" />
 
-    <header-file src="src/ios/Headers/MapboxGL.h" />
+    <!-- downloaded the iOS SDK from here: https://github.com/mapbox/mapbox-gl-native/releases -->
+    <header-file src="src/ios/Headers/Mapbox.h" />
     <header-file src="src/ios/Headers/MGLAccountManager.h" />
     <header-file src="src/ios/Headers/MGLAnnotation.h" />
     <header-file src="src/ios/Headers/MGLAnnotationImage.h" />
@@ -98,8 +100,8 @@
     <header-file src="src/ios/Headers/MGLTypes.h" />
     <header-file src="src/ios/Headers/MGLUserLocation.h" />
 
-    <source-file src="src/ios/libs/libMapboxGL.a" framework="true"/>
-    <resource-file src="src/ios/libs/MapboxGL.bundle" />
+    <source-file src="src/ios/libs/libMapbox.a" framework="true"/>
+    <resource-file src="src/ios/libs/Mapbox.bundle" />
     <!-- This bundle adds a mandatory opt-out switch for Mapbox Metrics to the iOS Settings app  -->
     <resource-file src="src/ios/libs/Settings.bundle" />
 
