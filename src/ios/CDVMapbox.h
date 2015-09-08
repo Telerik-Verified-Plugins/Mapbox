@@ -1,7 +1,5 @@
 #import <Cordova/CDVPlugin.h>
-#import "MGLMapView.h"
-#import "MGLPointAnnotation.h"
-#import "MGLPolygon.h"
+#import "Mapbox.h"
 
 @interface CDVMapbox : CDVPlugin<MGLMapViewDelegate>
 

@@ -34,9 +34,9 @@
     <button onclick="getZoomLevel()">getZoom</button>
     <button onclick="zoomIn()">+</button>
     <button onclick="zoomOut()">-</button>
-    <button onclick="setCenter()">setCtr</button>
-    <button onclick="getCenter()">getCtr</button>
-    <button onclick="hideMap()">Hide</button>
+    <button onclick="setCenter()">ctr!</button>
+    <button onclick="getCenter()">ctr?</button>
+    <button onclick="hideMap()">x</button>
   </div>
 </div>
 <script type="text/javascript" src="cordova.js"></script>
@@ -82,9 +82,9 @@
     Mapbox.show({
           style: 'emerald',
           margins: {
-            'left': 10,
-            'right': 10,
-            'top': 20,
+            'left': 0,
+            'right': 0,
+            'top': 0,
             'bottom': 50
           },
           center: {
@@ -103,21 +103,21 @@
             {
               'lat': 52.3732160,
               'lng': 4.8941680,
-              'title': 'hi',
-              'subtitle': 'lo',
+              'title': 'Nice location',
+              'subtitle': 'Really really nice location',
               'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
             }
           ]
         },
         function (result) {
-          console.log(JSON.stringify(result))
+          console.log(JSON.stringify(result));
           // let's add a callback for these markers
           Mapbox.addMarkerCallback(function (selectedMarker) {
             alert("Marker selected: " + JSON.stringify(selectedMarker));
           });
         },
         function (error) {
-          alert(error)
+          alert(error);
         }
     )
   }
@@ -125,10 +125,10 @@
   function hideMap() {
     Mapbox.hide({},
         function (result) {
-          console.log(JSON.stringify(result))
+          console.log(JSON.stringify(result));
         },
         function (error) {
-          alert(error)
+          alert(error);
         }
     )
   }
