@@ -28,39 +28,37 @@
     <clobbers target="Mapbox" />
   </js-module>
 
-  <!-- android
+  <!-- android -->
   <platform name="android">
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="Mapbox">
-        <param name="android-package" value="com.telerik.plugins.mapbox.Mapbox" />
+        <!--<param name="android-package" value="com.telerik.plugins.mapbox.Mapbox" />-->
+        <param name="android-package" value="com.telerik.plugins.mapbox.Mapboxgl" />
       </feature>
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/*">
       <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-      <uses-permission android:name="android.permission.INTERNET" /-->
-      <!--<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />-->
+      <uses-permission android:name="android.permission.INTERNET" />
+      <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
       <!-- these are for Location services only, you can comment them out if you don't need them -->
-      <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
-      <!--<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
-      <!--<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />-->
-    <!--</config-file>-->
-
+      <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+      <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    </config-file>
 
     <!-- Mapbox SDK (non-GL) -->
     <!--<framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>-->
     <!--<source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>-->
 
-
     <!-- Mapbox GL -->
     <!-- downloads from here: https://oss.sonatype.org/content/repositories/snapshots/com/mapbox/mapboxgl/mapbox-gl-android-sdk/0.0.1-SNAPSHOT/ -->
-    <!--<framework src="src/android/mapboxgl.gradle" custom="true" type="gradleReference"/>-->
-    <!--<source-file src="src/android/Mapboxgl.java" target-dir="src/com/telerik/plugins/mapbox"/>-->
+    <framework src="src/android/mapboxgl.gradle" custom="true" type="gradleReference"/>
+    <source-file src="src/android/Mapboxgl.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <!-- TODO an instruction or hook setting minsdk version to 15 in case of the mapboxgl version -->
-    <!-- TODO platforms/android/project.properties: target=android-23 is required -->
-
-  <!--</platform>-->
+    <!-- TODO (currently) platforms/android/project.properties: target=android-23 is required -->
+  </platform>
 
   <!-- iOS -->
   <platform name="ios">
