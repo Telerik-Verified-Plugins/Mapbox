@@ -27,16 +27,15 @@
     <br/>
     <br/>
     <br/>
-    <br/>
     <button onclick="addMarkers()">Markers</button>
     <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
     <button onclick="addPolygon()">Poly</button>
     <button onclick="getZoomLevel()">getZoom</button>
     <button onclick="zoomIn()">+</button>
     <button onclick="zoomOut()">-</button>
-    <button onclick="setCenter()">ctr!</button>
-    <button onclick="getCenter()">ctr?</button>
-    <button onclick="hideMap()">x</button>
+    <button onclick="setCenter()">set center</button>
+    <button onclick="getCenter()">get center</button>
+    <button onclick="hideMap()">hide</button>
   </div>
 </div>
 <script type="text/javascript" src="cordova.js"></script>
@@ -85,7 +84,7 @@
             'left': 0,
             'right': 0,
             'top': 0,
-            'bottom': 50
+            'bottom': 80
           },
           center: {
             lat: 52.3702160,
@@ -164,14 +163,13 @@
             'lat': 52.3602160,
             'lng': 4.8891680,
             'title': 'One-line title here', // no popup unless set
-            'subtitle': 'This line can\'t span multiple lines either',
+            'subtitle': 'This text can span multiple lines on Android only. On iOS it\'s one line max.',
             'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
           },
           {
             'lat': 52.3702160,
             'lng': 4.8911680,
-            'title': 'One-line title here 2', // no popup unless set
-            'subtitle': 'This line can\'t span multiple lines either 2'
+            'title': 'Nu subtitle for this one' // iOS: no popup unless set, Android: an empty popup -- so please add something
           }
         ],
         function (result) {

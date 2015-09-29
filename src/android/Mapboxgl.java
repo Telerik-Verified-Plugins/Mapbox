@@ -1,10 +1,12 @@
 package com.telerik.plugins.mapbox;
 
+import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxgl.annotations.MarkerOptions;
+import com.mapbox.mapboxgl.annotations.PolygonOptions;
 import com.mapbox.mapboxgl.geometry.LatLng;
 import com.mapbox.mapboxgl.geometry.LatLngZoom;
 import com.mapbox.mapboxgl.views.MapView;
@@ -14,12 +16,12 @@ import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
-// TODO not using this because the current release is too unstable and requires newer devices
-// .. perhaps fall back to old impl for older devices?
+import java.util.HashMap;
+import java.util.Map;
 
 
 // TODO for screen rotation, see https://www.mapbox.com/mapbox-android-sdk/#screen-rotation
@@ -28,15 +30,22 @@ import org.json.JSONObject;
 // TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
 public class Mapboxgl extends CordovaPlugin {
 
+  private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
+
   private static final String ACTION_SHOW = "show";
   private static final String ACTION_HIDE = "hide";
-  private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
+  private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
+  private static final String ACTION_ADD_POLYGON = "addPolygon";
+  private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
   private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
   private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
+  private static final String ACTION_GET_CENTER = "getCenter";
+  private static final String ACTION_SET_CENTER = "setCenter";
 
   public static MapView mapView;
-  private float retinaFactor;
+  private static float retinaFactor;
+  private String accessToken;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -45,66 +54,71 @@ public class Mapboxgl extends CordovaPlugin {
     DisplayMetrics metrics = new DisplayMetrics();
     cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
     retinaFactor = metrics.density;
+
+    try {
+      int mapboxAccesstokenResourceId = cordova.getActivity().getResources().getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", cordova.getActivity().getPackageName());
+      accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
+    } catch (Resources.NotFoundException e) {
+      // we'll deal with this when the accessToken property is read, but for now let's dump the error:
+      e.printStackTrace();
+    }
   }
 
   @Override
-  public boolean execute(String action, CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
+  public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
     try {
       if (ACTION_SHOW.equals(action)) {
         final JSONObject options = args.getJSONObject(0);
-
         final String style = getStyle(options.optString("style"));
 
         final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-        final int left = margins == null || margins.isNull("left") ? 0 : margins.getInt("left");
-        final int right = margins == null || margins.isNull("right") ? 0 : margins.getInt("right");
-        final int top = margins == null || margins.isNull("top") ? 0 : margins.getInt("top");
-        final int bottom = margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom");
-
-        final double zoomLevel = options.isNull("zoomLevel") ? 10 : options.getDouble("zoomLevel");
+        final int left = applyRetinaFactor(margins == null || margins.isNull("left") ? 0 : margins.getInt("left"));
+        final int right = applyRetinaFactor(margins == null || margins.isNull("right") ? 0 : margins.getInt("right"));
+        final int top = applyRetinaFactor(margins == null || margins.isNull("top") ? 0 : margins.getInt("top"));
+        final int bottom = applyRetinaFactor(margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom"));
 
         final JSONObject center = options.isNull("center") ? null : options.getJSONObject("center");
 
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-
-            mapView = new MapView(webView.getContext(), "sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw");
+            if (accessToken == null) {
+              callbackContext.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
+              return;
+            }
+            mapView = new MapView(webView.getContext(), accessToken);
 
             // need to do this to register a receiver which onPause later needs
             mapView.onResume();
-
             mapView.onCreate(null);
 
-            mapView.setCompassEnabled(true);
-            mapView.setRotateEnabled(true);
-            mapView.setScrollEnabled(true);
-            mapView.setZoomEnabled(true);
+            try {
+              mapView.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
+              mapView.setRotateEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
+              mapView.setScrollEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
+              mapView.setZoomEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
 
-            mapView.setZoomLevel(zoomLevel);
+              final boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
+              mapView.setMyLocationEnabled(showUserLocation);
 
-            if (center != null) {
-              try {
+              final double zoomLevel = options.isNull("zoomLevel") ? 10 : options.getDouble("zoomLevel");
+              if (center != null) {
                 final double lat = center.getDouble("lat");
                 final double lng = center.getDouble("lng");
                 mapView.setCenterCoordinate(new LatLngZoom(lat, lng, zoomLevel));
-              } catch (JSONException e) {
-                callbackContext.error(e.getMessage());
-                return;
+              } else {
+                mapView.setZoomLevel(zoomLevel);
               }
-            } else {
-              mapView.setZoomLevel(zoomLevel);
+
+              if (options.has("markers")) {
+                addMarkers(options.getJSONArray("markers"));
+              }
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+              return;
             }
 
             mapView.setStyleUrl("asset://styles/" + style + "-v8.json");
-
-            // TODO show the user on the map based on a boolean, also for iOS
-            if (true) {
-              //          UserLocationOverlay myLocationOverlay = new UserLocationOverlay(this, mapView);
-              //          userLocationOverlay.enableMyLocation();
-              //          userLocationOverlay.setDrawAccuracyEnabled(true);
-              //          mapView.getOverlays().add(myLocationOverlay);
-            }
 
             // position the mapView overlay
             int webViewWidth = webView.getView().getWidth();
@@ -125,7 +139,9 @@ public class Mapboxgl extends CordovaPlugin {
             @Override
             public void run() {
               ViewGroup vg = (ViewGroup) mapView.getParent();
-              vg.removeView(mapView);
+              if (vg != null) {
+                vg.removeView(mapView);
+              }
               callbackContext.success();
             }
           });
@@ -147,19 +163,84 @@ public class Mapboxgl extends CordovaPlugin {
           cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-              mapView.setZoomLevel(7, true);
-              callbackContext.success();
+              try {
+                final JSONObject options = args.getJSONObject(0);
+                final double zoom = options.getDouble("level");
+                if (zoom >= 0 && zoom <= 20) {
+                  final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
+                  mapView.setZoomLevel(zoom, animated);
+                  callbackContext.success();
+                } else {
+                  callbackContext.error("invalid zoomlevel, use any double value from 0 to 20 (like 8.3)");
+                }
+              } catch (JSONException e) {
+                callbackContext.error(e.getMessage());
+              }
+            }
+          });
+        }
+
+      } else if (ACTION_GET_CENTER.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              final LatLng center = mapView.getCenterCoordinate();
+              Map<String, Double> result = new HashMap<String, Double>();
+              result.put("lat", center.getLatitude());
+              result.put("lng", center.getLongitude());
+              callbackContext.success(new JSONObject(result));
+            }
+          });
+        }
+
+      } else if (ACTION_SET_CENTER.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                final JSONObject options = args.getJSONObject(0);
+                final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
+                final double lat = options.getDouble("lat");
+                final double lng = options.getDouble("lng");
+                mapView.setCenterCoordinate(new LatLng(lat, lng), animated);
+                callbackContext.success();
+              } catch (JSONException e) {
+                callbackContext.error(e.getMessage());
+              }
             }
           });
         }
 
       } else if (ACTION_ADD_POLYGON.equals(action)) {
-        final JSONObject options = args.getJSONObject(0);
-        final String url = options.optString("url");
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-//            mapView.loadFromGeoJSONURL(url);
+            try {
+              final PolygonOptions polygon = new PolygonOptions();
+              final JSONObject options = args.getJSONObject(0);
+              final JSONArray points = options.getJSONArray("points");
+              for (int i=0; i<points.length(); i++) {
+                final JSONObject marker = points.getJSONObject(i);
+                final double lat = marker.getDouble("lat");
+                final double lng = marker.getDouble("lng");
+                polygon.add(new LatLng(lat, lng));
+              }
+              mapView.addPolygon(polygon);
+
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+
+      } else if (ACTION_ADD_GEOJSON.equals(action)) {
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            // TODO implement
             callbackContext.success();
           }
         });
@@ -168,16 +249,12 @@ public class Mapboxgl extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-//            Context ctx = webView.getContext();
-//            Marker m = new Marker(); //mapView, "Edinburgh", "Scotland", new LatLng(55.94629, -3.20777));
-//            m.setMapView(mapView);
-//            m.setVisible(true);
-            MarkerOptions mo = new MarkerOptions();
-            mo.title("Title");
-            mo.position(new LatLng(59.32995, 18.06461));
-            mapView.addMarker(mo);
-
-            callbackContext.success();
+            try {
+              addMarkers(args.getJSONArray(0));
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
@@ -189,6 +266,21 @@ public class Mapboxgl extends CordovaPlugin {
       callbackContext.error(t.getMessage());
     }
     return true;
+  }
+
+  private void addMarkers(JSONArray markers) throws JSONException {
+    for (int i=0; i<markers.length(); i++) {
+      final JSONObject marker = markers.getJSONObject(i);
+      final MarkerOptions mo = new MarkerOptions();
+      mo.title(marker.isNull("title") ? null : marker.getString("title"));
+      mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
+      mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
+      mapView.addMarker(mo);
+    }
+  }
+
+  private static int applyRetinaFactor(int i) {
+    return (int) (i * retinaFactor);
   }
 
   private static String getStyle(final String requested) {
@@ -217,15 +309,3 @@ public class Mapboxgl extends CordovaPlugin {
     mapView.onDestroy();
   }
 }
-
-/*
-    // other features:
-
-    public LatLng getMapCenter() {
-        return mv.getCenter();
-    }
-
-    public void setMapCenter(ILatLng center) {
-        mv.setCenter(center);
-    }
-*/
