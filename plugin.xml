@@ -58,8 +58,8 @@
     <source-file src="src/android/Mapboxgl.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <!-- TODO an instruction or hook setting minsdk version to 15 in case of the mapboxgl version -->
 
-    <source-file src="src/android/res/values/strings.xml" target-dir="res/values" />
-    <config-file target="res/values/strings.xml" parent="/*">
+    <source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
+    <config-file target="res/values/mapboxstrings.xml" parent="/*">
       <string name="mapbox_accesstoken">$ACCESS_TOKEN</string>
     </config-file>
   </platform>
