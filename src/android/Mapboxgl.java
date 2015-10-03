@@ -98,6 +98,14 @@ public class Mapboxgl extends CordovaPlugin {
               mapView.setScrollEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
               mapView.setZoomEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
 
+              // placing these offscreen in case the user wants to hide them
+              if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
+                mapView.setAttributionMargins(-300, 0, 0, 0);
+              }
+              if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
+                mapView.setLogoMargins(-300, 0, 0, 0);
+              }
+
               final boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
               mapView.setMyLocationEnabled(showUserLocation);
 
