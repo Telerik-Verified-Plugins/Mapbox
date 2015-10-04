@@ -18,7 +18,7 @@
   CGRect webviewFrame = self.webView.frame;
   CGRect mapFrame = CGRectMake(left, top, webviewFrame.size.width - left - right, webviewFrame.size.height - top - bottom);
   
-  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame styleURL:[NSURL URLWithString:[NSString stringWithFormat:@"asset://styles/%@-v7.json", mapStyle]]];
+  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame styleURL:[NSURL URLWithString:[NSString stringWithFormat:@"asset://styles/%@-v8.json", mapStyle]]];
 
   _mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
@@ -55,6 +55,9 @@
   
   // default YES
   _mapView.rotateEnabled = ![[args objectForKey:@"disableRotation"] boolValue];
+
+  // default YES
+  _mapView.pitchEnabled = ![[args objectForKey:@"disablePitch"] boolValue];
 
   // default YES
   _mapView.scrollEnabled = ![[args objectForKey:@"disableScroll"] boolValue];

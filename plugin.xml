@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-mapbox"
-        version="0.6.0">
+        version="0.7.0">
 
   <name>Mapbox</name>
 
@@ -28,11 +28,10 @@
     <clobbers target="Mapbox" />
   </js-module>
 
-  <!-- android -->
+  <!-- android
   <platform name="android">
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="Mapbox">
-        <!--<param name="android-package" value="com.telerik.plugins.mapbox.Mapbox" />-->
         <param name="android-package" value="com.telerik.plugins.mapbox.Mapboxgl" />
       </feature>
     </config-file>
@@ -42,27 +41,19 @@
       <uses-permission android:name="android.permission.INTERNET" />
       <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
-      <!-- these are for Location services only, you can comment them out if you don't need them -->
       <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-      <!--<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
+      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
       <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     </config-file>
 
-    <!-- Mapbox SDK (non-GL) -->
-    <!--<framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>-->
-    <!--<source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>-->
-
-    <!-- Mapbox GL -->
-    <!-- downloads from here: https://oss.sonatype.org/content/repositories/snapshots/com/mapbox/mapboxgl/mapbox-gl-android-sdk/0.0.1-SNAPSHOT/ -->
     <framework src="src/android/mapboxgl.gradle" custom="true" type="gradleReference"/>
     <source-file src="src/android/Mapboxgl.java" target-dir="src/com/telerik/plugins/mapbox"/>
-    <!-- TODO an instruction or hook setting minsdk version to 15 in case of the mapboxgl version -->
 
     <source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
     <config-file target="res/values/mapboxstrings.xml" parent="/*">
       <string name="mapbox_accesstoken">$ACCESS_TOKEN</string>
     </config-file>
-  </platform>
+  </platform-->
 
   <!-- iOS -->
   <platform name="ios">
@@ -85,7 +76,7 @@
     <header-file src="src/ios/CDVMapbox.h" />
     <source-file src="src/ios/CDVMapbox.m" />
 
-    <!-- downloaded the iOS SDK from here: https://github.com/mapbox/mapbox-gl-native/releases -->
+    <!-- Downloaded the iOS SDK version 2.1.2 from https://github.com/mapbox/mapbox-gl-native/releases -->
     <header-file src="src/ios/Headers/Mapbox.h" />
     <header-file src="src/ios/Headers/MGLAccountManager.h" />
     <header-file src="src/ios/Headers/MGLAnnotation.h" />
@@ -101,6 +92,7 @@
     <header-file src="src/ios/Headers/MGLShape.h" />
     <header-file src="src/ios/Headers/MGLTypes.h" />
     <header-file src="src/ios/Headers/MGLUserLocation.h" />
+    <header-file src="src/ios/Headers/MGLMapCamera.h" />
 
     <source-file src="src/ios/libs/libMapbox.a" framework="true"/>
     <resource-file src="src/ios/libs/Mapbox.bundle" />
