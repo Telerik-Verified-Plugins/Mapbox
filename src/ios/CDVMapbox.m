@@ -232,7 +232,7 @@
     return @"satellite";
   } else {
     // default
-    return @"mapbox-streets";
+    return @"streets";
   }
 }
 
