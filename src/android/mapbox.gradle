@@ -1,8 +1,4 @@
-android {
-    defaultConfig {
-        minSdkVersion 15
-    }
-}
+ext.cdvMinSdkVersion = 15
 
 dependencies {
     compile 'com.android.support:appcompat-v7:22.+'

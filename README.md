@@ -13,15 +13,19 @@ by [Telerik](https://www.telerik.com) / [Eddy Verbruggen](http://twitter.com/edd
 
 Use Mapbox - an OpenGL powered vector-based native mapping solution - in your Cordova / PhoneGap app.
 
-iOS support only, but Android support is just around the corner!
+iOS and Android are fully supported.
 
 ## 2. Screenshots
 
-iOS
+### iOS
 
 <img src="screenshots/ios/ios-marker-amsterdam.png" width="235"/>&nbsp;
 <img src="screenshots/ios/ios-location-benelux.png" width="235"/>&nbsp;
 <img src="screenshots/ios/ios-location-europe-dark-boxed.png" width="235"/>
+
+### Android
+
+<img src="screenshots/android/android-marker-amsterdam.png" width="400"/>
 
 
 ## 3. Installation
