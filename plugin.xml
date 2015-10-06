@@ -32,7 +32,7 @@
   <platform name="android">
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="Mapbox">
-        <param name="android-package" value="com.telerik.plugins.mapbox.Mapboxgl" />
+        <param name="android-package" value="com.telerik.plugins.mapbox.Mapbox" />
       </feature>
     </config-file>
 
