@@ -1,5 +1,0 @@
-dependencies {
-    compile('com.mapbox.mapboxgl:mapbox-gl-android-sdk:0.1.0@aar') {
-        transitive = true
-    }
-}

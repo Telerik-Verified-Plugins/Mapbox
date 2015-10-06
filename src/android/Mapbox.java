@@ -1,73 +1,142 @@
 package com.telerik.plugins.mapbox;
 
-import android.content.Context;
+import android.content.res.Resources;
+import android.util.DisplayMetrics;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import com.mapbox.mapboxsdk.overlay.Icon;
-import com.mapbox.mapboxsdk.overlay.Marker;
+
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngZoom;
 import com.mapbox.mapboxsdk.views.MapView;
-import com.mapbox.mapboxsdk.tileprovider.tilesource.MapboxTileLayer;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
+import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
+import java.util.Map;
+
+
 // TODO for screen rotation, see https://www.mapbox.com/mapbox-android-sdk/#screen-rotation
 // TODO fox Xwalk compat, see nativepagetransitions plugin
+// TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
 public class Mapbox extends CordovaPlugin {
+
+  private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
 
   private static final String ACTION_SHOW = "show";
   private static final String ACTION_HIDE = "hide";
-  private static final String ACTION_ADD_GEOJSON = "addGeoJson";
-  private static final String ACTION_ADD_ANNOTATIONS = "addAnnotations";
+  private static final String ACTION_ADD_MARKERS = "addMarkers";
+  private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
+  private static final String ACTION_ADD_POLYGON = "addPolygon";
+  private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
+  private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
+  private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
+  private static final String ACTION_GET_CENTER = "getCenter";
+  private static final String ACTION_SET_CENTER = "setCenter";
 
-  private MapView mapView;
+  public static MapView mapView;
+  private static float retinaFactor;
+  private String accessToken;
 
   @Override
-  public boolean execute(String action, CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
+  public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+    super.initialize(cordova, webView);
+
+    DisplayMetrics metrics = new DisplayMetrics();
+    cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+    retinaFactor = metrics.density;
+
+    try {
+      int mapboxAccesstokenResourceId = cordova.getActivity().getResources().getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", cordova.getActivity().getPackageName());
+      accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
+    } catch (Resources.NotFoundException e) {
+      // we'll deal with this when the accessToken property is read, but for now let's dump the error:
+      e.printStackTrace();
+    }
+  }
+
+  @Override
+  public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
     try {
       if (ACTION_SHOW.equals(action)) {
         final JSONObject options = args.getJSONObject(0);
+        final String style = getStyle(options.optString("style"));
+
+        final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
+        final int left = applyRetinaFactor(margins == null || margins.isNull("left") ? 0 : margins.getInt("left"));
+        final int right = applyRetinaFactor(margins == null || margins.isNull("right") ? 0 : margins.getInt("right"));
+        final int top = applyRetinaFactor(margins == null || margins.isNull("top") ? 0 : margins.getInt("top"));
+        final int bottom = applyRetinaFactor(margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom"));
+
+        final JSONObject center = options.isNull("center") ? null : options.getJSONObject("center");
 
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
+            if (accessToken == null) {
+              callbackContext.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
+              return;
+            }
+            mapView = new MapView(webView.getContext(), accessToken);
 
-            mapView = new MapView(webView.getContext());
-            mapView.setZoom(5);
-            mapView.setCenter(new LatLng(55.94629, -3.20777));
+            // need to do this to register a receiver which onPause later needs
+            mapView.onResume();
+            mapView.onCreate(null);
 
+            try {
+              mapView.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
+              mapView.setRotateEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
+              mapView.setScrollEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
+              mapView.setZoomEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
 
-            // TODO get from strings.xml via plugin.xml
-            mapView.setAccessToken("sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw");
+              // placing these offscreen in case the user wants to hide them
+              if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
+                mapView.setAttributionMargins(-300, 0, 0, 0);
+              }
+              if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
+                mapView.setLogoMargins(-300, 0, 0, 0);
+              }
 
-            // streets | outdoors | satellite | run-bike-hike | pencil
-            mapView.setTileSource(new MapboxTileLayer("mapbox.run-bike-hike"));
+              final boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
+              mapView.setMyLocationEnabled(showUserLocation);
 
-            // TODO show the user on the map based on a boolean, also for iOS
-            if (true) {
-              //          UserLocationOverlay myLocationOverlay = new UserLocationOverlay(this, mapView);
-              //          userLocationOverlay.enableMyLocation();
-              //          userLocationOverlay.setDrawAccuracyEnabled(true);
-              //          mapView.getOverlays().add(myLocationOverlay);
+              final double zoomLevel = options.isNull("zoomLevel") ? 10 : options.getDouble("zoomLevel");
+              if (center != null) {
+                final double lat = center.getDouble("lat");
+                final double lng = center.getDouble("lng");
+                mapView.setCenterCoordinate(new LatLngZoom(lat, lng, zoomLevel));
+              } else {
+                mapView.setZoomLevel(zoomLevel);
+              }
+
+              if (options.has("markers")) {
+                addMarkers(options.getJSONArray("markers"));
+              }
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+              return;
             }
 
-            // TODO pass in width stuff like  json.getInt("left");
+            mapView.setStyleUrl("asset://styles/" + style + "-v8.json");
+
+            // position the mapView overlay
             int webViewWidth = webView.getView().getWidth();
             int webViewHeight = webView.getView().getHeight();
-
-            int left = 0;
-            int right = 0;
-            int top = 0;
-            int bottom = 240;
             final FrameLayout layout = (FrameLayout) webView.getView().getParent();
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth-left-right, webViewHeight-top-bottom);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
             params.setMargins(left, top, right, bottom);
             mapView.setLayoutParams(params);
+
             layout.addView(mapView);
-            callbackContext.success("OK");
+            callbackContext.success();
           }
         });
 
@@ -77,61 +146,122 @@ public class Mapbox extends CordovaPlugin {
             @Override
             public void run() {
               ViewGroup vg = (ViewGroup) mapView.getParent();
-              vg.removeView(mapView);
-              callbackContext.success("OK");
+              if (vg != null) {
+                vg.removeView(mapView);
+              }
+              callbackContext.success();
             }
           });
         }
 
-      } else if (ACTION_ADD_GEOJSON.equals(action)) {
-        final JSONObject options = args.getJSONObject(0);
-        final String url = options.optString("url");
+      } else if (ACTION_GET_ZOOMLEVEL.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              final double zoomLevel = mapView.getZoomLevel();
+              callbackContext.success("" + zoomLevel);
+            }
+          });
+        }
+
+      } else if (ACTION_SET_ZOOMLEVEL.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                final JSONObject options = args.getJSONObject(0);
+                final double zoom = options.getDouble("level");
+                if (zoom >= 0 && zoom <= 20) {
+                  final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
+                  mapView.setZoomLevel(zoom, animated);
+                  callbackContext.success();
+                } else {
+                  callbackContext.error("invalid zoomlevel, use any double value from 0 to 20 (like 8.3)");
+                }
+              } catch (JSONException e) {
+                callbackContext.error(e.getMessage());
+              }
+            }
+          });
+        }
+
+      } else if (ACTION_GET_CENTER.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              final LatLng center = mapView.getCenterCoordinate();
+              Map<String, Double> result = new HashMap<String, Double>();
+              result.put("lat", center.getLatitude());
+              result.put("lng", center.getLongitude());
+              callbackContext.success(new JSONObject(result));
+            }
+          });
+        }
+
+      } else if (ACTION_SET_CENTER.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                final JSONObject options = args.getJSONObject(0);
+                final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
+                final double lat = options.getDouble("lat");
+                final double lng = options.getDouble("lng");
+                mapView.setCenterCoordinate(new LatLng(lat, lng), animated);
+                callbackContext.success();
+              } catch (JSONException e) {
+                callbackContext.error(e.getMessage());
+              }
+            }
+          });
+        }
+
+      } else if (ACTION_ADD_POLYGON.equals(action)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-            mapView.loadFromGeoJSONURL(url);
-            callbackContext.success("OK");
+            try {
+              final PolygonOptions polygon = new PolygonOptions();
+              final JSONObject options = args.getJSONObject(0);
+              final JSONArray points = options.getJSONArray("points");
+              for (int i=0; i<points.length(); i++) {
+                final JSONObject marker = points.getJSONObject(i);
+                final double lat = marker.getDouble("lat");
+                final double lng = marker.getDouble("lng");
+                polygon.add(new LatLng(lat, lng));
+              }
+              mapView.addPolygon(polygon);
+
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
-      } else if (ACTION_ADD_ANNOTATIONS.equals(action)) {
+      } else if (ACTION_ADD_GEOJSON.equals(action)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-            Context ctx = webView.getContext();
-            Marker m = new Marker(mapView, "Edinburgh", "Scotland", new LatLng(55.94629, -3.20777));
-            m.setIcon(new Icon(ctx, Icon.Size.SMALL, "marker-stroked", "ee8a65"));
-            mapView.addMarker(m);
+            // TODO implement
+            callbackContext.success();
+          }
+        });
 
-            m = new Marker(mapView, "Stockholm", "Sweden", new LatLng(59.32995, 18.06461));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Prague", "Czech Republic", new LatLng(50.08734, 14.42112));
-            m.setIcon(new Icon(ctx, Icon.Size.MEDIUM, "land-use", "3bb2d0"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Athens", "Greece", new LatLng(37.97885, 23.71399));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "land-use", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Tokyo", "Japan", new LatLng(35.70247, 139.71588));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Ayacucho", "Peru", new LatLng(-13.16658, -74.21608));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Nairobi", "Kenya", new LatLng(-1.26676, 36.83372));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            m = new Marker(mapView, "Canberra", "Australia", new LatLng(-35.30952, 149.12430));
-            m.setIcon(new Icon(ctx, Icon.Size.LARGE, "city", "3887be"));
-            mapView.addMarker(m);
-
-            callbackContext.success("OK");
+      } else if (ACTION_ADD_MARKERS.equals(action)) {
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              addMarkers(args.getJSONArray(0));
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
@@ -140,20 +270,49 @@ public class Mapbox extends CordovaPlugin {
       }
     } catch (Throwable t) {
       t.printStackTrace();
-      callbackContext.error("ERROR: " + t.getMessage());
+      callbackContext.error(t.getMessage());
     }
     return true;
   }
+
+  private void addMarkers(JSONArray markers) throws JSONException {
+    for (int i=0; i<markers.length(); i++) {
+      final JSONObject marker = markers.getJSONObject(i);
+      final MarkerOptions mo = new MarkerOptions();
+      mo.title(marker.isNull("title") ? null : marker.getString("title"));
+      mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
+      mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
+      mapView.addMarker(mo);
+    }
+  }
+
+  private static int applyRetinaFactor(int i) {
+    return (int) (i * retinaFactor);
+  }
+
+  private static String getStyle(final String requested) {
+    if ("light".equalsIgnoreCase(requested)) {
+      return "light";
+    } else if ("dark".equalsIgnoreCase(requested)) {
+      return "dark";
+    } else if ("emerald".equalsIgnoreCase(requested)) {
+      return "emerald";
+    } else if ("satellite".equalsIgnoreCase(requested)) {
+      return "satellite";
+    } else {
+      return "streets";
+    }
+  }
+
+  public void onPause(boolean multitasking) {
+    mapView.onPause();
+  }
+
+  public void onResume(boolean multitasking) {
+    mapView.onResume();
+  }
+
+  public void onDestroy() {
+    mapView.onDestroy();
+  }
 }
-
-/*
-    // other features:
-
-    public LatLng getMapCenter() {
-        return mv.getCenter();
-    }
-
-    public void setMapCenter(ILatLng center) {
-        mv.setCenter(center);
-    }
-*/

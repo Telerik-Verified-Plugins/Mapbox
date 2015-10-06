@@ -1,5 +1,10 @@
-dependencies {
-    compile('com.mapbox.mapboxsdk:mapbox-android-sdk:0.7.4@aar') {
-        transitive = true
+android {
+    defaultConfig {
+        minSdkVersion 15
     }
+}
+
+dependencies {
+    compile 'com.android.support:appcompat-v7:22.+'
+    compile('com.mapbox.mapboxsdk:mapbox-android-sdk:2.0.0@aar')
 }

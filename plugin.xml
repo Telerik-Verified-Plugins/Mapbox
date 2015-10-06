@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-mapbox"
-        version="0.9.0">
+        version="1.0.0">
 
   <name>Mapbox</name>
 
@@ -28,7 +28,7 @@
     <clobbers target="Mapbox" />
   </js-module>
 
-  <!-- android
+  <!-- android -->
   <platform name="android">
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="Mapbox">
@@ -46,14 +46,18 @@
       <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     </config-file>
 
-    <framework src="src/android/mapboxgl.gradle" custom="true" type="gradleReference"/>
-    <source-file src="src/android/Mapboxgl.java" target-dir="src/com/telerik/plugins/mapbox"/>
+    <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
+    <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
+
+    <resource-file src="src/android/libs/lost-1.0.1.jar" target="libs/lost-1.0.1.jar" />
+    <resource-file src="src/android/libs/okhttp-2.4.0.jar" target="libs/okhttp-2.4.0.jar" />
+    <resource-file src="src/android/libs/okio-1.4.0.jar" target="libs/okio-1.4.0.jar" />
 
     <source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
     <config-file target="res/values/mapboxstrings.xml" parent="/*">
       <string name="mapbox_accesstoken">$ACCESS_TOKEN</string>
     </config-file>
-  </platform-->
+  </platform>
 
   <!-- iOS -->
   <platform name="ios">
