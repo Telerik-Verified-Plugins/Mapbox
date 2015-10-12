@@ -210,7 +210,9 @@
   if (self.markerCallbackId != nil) {
     NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
     [returnInfo setObject:annotation.title forKey:@"title"];
-    [returnInfo setObject:annotation.subtitle forKey:@"subtitle"];
+    if (annotation.subtitle != nil) {
+      [returnInfo setObject:annotation.subtitle forKey:@"subtitle"];
+    }
     [returnInfo setObject:[NSNumber numberWithDouble:annotation.coordinate.latitude] forKey:@"lat"];
     [returnInfo setObject:[NSNumber numberWithDouble:annotation.coordinate.longitude] forKey:@"lng"];
 
