@@ -53,8 +53,13 @@
     <resource-file src="src/android/libs/okhttp-2.4.0.jar" target="libs/okhttp-2.4.0.jar" />
     <resource-file src="src/android/libs/okio-1.4.0.jar" target="libs/okio-1.4.0.jar" />
 
-    <source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
+    <!-- This leads to trouble in AppBuilder when compiling for Cordova-Android 4 -->
+    <!--source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
     <config-file target="res/values/mapboxstrings.xml" parent="/*">
+      <string name="mapbox_accesstoken">$ACCESS_TOKEN</string>
+    </config-file-->
+
+    <config-file target="res/values/strings.xml" parent="/*">
       <string name="mapbox_accesstoken">$ACCESS_TOKEN</string>
     </config-file>
   </platform>

@@ -2,20 +2,25 @@ package com.telerik.plugins.mapbox;
 
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.mapbox.mapboxsdk.annotations.MarkerOptions;
-import com.mapbox.mapboxsdk.annotations.PolygonOptions;
-import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.geometry.LatLngZoom;
-import com.mapbox.mapboxsdk.views.MapView;
+import com.mapbox.mapboxgl.annotations.Annotation;
+import com.mapbox.mapboxgl.annotations.Marker;
+import com.mapbox.mapboxgl.annotations.MarkerOptions;
+import com.mapbox.mapboxgl.annotations.PolygonOptions;
+import com.mapbox.mapboxgl.geometry.LatLng;
+import com.mapbox.mapboxgl.geometry.LatLngZoom;
+import com.mapbox.mapboxgl.views.MapView;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +50,7 @@ public class Mapbox extends CordovaPlugin {
   public static MapView mapView;
   private static float retinaFactor;
   private String accessToken;
+  private CallbackContext markerCallbackContext;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -265,6 +271,9 @@ public class Mapbox extends CordovaPlugin {
           }
         });
 
+      } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
+        this.markerCallbackContext = callbackContext;
+
       } else {
         return false;
       }
@@ -283,6 +292,47 @@ public class Mapbox extends CordovaPlugin {
       mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
       mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
       mapView.addMarker(mo);
+      mo.getMarker().setInfoWindowOnTouchListener(new MarkerTouchListener(mo.getMarker().getId()));
+    }
+  }
+
+  private class MarkerTouchListener implements View.OnTouchListener {
+
+    public long markerId;
+
+    public MarkerTouchListener(long markerId) {
+      this.markerId = markerId;
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+      if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        // callback
+        if (markerCallbackContext != null) {
+          for (Annotation annotation : mapView.getAnnotations()) {
+            if (annotation.getId() == this.markerId) {
+              final Marker marker = (Marker) annotation;
+              final JSONObject json = new JSONObject();
+              try {
+                json.put("title", marker.getTitle());
+                json.put("subtitle", marker.getSnippet());
+                json.put("lat", marker.getPosition().getLatitude());
+                json.put("lng", marker.getPosition().getLongitude());
+              } catch (JSONException e) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
+                    "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
+                pluginResult.setKeepCallback(true);
+                markerCallbackContext.sendPluginResult(pluginResult);
+              }
+              PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
+              pluginResult.setKeepCallback(true);
+              markerCallbackContext.sendPluginResult(pluginResult);
+              return true;
+            }
+          }
+        }
+      }
+      return false;
     }
   }
 
