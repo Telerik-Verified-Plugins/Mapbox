@@ -206,15 +206,26 @@
 //  return annotationImage;
 //}
 
-- (void)mapView:(MGLMapView *)mapView didSelectAnnotation:(id <MGLAnnotation>)annotation {
+- (nullable UIView *)mapView:(MGLMapView *)mapView rightCalloutAccessoryViewForAnnotation:(id <MGLAnnotation>)annotation {
   if (self.markerCallbackId != nil) {
+    self.selectedAnnotation = annotation;
+    UIButton *butt = [UIButton buttonWithType:UIButtonTypeDetailDisclosure];
+    [butt addTarget:self action:@selector(annotationInfoButtonTouched:) forControlEvents:UIControlEventTouchDown];
+    return butt;
+  } else {
+    return nil;
+  }
+}
+
+- (void) annotationInfoButtonTouched:(UIButton *)sender {
+  if (self.markerCallbackId != nil && self.selectedAnnotation != nil) {
     NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
-    [returnInfo setObject:annotation.title forKey:@"title"];
-    if (annotation.subtitle != nil) {
-      [returnInfo setObject:annotation.subtitle forKey:@"subtitle"];
+    [returnInfo setObject:self.selectedAnnotation.title forKey:@"title"];
+    if (self.selectedAnnotation.subtitle != nil) {
+      [returnInfo setObject:self.selectedAnnotation.subtitle forKey:@"subtitle"];
     }
-    [returnInfo setObject:[NSNumber numberWithDouble:annotation.coordinate.latitude] forKey:@"lat"];
-    [returnInfo setObject:[NSNumber numberWithDouble:annotation.coordinate.longitude] forKey:@"lng"];
+    [returnInfo setObject:[NSNumber numberWithDouble:self.selectedAnnotation.coordinate.latitude] forKey:@"lat"];
+    [returnInfo setObject:[NSNumber numberWithDouble:self.selectedAnnotation.coordinate.longitude] forKey:@"lng"];
 
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];

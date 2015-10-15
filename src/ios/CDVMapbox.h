@@ -5,6 +5,7 @@
 
 @property (retain) MGLMapView *mapView;
 @property (retain) NSString *markerCallbackId;
+@property (retain) MGLPointAnnotation *selectedAnnotation;
 
 - (void) show:(CDVInvokedUrlCommand*)command;
 - (void) hide:(CDVInvokedUrlCommand*)command;

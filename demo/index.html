@@ -111,7 +111,7 @@
         },
         function (result) {
           console.log(JSON.stringify(result));
-          // let's add a callback for these markers
+          // let's add a callback for these markers - invoked when the callout is tapped (Android) or the (i) icon in the marker callout (iOS)
           Mapbox.addMarkerCallback(function (selectedMarker) {
             alert("Marker selected: " + JSON.stringify(selectedMarker));
           });
