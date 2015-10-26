@@ -7,13 +7,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.mapbox.mapboxgl.annotations.Annotation;
-import com.mapbox.mapboxgl.annotations.Marker;
-import com.mapbox.mapboxgl.annotations.MarkerOptions;
-import com.mapbox.mapboxgl.annotations.PolygonOptions;
-import com.mapbox.mapboxgl.geometry.LatLng;
-import com.mapbox.mapboxgl.geometry.LatLngZoom;
-import com.mapbox.mapboxgl.views.MapView;
+import com.mapbox.mapboxsdk.annotations.Annotation;
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngZoom;
+import com.mapbox.mapboxsdk.views.MapView;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -309,7 +309,7 @@ public class Mapbox extends CordovaPlugin {
       if (event.getAction() == MotionEvent.ACTION_DOWN) {
         // callback
         if (markerCallbackContext != null) {
-          for (Annotation annotation : mapView.getAnnotations()) {
+          for (Annotation annotation : mapView.getAllAnnotations()) {
             if (annotation.getId() == this.markerId) {
               final Marker marker = (Marker) annotation;
               final JSONObject json = new JSONObject();

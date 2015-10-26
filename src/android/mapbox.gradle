@@ -2,5 +2,5 @@ ext.cdvMinSdkVersion = 15
 
 dependencies {
     compile 'com.android.support:appcompat-v7:22.+'
-    compile('com.mapbox.mapboxsdk:mapbox-android-sdk:2.0.0@aar')
+    compile('com.mapbox.mapboxsdk:mapbox-android-sdk:2.1.0@aar')
 }
