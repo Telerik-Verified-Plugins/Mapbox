@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.mapbox.mapboxsdk.constants.MapboxConstants;
+import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.annotations.Annotation;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
@@ -131,7 +133,7 @@ public class Mapbox extends CordovaPlugin {
               return;
             }
 
-            mapView.setStyleUrl("asset://styles/" + style + "-v8.json");
+            mapView.setStyleUrl(style);
 
             // position the mapView overlay
             int webViewWidth = webView.getView().getWidth();
@@ -342,15 +344,17 @@ public class Mapbox extends CordovaPlugin {
 
   private static String getStyle(final String requested) {
     if ("light".equalsIgnoreCase(requested)) {
-      return "light";
+      return Style.LIGHT;
     } else if ("dark".equalsIgnoreCase(requested)) {
-      return "dark";
+      return Style.DARK;
     } else if ("emerald".equalsIgnoreCase(requested)) {
-      return "emerald";
+      return Style.EMERALD;
     } else if ("satellite".equalsIgnoreCase(requested)) {
-      return "satellite";
+      return Style.SATELLITE;
+    } else if ("streets".equalsIgnoreCase(requested)) {
+      return Style.MAPBOX_STREETS;
     } else {
-      return "streets";
+      return requested;
     }
   }
 
