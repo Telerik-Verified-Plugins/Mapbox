@@ -1,5 +1,7 @@
 package com.telerik.plugins.mapbox;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
@@ -34,6 +36,12 @@ import java.util.Map;
 // TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
 public class Mapbox extends CordovaPlugin {
 
+  public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+  public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+  public static final int LOCATION_REQ_CODE = 0;
+
+  public static final int PERMISSION_DENIED_ERROR = 20;
+
   private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
 
   private static final String ACTION_SHOW = "show";
@@ -50,7 +58,10 @@ public class Mapbox extends CordovaPlugin {
   public static MapView mapView;
   private static float retinaFactor;
   private String accessToken;
+  private CallbackContext callback;
   private CallbackContext markerCallbackContext;
+
+  private boolean showUserLocation;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -71,6 +82,9 @@ public class Mapbox extends CordovaPlugin {
 
   @Override
   public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
+
+    this.callback = callbackContext;
+
     try {
       if (ACTION_SHOW.equals(action)) {
         final JSONObject options = args.getJSONObject(0);
@@ -83,6 +97,8 @@ public class Mapbox extends CordovaPlugin {
         final int bottom = applyRetinaFactor(margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom"));
 
         final JSONObject center = options.isNull("center") ? null : options.getJSONObject("center");
+
+        this.showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
 
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
@@ -111,8 +127,9 @@ public class Mapbox extends CordovaPlugin {
                 mapView.setLogoMargins(-300, 0, 0, 0);
               }
 
-              final boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
-              mapView.setMyLocationEnabled(showUserLocation);
+              if (showUserLocation) {
+                showUserLocation();
+              }
 
               final double zoomLevel = options.isNull("zoomLevel") ? 10 : options.getDouble("zoomLevel");
               if (center != null) {
@@ -351,6 +368,33 @@ public class Mapbox extends CordovaPlugin {
       return "satellite";
     } else {
       return "streets";
+    }
+  }
+
+  protected void showUserLocation() {
+    if (cordova.hasPermission(COARSE_LOCATION) && cordova.hasPermission(FINE_LOCATION)) {
+      mapView.setMyLocationEnabled(showUserLocation);
+    } else {
+      getLocationPermission(LOCATION_REQ_CODE);
+    }
+  }
+
+  protected void getLocationPermission(int requestCode) {
+    String[] permissions = { FINE_LOCATION, COARSE_LOCATION };
+    cordova.requestPermissions(this, requestCode, permissions);
+  }
+
+  public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+    for (int r : grantResults) {
+      if (r == PackageManager.PERMISSION_DENIED) {
+        this.callback.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, PERMISSION_DENIED_ERROR));
+        return;
+      }
+    }
+    switch (requestCode) {
+      case LOCATION_REQ_CODE:
+        showUserLocation();
+        break;
     }
   }
 
