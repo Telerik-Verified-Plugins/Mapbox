@@ -50,8 +50,6 @@
     <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
 
     <resource-file src="src/android/libs/lost-1.0.1.jar" target="libs/lost-1.0.1.jar" />
-    <resource-file src="src/android/libs/okhttp-2.4.0.jar" target="libs/okhttp-2.4.0.jar" />
-    <resource-file src="src/android/libs/okio-1.4.0.jar" target="libs/okio-1.4.0.jar" />
 
     <!-- This leads to trouble in AppBuilder when compiling for Cordova-Android 4 -->
     <!--source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
