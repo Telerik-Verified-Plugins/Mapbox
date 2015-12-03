@@ -292,7 +292,7 @@ public class Mapbox extends CordovaPlugin {
       mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
       mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
       mapView.addMarker(mo);
-      mo.getMarker().setInfoWindowOnTouchListener(new MarkerTouchListener(mo.getMarker().getId()));
+      //mo.getMarker().setInfoWindowOnTouchListener(new MarkerTouchListener(mo.getMarker().getId()));
     }
   }
 
