@@ -290,6 +290,7 @@ public class Mapbox extends CordovaPlugin {
 
       } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
         this.markerCallbackContext = callbackContext;
+        mapView.setOnInfoWindowClickListener(new MarkerClickListener());
 
       } else {
         return false;
@@ -309,45 +310,31 @@ public class Mapbox extends CordovaPlugin {
       mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
       mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
       mapView.addMarker(mo);
-      //mo.getMarker().setInfoWindowOnTouchListener(new MarkerTouchListener(mo.getMarker().getId()));
     }
   }
 
-  private class MarkerTouchListener implements View.OnTouchListener {
-
-    public long markerId;
-
-    public MarkerTouchListener(long markerId) {
-      this.markerId = markerId;
-    }
+  private class MarkerClickListener implements MapView.OnInfoWindowClickListener {
 
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
-      if (event.getAction() == MotionEvent.ACTION_DOWN) {
-        // callback
-        if (markerCallbackContext != null) {
-          for (Annotation annotation : mapView.getAllAnnotations()) {
-            if (annotation.getId() == this.markerId) {
-              final Marker marker = (Marker) annotation;
-              final JSONObject json = new JSONObject();
-              try {
-                json.put("title", marker.getTitle());
-                json.put("subtitle", marker.getSnippet());
-                json.put("lat", marker.getPosition().getLatitude());
-                json.put("lng", marker.getPosition().getLongitude());
-              } catch (JSONException e) {
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
-                    "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
-                pluginResult.setKeepCallback(true);
-                markerCallbackContext.sendPluginResult(pluginResult);
-              }
-              PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
-              pluginResult.setKeepCallback(true);
-              markerCallbackContext.sendPluginResult(pluginResult);
-              return true;
-            }
-          }
+    public boolean onMarkerClick(Marker marker) {
+      // callback
+      if (markerCallbackContext != null) {
+        final JSONObject json = new JSONObject();
+        try {
+          json.put("title", marker.getTitle());
+          json.put("subtitle", marker.getSnippet());
+          json.put("lat", marker.getPosition().getLatitude());
+          json.put("lng", marker.getPosition().getLongitude());
+        } catch (JSONException e) {
+          PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
+              "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
+          pluginResult.setKeepCallback(true);
+          markerCallbackContext.sendPluginResult(pluginResult);
         }
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
+        pluginResult.setKeepCallback(true);
+        markerCallbackContext.sendPluginResult(pluginResult);
+        return true;
       }
       return false;
     }
