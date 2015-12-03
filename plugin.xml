@@ -47,6 +47,7 @@
     </config-file>
 
     <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
+    <framework src="com.android.support:appcompat-v7:22.+" />
     <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
 
     <resource-file src="src/android/libs/lost-1.0.1.jar" target="libs/lost-1.0.1.jar" />
