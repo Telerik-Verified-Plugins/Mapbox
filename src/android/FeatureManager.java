@@ -50,6 +50,10 @@ class FeatureManager {
         this.mapView = mapView;
     }
 
+    public boolean hasSource(String name) {
+        return this.sources.containsKey(name);
+    }
+
     public void addGeoJSONSource(String name, String json) throws JSONException {
         this.sources.put(name, new GeoJSONSource(name).addGeoJSON(json));
     }

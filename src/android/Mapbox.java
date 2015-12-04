@@ -49,6 +49,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
   private static final String ACTION_ADD_SOURCE = "addSource";
+  private static final String ACTION_ADD_LAYER = "addLayer";
   private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
   private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
   private static final String ACTION_GET_CENTER = "getCenter";
@@ -301,7 +302,33 @@ public class Mapbox extends CordovaPlugin {
             }
           });
         }
+      } else if (ACTION_ADD_LAYER.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                final JSONObject layer = args.getJSONObject(0);
+                final String layerType = layer.getString("type");
+                final String source = layer.getString("source");
+                final String id = layer.getString("id");
 
+                if (!features.hasSource(source)) {
+                  callbackContext.error("Unknown source: " + source);
+                } else {
+                  if (layerType.equals("symbol") && features.hasSource(source)) {
+                    features.addMarkerLayer(id, source, layer);
+                    callbackContext.success();
+                  } else {
+                    callbackContext.error("Unsupported layer type: " + layerType);
+                  }
+                }
+              } catch (JSONException e) {
+                callbackContext.error(e.getMessage());
+              }
+            }
+          });
+        }
       } else if (ACTION_ADD_MARKERS.equals(action)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
