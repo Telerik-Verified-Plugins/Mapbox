@@ -155,7 +155,7 @@ public class Mapbox extends CordovaPlugin {
             // position the mapView overlay
             int webViewWidth = webView.getView().getWidth();
             int webViewHeight = webView.getView().getHeight();
-            final FrameLayout layout = (FrameLayout) webView.getView().getParent();
+            final ViewGroup layout = (ViewGroup) webView.getView().getParent();
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
             params.setMargins(left, top, right, bottom);
             mapView.setLayoutParams(params);
