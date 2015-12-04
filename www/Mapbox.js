@@ -21,6 +21,14 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJSON", [options]);
   },
 
+  addSource: function (name, source, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addSource", [name, source]);
+  },
+
+  addLayer: function (layer, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addLayer", [layer]);
+  },
+
   setCenter: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "setCenter", [options]);
   },

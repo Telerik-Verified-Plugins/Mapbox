@@ -4,14 +4,10 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.mapbox.mapboxsdk.constants.MapboxConstants;
 import com.mapbox.mapboxsdk.constants.Style;
-import com.mapbox.mapboxsdk.annotations.Annotation;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
@@ -52,6 +48,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
+  private static final String ACTION_ADD_SOURCE = "addSource";
   private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
   private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
   private static final String ACTION_GET_CENTER = "getCenter";
@@ -62,6 +59,8 @@ public class Mapbox extends CordovaPlugin {
   private String accessToken;
   private CallbackContext callback;
   private CallbackContext markerCallbackContext;
+
+  private FeatureManager features;
 
   private boolean showUserLocation;
 
@@ -110,6 +109,7 @@ public class Mapbox extends CordovaPlugin {
               return;
             }
             mapView = new MapView(webView.getContext(), accessToken);
+            features = new FeatureManager(mapView);
 
             // need to do this to register a receiver which onPause later needs
             mapView.onResume();
@@ -277,6 +277,30 @@ public class Mapbox extends CordovaPlugin {
             callbackContext.success();
           }
         });
+      } else if (ACTION_ADD_SOURCE.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                final String name = args.getString(0);
+                final JSONObject source = args.getJSONObject(1);
+                final String sourceType = source.getString("type");
+
+                if (sourceType.equals("geojson") && source.has("data")) {
+                  final JSONObject data = source.getJSONObject("data");
+                  features.addGeoJSONSource(name, data);
+                  callbackContext.success();
+                }
+                else {
+                  callbackContext.error("Unsupported source type: " + sourceType);
+                }
+              } catch (JSONException e) {
+                callbackContext.error(e.getMessage());
+              }
+            }
+          });
+        }
 
       } else if (ACTION_ADD_MARKERS.equals(action)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
