@@ -7,6 +7,9 @@ repositories {
 
 
 dependencies {
+    dependencies {
+        compile 'com.cocoahero.android:geojson:1.0.1@jar'
+    }
     compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:2.3.0@aar'){
         transitive=true
     }
