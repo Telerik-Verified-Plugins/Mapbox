@@ -160,7 +160,7 @@ class FeatureManager {
                 }
             } else if (geojson instanceof Feature) {
                 Feature feature = (Feature) geojson;
-                addFeature(feature);
+                this.addFeature(feature);
             } else {
                 Log.e(TAG, "GeoJSON must be FeatureCollection or Feature.");
             }

@@ -316,7 +316,13 @@ public class Mapbox extends CordovaPlugin {
                 if (!features.hasSource(source)) {
                   callbackContext.error("Unknown source: " + source);
                 } else {
-                  if (layerType.equals("symbol") && features.hasSource(source)) {
+                  if (layerType.equals("fill")) {
+                    features.addFillLayer(id, source, layer);
+                    callbackContext.success();
+                  } else if (layerType.equals("line")) {
+                    features.addLineLayer(id, source, layer);
+                    callbackContext.success();
+                  } else if (layerType.equals("symbol")) {
                     features.addMarkerLayer(id, source, layer);
                     callbackContext.success();
                   } else {
