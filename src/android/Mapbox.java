@@ -116,6 +116,7 @@ public class Mapbox extends CordovaPlugin {
             mapView.onCreate(null);
 
             try {
+              mapView.setTiltEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
               mapView.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
               mapView.setRotateEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
               mapView.setScrollEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
@@ -293,7 +294,6 @@ public class Mapbox extends CordovaPlugin {
       } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
         this.markerCallbackContext = callbackContext;
         mapView.setOnInfoWindowClickListener(new MarkerClickListener());
-
       } else {
         return false;
       }
