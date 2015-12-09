@@ -1,6 +1,13 @@
 package com.telerik.plugins.mapbox;
 
+import android.content.Context;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.webkit.GeolocationPermissions;
 
@@ -21,12 +28,18 @@ import com.cocoahero.android.geojson.Ring;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
+import com.mapbox.mapboxsdk.annotations.Sprite;
+import com.mapbox.mapboxsdk.annotations.SpriteFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.views.MapView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,10 +56,12 @@ interface DataSource {
 class FeatureManager {
     private String TAG = "FeatureManager";
     protected MapView mapView;
+    protected SpriteFactory spriteFactory;
 
     protected HashMap<String, DataSource> sources = new HashMap<String, DataSource>();
 
     public FeatureManager(MapView mapView) {
+        this.spriteFactory = new SpriteFactory(mapView);
         this.mapView = mapView;
     }
 
@@ -97,23 +112,69 @@ class FeatureManager {
     }
 
     public void addMarkerLayer(String id, String source, JSONObject layer) {
-        for (Feature feature : this.sources.get(source).getSymbols()) {
-            Position p = ((Point) feature.getGeometry()).getPosition();
-            JSONObject properties = feature.getProperties();
+        ArrayList<MarkerOptions> markers = new ArrayList<MarkerOptions>();
+        List<Feature> features = this.sources.get(source).getSymbols();
 
-            MarkerOptions marker = new MarkerOptions()
-                    .position(new LatLng(p.getLatitude(), p.getLongitude()));
-
-            try {
-                // TODO: Need to use values in layer to set options.
-                marker.title(properties.getString("title"));
-                marker.snippet(properties.getString("description"));
-            } catch (JSONException e) {
-                Log.w(TAG, "Error parsing GeoJSON Feature properties: " + e.getMessage());
-            }
-
-            this.mapView.addMarker(marker);
+        for (Feature feature : features) {
+            markers.add(this.createMarker(feature, layer));
         }
+
+        this.mapView.addMarkers(markers);
+    }
+
+    protected MarkerOptions createMarker(Feature feature, JSONObject style) {
+        final JSONObject properties = feature.getProperties();
+        final Position p = ((Point) feature.getGeometry()).getPosition();
+        final MarkerOptions marker = new MarkerOptions()
+            .position(new LatLng(p.getLatitude(), p.getLongitude()));
+
+        try {
+            final String textField = style.getJSONObject("layout").getString("text-field");
+            marker.title(textField.replace("{title}", properties.getString("title")));
+        } catch (JSONException e) {
+            Log.w(TAG, "Error parsing Style JSON properties: " + e.getMessage());
+        }
+
+        try {
+            final String iconImage = style.getJSONObject("layout").getString("icon-image");
+            final String markerSymbol = properties.getString("marker-symbol");
+            final URI uri = new URI(iconImage.replace("{marker-symbol}", markerSymbol));
+            final Sprite icon = this.loadIcon(uri);
+            if (icon != null) {
+                marker.icon(icon);
+            }
+        } catch (JSONException e) {
+            Log.w(TAG, "Error parsing Style JSON properties: " + e.getMessage());
+        } catch (URISyntaxException e) {
+            Log.w(TAG, "Invalid icon-image URI: " + e.getMessage());
+        }
+
+        return marker;
+    }
+
+    protected Sprite loadIcon(URI uri) {
+        Sprite icon = null;
+
+        if (uri.getScheme().equals("asset")) {
+            // Stripping leading '/'.
+            String path = uri.getPath().substring(1);
+            try {
+                Context ctx = this.mapView.getContext();
+                AssetManager am = ctx.getAssets();
+                InputStream image = am.open(path);
+                Bitmap bmp = BitmapFactory.decodeStream(image);
+                DisplayMetrics dm = ctx.getResources().getDisplayMetrics();
+                bmp.setDensity(dm.densityDpi);
+                icon = spriteFactory.fromBitmap(bmp);
+            } catch (IOException e) {
+                Log.w(TAG, "Error loading file: " + e.getMessage());
+            }
+        }
+        else {
+            icon = spriteFactory.fromPath(uri.getPath());
+        }
+
+        return icon;
     }
 
     private class GeoJSONSource implements DataSource {
