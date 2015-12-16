@@ -281,41 +281,35 @@ public class Mapbox extends CordovaPlugin {
         });
       } else if (ACTION_ADD_SOURCE.equals(action)) {
         if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                final String name = args.getString(0);
-                final JSONObject source = args.getJSONObject(1);
-                final String sourceType = source.getString("type");
+          try {
+            final String name = args.getString(0);
+            final JSONObject source = args.getJSONObject(1);
+            final String sourceType = source.getString("type");
 
-                if (sourceType.equals("geojson") && source.has("data")) {
-                  final JSONObject data = source.getJSONObject("data");
-                  features.addGeoJSONSource(name, data);
-                  callbackContext.success();
-                }
-                else {
-                  callbackContext.error("Unsupported source type: " + sourceType);
-                }
-              } catch (JSONException e) {
-                callbackContext.error(e.getMessage());
-              }
+            if (sourceType.equals("geojson") && source.has("data")) {
+              final JSONObject data = source.getJSONObject("data");
+              features.addGeoJSONSource(name, data);
+              callbackContext.success();
+            } else {
+              callbackContext.error("Unsupported source type: " + sourceType);
             }
-          });
+          } catch (JSONException e) {
+            callbackContext.error(e.getMessage());
+          }
         }
       } else if (ACTION_ADD_LAYER.equals(action)) {
         if (mapView == null) {
           callbackContext.error("Map must be visible to add layers. Call MapBox.show() first.");
         } else {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                final JSONObject layer = args.getJSONObject(0);
-                final String layerType = layer.getString("type");
-                final String source = layer.getString("source");
-                final String id = layer.getString("id");
+          try {
+            final JSONObject layer = args.getJSONObject(0);
+            final String layerType = layer.getString("type");
+            final String source = layer.getString("source");
+            final String id = layer.getString("id");
 
+            cordova.getActivity().runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
                 if (!features.hasSource(source)) {
                   callbackContext.error("Unknown source: " + source);
                 } else {
@@ -332,11 +326,11 @@ public class Mapbox extends CordovaPlugin {
                     callbackContext.error("Unsupported layer type: " + layerType);
                   }
                 }
-              } catch (JSONException e) {
-                callbackContext.error(e.getMessage());
               }
-            }
-          });
+            });
+          } catch (JSONException e) {
+            callbackContext.error(e.getMessage());
+          }
         }
       } else if (ACTION_ADD_MARKERS.equals(action)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
