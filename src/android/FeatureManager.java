@@ -134,6 +134,12 @@ class FeatureManager {
         }
 
         try {
+            marker.snippet(properties.getString("description"));
+        } catch (JSONException e) {
+            Log.w(TAG, "Error parsing Style JSON properties: " + e.getMessage());
+        }
+
+        try {
             final String iconImage = style.getJSONObject("layout").getString("icon-image");
             final String markerSymbol = properties.getString("marker-symbol");
             final URI uri = new URI(iconImage.replace("{marker-symbol}", markerSymbol));
