@@ -56,12 +56,10 @@ interface DataSource {
 class FeatureManager {
     private String TAG = "FeatureManager";
     protected MapView mapView;
-    protected SpriteFactory spriteFactory;
 
     protected HashMap<String, DataSource> sources = new HashMap<String, DataSource>();
 
     public FeatureManager(MapView mapView) {
-        this.spriteFactory = new SpriteFactory(mapView);
         this.mapView = mapView;
     }
 
@@ -147,34 +145,37 @@ class FeatureManager {
             Log.w(TAG, "Error parsing Style JSON properties: " + e.getMessage());
         } catch (URISyntaxException e) {
             Log.w(TAG, "Invalid icon-image URI: " + e.getMessage());
+        } catch (IOException e) {
+            Log.w(TAG, "Error loading file: " + e.getMessage());
         }
 
         return marker;
     }
 
-    protected Sprite loadIcon(URI uri) {
-        Sprite icon = null;
+    protected Sprite loadIcon(URI uri) throws IOException {
+        SpriteFactory spriteFactory = this.mapView.getSpriteFactory();
+        Sprite icon;
 
         if (uri.getScheme().equals("asset")) {
             // Stripping leading '/'.
             String path = uri.getPath().substring(1);
-            try {
-                Context ctx = this.mapView.getContext();
-                AssetManager am = ctx.getAssets();
-                InputStream image = am.open(path);
-                Bitmap bmp = BitmapFactory.decodeStream(image);
-                DisplayMetrics dm = ctx.getResources().getDisplayMetrics();
-                bmp.setDensity(dm.densityDpi);
-                icon = spriteFactory.fromBitmap(bmp);
-            } catch (IOException e) {
-                Log.w(TAG, "Error loading file: " + e.getMessage());
-            }
+            icon = spriteFactory.fromBitmap(this.loadScaledBitmap(path));
         }
         else {
             icon = spriteFactory.fromPath(uri.getPath());
         }
 
         return icon;
+    }
+
+    protected Bitmap loadScaledBitmap(String path) throws IOException {
+        Context ctx = this.mapView.getContext();
+        AssetManager am = ctx.getAssets();
+        InputStream image = am.open(path);
+        Bitmap bmp = BitmapFactory.decodeStream(image);
+        DisplayMetrics dm = ctx.getResources().getDisplayMetrics();
+        bmp.setDensity(dm.densityDpi);
+        return bmp;
     }
 
     private class GeoJSONSource implements DataSource {

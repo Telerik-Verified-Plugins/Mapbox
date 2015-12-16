@@ -163,6 +163,7 @@ public class Mapbox extends CordovaPlugin {
             mapView.setLayoutParams(params);
 
             layout.addView(mapView);
+
             callbackContext.success();
           }
         });
