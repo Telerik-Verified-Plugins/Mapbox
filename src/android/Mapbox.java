@@ -304,7 +304,9 @@ public class Mapbox extends CordovaPlugin {
           });
         }
       } else if (ACTION_ADD_LAYER.equals(action)) {
-        if (mapView != null) {
+        if (mapView == null) {
+          callbackContext.error("Map must be visible to add layers. Call MapBox.show() first.");
+        } else {
           cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
