@@ -447,6 +447,14 @@ public class Mapbox extends CordovaPlugin {
     }
   }
 
+  public void onStart() {
+    mapView.onStart();
+  }
+
+  public void onStop() {
+    mapView.onStop();
+  }
+
   public void onPause(boolean multitasking) {
     mapView.onPause();
   }
