@@ -387,11 +387,18 @@ public class Mapbox extends CordovaPlugin {
     public boolean onMarkerClick(Marker marker) {
       // callback
       if (markerCallbackContext != null) {
+        final long markerId = marker.getId();
         final JSONObject json = new JSONObject();
-        Feature feature = null;
+        JSONObject feature = null;
 
         if (features != null) {
-          feature = features.getMarkerFeature(marker);
+          if (features.hasMarkerFeature(markerId)) {
+            try {
+              feature = features.getMarkerFeature(markerId).toJSON();
+            } catch (JSONException e) {
+              Log.e(TAG, e.getMessage());
+            }
+          }
         }
 
         try {
