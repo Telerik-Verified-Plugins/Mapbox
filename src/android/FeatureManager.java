@@ -25,6 +25,7 @@ import com.cocoahero.android.geojson.Point;
 import com.cocoahero.android.geojson.Polygon;
 import com.cocoahero.android.geojson.Position;
 import com.cocoahero.android.geojson.Ring;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
@@ -59,12 +60,30 @@ class FeatureManager {
 
     protected HashMap<String, DataSource> sources = new HashMap<String, DataSource>();
 
+    protected HashMap<Long, Feature> markerIndex = new HashMap<Long, Feature>();
+
     public FeatureManager(MapView mapView) {
         this.mapView = mapView;
     }
 
     public boolean hasSource(String name) {
         return this.sources.containsKey(name);
+    }
+
+    public boolean hasMarkerFeature(Long id) {
+        return this.markerIndex.containsKey(id);
+    }
+
+    public Feature getMarkerFeature(Long id) {
+        if (this.hasMarkerFeature(id)) {
+            return this.markerIndex.get(id);
+        } else {
+            return null;
+        }
+    }
+
+    public Feature getMarkerFeature(Marker marker) {
+        return this.getMarkerFeature(marker.getId());
     }
 
     public void addGeoJSONSource(String name, String json) throws JSONException {
@@ -110,14 +129,13 @@ class FeatureManager {
     }
 
     public void addMarkerLayer(String id, String source, JSONObject layer) {
-        ArrayList<MarkerOptions> markers = new ArrayList<MarkerOptions>();
         List<Feature> features = this.sources.get(source).getSymbols();
 
         for (Feature feature : features) {
-            markers.add(this.createMarker(feature, layer));
+            MarkerOptions options = this.createMarker(feature, layer);
+            Marker marker = this.mapView.addMarker(options);
+            this.markerIndex.put(marker.getId(), feature);
         }
-
-        this.mapView.addMarkers(markers);
     }
 
     protected MarkerOptions createMarker(Feature feature, JSONObject style) {

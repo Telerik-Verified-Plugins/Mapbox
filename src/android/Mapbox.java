@@ -7,6 +7,7 @@ import android.util.DisplayMetrics;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.cocoahero.android.geojson.Feature;
 import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
@@ -376,11 +377,18 @@ public class Mapbox extends CordovaPlugin {
       // callback
       if (markerCallbackContext != null) {
         final JSONObject json = new JSONObject();
+        Feature feature = null;
+
+        if (features != null) {
+          feature = features.getMarkerFeature(marker);
+        }
+
         try {
           json.put("title", marker.getTitle());
           json.put("subtitle", marker.getSnippet());
           json.put("lat", marker.getPosition().getLatitude());
           json.put("lng", marker.getPosition().getLongitude());
+          json.put("feature", feature);
         } catch (JSONException e) {
           PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
               "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
