@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -34,6 +35,8 @@ import java.util.Map;
 // TODO fox Xwalk compat, see nativepagetransitions plugin
 // TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
 public class Mapbox extends CordovaPlugin {
+
+  private static final String TAG = "MapboxCordovaPlugin";
 
   public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -117,6 +120,16 @@ public class Mapbox extends CordovaPlugin {
             mapView.onResume();
             mapView.onCreate(null);
 
+            // Add annotation deselection listener
+            mapView.addOnMapChangedListener(new MapView.OnMapChangedListener() {
+              @Override
+              public void onMapChanged(@MapView.MapChange int change) {
+                if (change == MapView.DID_FINISH_LOADING_MAP) {
+                  callbackContext.success();
+                }
+              }
+            });
+
             try {
               mapView.setTiltEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
               mapView.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
@@ -164,8 +177,6 @@ public class Mapbox extends CordovaPlugin {
             mapView.setLayoutParams(params);
 
             layout.addView(mapView);
-
-            callbackContext.success();
           }
         });
 
