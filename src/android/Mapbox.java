@@ -4,14 +4,12 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
-import android.view.MotionEvent;
-import android.view.View;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.mapbox.mapboxsdk.constants.MapboxConstants;
+import com.cocoahero.android.geojson.Feature;
 import com.mapbox.mapboxsdk.constants.Style;
-import com.mapbox.mapboxsdk.annotations.Annotation;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
@@ -38,6 +36,8 @@ import java.util.Map;
 // TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
 public class Mapbox extends CordovaPlugin {
 
+  private static final String TAG = "MapboxCordovaPlugin";
+
   public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
   public static final int LOCATION_REQ_CODE = 0;
@@ -52,6 +52,8 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
+  private static final String ACTION_ADD_SOURCE = "addSource";
+  private static final String ACTION_ADD_LAYER = "addLayer";
   private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
   private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
   private static final String ACTION_GET_CENTER = "getCenter";
@@ -62,6 +64,8 @@ public class Mapbox extends CordovaPlugin {
   private String accessToken;
   private CallbackContext callback;
   private CallbackContext markerCallbackContext;
+
+  private FeatureManager features;
 
   private boolean showUserLocation;
 
@@ -110,12 +114,24 @@ public class Mapbox extends CordovaPlugin {
               return;
             }
             mapView = new MapView(webView.getContext(), accessToken);
+            features = new FeatureManager(mapView);
 
             // need to do this to register a receiver which onPause later needs
             mapView.onResume();
             mapView.onCreate(null);
 
+            // Add annotation deselection listener
+            mapView.addOnMapChangedListener(new MapView.OnMapChangedListener() {
+              @Override
+              public void onMapChanged(@MapView.MapChange int change) {
+                if (change == MapView.DID_FINISH_LOADING_MAP) {
+                  callbackContext.success();
+                }
+              }
+            });
+
             try {
+              mapView.setTiltEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
               mapView.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
               mapView.setRotateEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
               mapView.setScrollEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
@@ -155,13 +171,12 @@ public class Mapbox extends CordovaPlugin {
             // position the mapView overlay
             int webViewWidth = webView.getView().getWidth();
             int webViewHeight = webView.getView().getHeight();
-            final FrameLayout layout = (FrameLayout) webView.getView().getParent();
+            final ViewGroup layout = (ViewGroup) webView.getView().getParent();
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
             params.setMargins(left, top, right, bottom);
             mapView.setLayoutParams(params);
 
             layout.addView(mapView);
-            callbackContext.success();
           }
         });
 
@@ -276,7 +291,59 @@ public class Mapbox extends CordovaPlugin {
             callbackContext.success();
           }
         });
+      } else if (ACTION_ADD_SOURCE.equals(action)) {
+        if (mapView != null) {
+          try {
+            final String name = args.getString(0);
+            final JSONObject source = args.getJSONObject(1);
+            final String sourceType = source.getString("type");
 
+            if (sourceType.equals("geojson") && source.has("data")) {
+              final JSONObject data = source.getJSONObject("data");
+              features.addGeoJSONSource(name, data);
+              callbackContext.success();
+            } else {
+              callbackContext.error("Unsupported source type: " + sourceType);
+            }
+          } catch (JSONException e) {
+            callbackContext.error(e.getMessage());
+          }
+        }
+      } else if (ACTION_ADD_LAYER.equals(action)) {
+        if (mapView == null) {
+          callbackContext.error("Map must be visible to add layers. Call MapBox.show() first.");
+        } else {
+          try {
+            final JSONObject layer = args.getJSONObject(0);
+            final String layerType = layer.getString("type");
+            final String source = layer.getString("source");
+            final String id = layer.getString("id");
+
+            cordova.getActivity().runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                if (!features.hasSource(source)) {
+                  callbackContext.error("Unknown source: " + source);
+                } else {
+                  if (layerType.equals("fill")) {
+                    features.addFillLayer(id, source, layer);
+                    callbackContext.success();
+                  } else if (layerType.equals("line")) {
+                    features.addLineLayer(id, source, layer);
+                    callbackContext.success();
+                  } else if (layerType.equals("symbol")) {
+                    features.addMarkerLayer(id, source, layer);
+                    callbackContext.success();
+                  } else {
+                    callbackContext.error("Unsupported layer type: " + layerType);
+                  }
+                }
+              }
+            });
+          } catch (JSONException e) {
+            callbackContext.error(e.getMessage());
+          }
+        }
       } else if (ACTION_ADD_MARKERS.equals(action)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
@@ -293,7 +360,6 @@ public class Mapbox extends CordovaPlugin {
       } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
         this.markerCallbackContext = callbackContext;
         mapView.setOnInfoWindowClickListener(new MarkerClickListener());
-
       } else {
         return false;
       }
@@ -321,12 +387,26 @@ public class Mapbox extends CordovaPlugin {
     public boolean onMarkerClick(Marker marker) {
       // callback
       if (markerCallbackContext != null) {
+        final long markerId = marker.getId();
         final JSONObject json = new JSONObject();
+        JSONObject feature = null;
+
+        if (features != null) {
+          if (features.hasMarkerFeature(markerId)) {
+            try {
+              feature = features.getMarkerFeature(markerId).toJSON();
+            } catch (JSONException e) {
+              Log.e(TAG, e.getMessage());
+            }
+          }
+        }
+
         try {
           json.put("title", marker.getTitle());
           json.put("subtitle", marker.getSnippet());
           json.put("lat", marker.getPosition().getLatitude());
           json.put("lng", marker.getPosition().getLongitude());
+          json.put("feature", feature);
         } catch (JSONException e) {
           PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
               "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
@@ -387,6 +467,14 @@ public class Mapbox extends CordovaPlugin {
         showUserLocation();
         break;
     }
+  }
+
+  public void onStart() {
+    mapView.onStart();
+  }
+
+  public void onStop() {
+    mapView.onStop();
   }
 
   public void onPause(boolean multitasking) {
