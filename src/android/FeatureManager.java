@@ -25,12 +25,12 @@ import com.cocoahero.android.geojson.Point;
 import com.cocoahero.android.geojson.Polygon;
 import com.cocoahero.android.geojson.Position;
 import com.cocoahero.android.geojson.Ring;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.annotations.PolylineOptions;
-import com.mapbox.mapboxsdk.annotations.Sprite;
-import com.mapbox.mapboxsdk.annotations.SpriteFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.views.MapView;
 
@@ -42,11 +42,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 interface DataSource {
     List<Feature> getFills();
@@ -161,7 +158,7 @@ class FeatureManager {
             final String iconImage = style.getJSONObject("layout").getString("icon-image");
             final String markerSymbol = properties.getString("marker-symbol");
             final URI uri = new URI(iconImage.replace("{marker-symbol}", markerSymbol));
-            final Sprite icon = this.loadIcon(uri);
+            final Icon icon = this.loadIcon(uri);
             if (icon != null) {
                 marker.icon(icon);
             }
@@ -176,17 +173,17 @@ class FeatureManager {
         return marker;
     }
 
-    protected Sprite loadIcon(URI uri) throws IOException {
-        SpriteFactory spriteFactory = this.mapView.getSpriteFactory();
-        Sprite icon;
+    protected Icon loadIcon(URI uri) throws IOException {
+        IconFactory iconFactory = this.mapView.getIconFactory();
+        Icon icon;
 
         if (uri.getScheme().equals("asset")) {
             // Stripping leading '/'.
             String path = uri.getPath().substring(1);
-            icon = spriteFactory.fromBitmap(this.loadScaledBitmap(path));
+            icon = iconFactory.fromBitmap(this.loadScaledBitmap(path));
         }
         else {
-            icon = spriteFactory.fromPath(uri.getPath());
+            icon = iconFactory.fromPath(uri.getPath());
         }
 
         return icon;
