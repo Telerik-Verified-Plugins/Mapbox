@@ -3,15 +3,14 @@ package com.telerik.plugins.mapbox;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.os.Build;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.DisplayMetrics;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.mapbox.mapboxsdk.constants.MapboxConstants;
 import com.mapbox.mapboxsdk.constants.Style;
-import com.mapbox.mapboxsdk.annotations.Annotation;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
@@ -362,17 +361,32 @@ public class Mapbox extends CordovaPlugin {
     }
   }
 
+  private boolean permissionGranted(String... types) {
+    if (Build.VERSION.SDK_INT < 23) {
+      return true;
+    }
+    for (final String type : types) {
+      if (PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(this.cordova.getActivity(), type)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   protected void showUserLocation() {
-    if (cordova.hasPermission(COARSE_LOCATION) && cordova.hasPermission(FINE_LOCATION)) {
+    if (permissionGranted(COARSE_LOCATION, FINE_LOCATION)) {
       mapView.setMyLocationEnabled(showUserLocation);
     } else {
-      getLocationPermission(LOCATION_REQ_CODE);
+      requestPermission(COARSE_LOCATION, FINE_LOCATION);
     }
   }
 
-  protected void getLocationPermission(int requestCode) {
-    String[] permissions = { FINE_LOCATION, COARSE_LOCATION };
-    cordova.requestPermissions(this, requestCode, permissions);
+
+  private void requestPermission(String... types) {
+    ActivityCompat.requestPermissions(
+        this.cordova.getActivity(),
+        types,
+        LOCATION_REQ_CODE);
   }
 
   public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {

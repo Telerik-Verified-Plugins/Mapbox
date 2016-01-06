@@ -19,20 +19,25 @@ iOS and Android are fully supported.
 
 ### iOS
 
-<img src="screenshots/ios/ios-marker-amsterdam.png" width="235"/>&nbsp;
-<img src="screenshots/ios/ios-location-benelux.png" width="235"/>&nbsp;
-<img src="screenshots/ios/ios-location-europe-dark-boxed.png" width="235"/>
+<img src="https://raw.githubusercontent.com/Telerik-Verified-Plugins/Mapbox/master/screenshots/ios/ios-marker-amsterdam.png" width="235"/>&nbsp;
+<img src="https://raw.githubusercontent.com/Telerik-Verified-Plugins/Mapbox/master/screenshots/ios/ios-location-benelux.png" width="235"/>&nbsp;
+<img src="https://raw.githubusercontent.com/Telerik-Verified-Plugins/Mapbox/master/screenshots/ios/ios-location-europe-dark-boxed.png" width="235"/>
 
 ### Android
 
-<img src="screenshots/android/android-marker-amsterdam.png" width="400"/>
+<img src="https://raw.githubusercontent.com/Telerik-Verified-Plugins/Mapbox/master/screenshots/android/android-marker-amsterdam.png" width="400"/>
 
 
 ## 3. Installation
 
+npm (latest stable)
+```
+$ cordova plugin add cordova-plugin-mapbox --variable ACCESS_TOKEN=your.access.token
+```
+
+Github master (lastest develop)
 ```
 $ cordova plugin add https://github.com/Telerik-Verified-Plugins/Mapbox --variable ACCESS_TOKEN=your.access.token
-$ cordova prepare
 ```
 
 Mapbox.js is brought in automatically. There is no need to change or add anything in your html.
