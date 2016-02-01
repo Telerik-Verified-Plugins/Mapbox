@@ -1,5 +1,5 @@
 {
-  "version": "1.1.2",
+  "version": "1.2.0",
   "name": "cordova-plugin-mapbox",
   "cordova_name": "Mapbox",
   "description": "Need native maps? Look no further!",
