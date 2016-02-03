@@ -81,7 +81,7 @@
     <header-file src="src/ios/CDVMapbox.h" />
     <source-file src="src/ios/CDVMapbox.m" />
 
-    <!-- Downloaded the iOS SDK version 2.1.2 from https://github.com/mapbox/mapbox-gl-native/releases -->
+    <!-- Downloaded iOS SDK version 3.0.1 from https://github.com/mapbox/mapbox-gl-native/releases -->
     <header-file src="src/ios/Headers/Mapbox.h" />
     <header-file src="src/ios/Headers/MGLAccountManager.h" />
     <header-file src="src/ios/Headers/MGLAnnotation.h" />
