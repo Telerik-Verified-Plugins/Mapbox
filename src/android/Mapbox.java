@@ -433,6 +433,9 @@ public class Mapbox extends CordovaPlugin {
       return Style.EMERALD;
     } else if ("satellite".equalsIgnoreCase(requested)) {
       return Style.SATELLITE;
+      // TODO not currently supported on Android
+//    } else if ("hybrid".equalsIgnoreCase(requested)) {
+//      return Style.HYBRID;
     } else if ("streets".equalsIgnoreCase(requested)) {
       return Style.MAPBOX_STREETS;
     } else {
