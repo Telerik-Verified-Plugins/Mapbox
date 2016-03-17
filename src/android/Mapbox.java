@@ -1,24 +1,14 @@
 package com.telerik.plugins.mapbox;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
-import android.support.annotation.NonNull;
+
 import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-
-import com.mapbox.mapboxsdk.camera.CameraPosition;
-import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
-import com.mapbox.mapboxsdk.constants.Style;
-import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.annotations.MarkerOptions;
-import com.mapbox.mapboxsdk.annotations.PolygonOptions;
-import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.geometry.LatLngZoom;
-import com.mapbox.mapboxsdk.views.MapView;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -26,13 +16,9 @@ import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.PluginResult;
-import org.json.JSONArray;
+
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
-
 
 // TODO for screen rotation, see https://www.mapbox.com/mapbox-android-sdk/#screen-rotation
 // TODO fox Xwalk compat, see nativepagetransitions plugin
@@ -61,387 +47,303 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_SET_TILT = "setTilt";
   private static final String ACTION_ANIMATE_CAMERA = "animateCamera";
 
-  public static MapView mapView;
   private static float retinaFactor;
   private String accessToken;
   private CallbackContext callback;
-  private CallbackContext markerCallbackContext;
 
-  private boolean showUserLocation;
+//  private boolean showUserLocation;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
 
-    DisplayMetrics metrics = new DisplayMetrics();
-    cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-    retinaFactor = metrics.density;
-
-    try {
-      int mapboxAccesstokenResourceId = cordova.getActivity().getResources().getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", cordova.getActivity().getPackageName());
-      accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
-    } catch (Resources.NotFoundException e) {
-      // we'll deal with this when the accessToken property is read, but for now let's dump the error:
-      e.printStackTrace();
-    }
+    this.retinaFactor = this.getRetinaFactor();
+    this.accessToken = this.getAccessToken();
   }
+
 
   @Override
   public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
+    callback = callbackContext;
 
-    this.callback = callbackContext;
+    if (ACTION_SHOW.equals(action)) {
+      final JSONObject options = args.getJSONObject(0);
+      this.show(options, callbackContext);
+    } else if (ACTION_HIDE.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              ViewGroup vg = (ViewGroup) mapView.getParent();
+//              if (vg != null) {
+//                vg.removeView(mapView);
+//              }
+//              callbackContext.success();
+//            }
+//          });
+//        }
 
-    try {
-      if (ACTION_SHOW.equals(action)) {
-        final JSONObject options = args.getJSONObject(0);
-        final String style = getStyle(options.optString("style"));
+    } else if (ACTION_GET_ZOOMLEVEL.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              final double zoomLevel = mapView.getZoom();
+//              callbackContext.success("" + zoomLevel);
+//            }
+//          });
+//        }
 
-        final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-        final int left = applyRetinaFactor(margins == null || margins.isNull("left") ? 0 : margins.getInt("left"));
-        final int right = applyRetinaFactor(margins == null || margins.isNull("right") ? 0 : margins.getInt("right"));
-        final int top = applyRetinaFactor(margins == null || margins.isNull("top") ? 0 : margins.getInt("top"));
-        final int bottom = applyRetinaFactor(margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom"));
+    } else if (ACTION_SET_ZOOMLEVEL.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              try {
+//                final JSONObject options = args.getJSONObject(0);
+//                final double zoom = options.getDouble("level");
+//                if (zoom >= 0 && zoom <= 20) {
+//                  final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
+//                  mapView.setZoom(zoom, animated);
+//                  callbackContext.success();
+//                } else {
+//                  callbackContext.error("invalid zoomlevel, use any double value from 0 to 20 (like 8.3)");
+//                }
+//              } catch (JSONException e) {
+//                callbackContext.error(e.getMessage());
+//              }
+//            }
+//          });
+//        }
 
-        final JSONObject center = options.isNull("center") ? null : options.getJSONObject("center");
+    } else if (ACTION_GET_CENTER.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              final LatLng center = mapView.getLatLng();
+//              Map<String, Double> result = new HashMap<String, Double>();
+//              result.put("lat", center.getLatitude());
+//              result.put("lng", center.getLongitude());
+//              callbackContext.success(new JSONObject(result));
+//            }
+//          });
+//        }
 
-        this.showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
+    } else if (ACTION_SET_CENTER.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              try {
+//                final JSONObject options = args.getJSONObject(0);
+//                final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
+//                final double lat = options.getDouble("lat");
+//                final double lng = options.getDouble("lng");
+//                mapView.setLatLng(new LatLng(lat, lng), animated);
+//                callbackContext.success();
+//              } catch (JSONException e) {
+//                callbackContext.error(e.getMessage());
+//              }
+//            }
+//          });
+//        }
 
-        cordova.getActivity().runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            if (accessToken == null) {
-              callbackContext.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
-              return;
-            }
-            mapView = new MapView(webView.getContext(), accessToken);
+    } else if (ACTION_GET_TILT.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              final double tilt = mapView.getTilt();
+//              callbackContext.success("" + tilt);
+//            }
+//          });
+//        }
 
-            // need to do this to register a receiver which onPause later needs
-            mapView.onResume();
-            mapView.onCreate(null);
+    } else if (ACTION_SET_TILT.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              try {
+//                final JSONObject options = args.getJSONObject(0);
+//                mapView.setTilt(
+//                    options.optDouble("pitch", 20),      // default 20
+//                    options.optLong("duration", 5000)); // default 5s
+//                callbackContext.success();
+//              } catch (JSONException e) {
+//                callbackContext.error(e.getMessage());
+//              }
+//            }
+//          });
+//        }
 
-            try {
-              mapView.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
-              mapView.setRotateEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
-              mapView.setScrollEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
-              mapView.setZoomEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
-              mapView.setTiltEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
+    } else if (ACTION_ANIMATE_CAMERA.equals(action)) {
+//        if (mapView != null) {
+//          cordova.getActivity().runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//              try {
+//                // TODO check mandatory elements
+//                final JSONObject options = args.getJSONObject(0);
+//
+//                final JSONObject target = options.getJSONObject("target");
+//                final double lat = target.getDouble("lat");
+//                final double lng = target.getDouble("lng");
+//
+//                final CameraPosition.Builder builder =
+//                    new CameraPosition.Builder()
+//                        .target(new LatLng(lat, lng));
+//
+//                if (options.has("bearing")) {
+//                  builder.bearing(((Double)options.getDouble("bearing")).floatValue());
+//                }
+//                if (options.has("tilt")) {
+//                  builder.tilt(((Double)options.getDouble("tilt")).floatValue());
+//                }
+//                if (options.has("zoomLevel")) {
+//                  builder.zoom(((Double)options.getDouble("zoomLevel")).floatValue());
+//                }
+//
+//                mapView.animateCamera(
+//                    CameraUpdateFactory.newCameraPosition(builder.build()),
+//                    (options.optInt("duration", 15)) * 1000, // default 15 seconds
+//                    null);
+//
+//                callbackContext.success();
+//              } catch (JSONException e) {
+//                callbackContext.error(e.getMessage());
+//              }
+//            }
+//          });
+//        }
 
-              // placing these offscreen in case the user wants to hide them
-              if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
-                mapView.setAttributionMargins(-300, 0, 0, 0);
-              }
-              if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
-                mapView.setLogoMargins(-300, 0, 0, 0);
-              }
+    } else if (ACTION_ADD_POLYGON.equals(action)) {
+//        cordova.getActivity().runOnUiThread(new Runnable() {
+//          @Override
+//          public void run() {
+//            try {
+//              final PolygonOptions polygon = new PolygonOptions();
+//              final JSONObject options = args.getJSONObject(0);
+//              final JSONArray points = options.getJSONArray("points");
+//              for (int i = 0; i < points.length(); i++) {
+//                final JSONObject marker = points.getJSONObject(i);
+//                final double lat = marker.getDouble("lat");
+//                final double lng = marker.getDouble("lng");
+//                polygon.add(new LatLng(lat, lng));
+//              }
+//              mapView.addPolygon(polygon);
+//
+//              callbackContext.success();
+//            } catch (JSONException e) {
+//              callbackContext.error(e.getMessage());
+//            }
+//          }
+//        });
 
-              if (showUserLocation) {
-                showUserLocation();
-              }
-
-              Double zoom = options.isNull("zoomLevel") ? 10 : options.getDouble("zoomLevel");
-              float zoomLevel = zoom.floatValue();
-              if (center != null) {
-                final double lat = center.getDouble("lat");
-                final double lng = center.getDouble("lng");
-                mapView.setLatLng(new LatLngZoom(lat, lng, zoomLevel));
-              } else {
-                if (zoomLevel > 18.0) {
-                  zoomLevel = 18.0f;
-                }
-                mapView.setZoom(zoomLevel);
-              }
-
-              if (options.has("markers")) {
-                addMarkers(options.getJSONArray("markers"));
-              }
-            } catch (JSONException e) {
-              callbackContext.error(e.getMessage());
-              return;
-            }
-
-            mapView.setStyleUrl(style);
-
-            // position the mapView overlay
-            int webViewWidth = webView.getView().getWidth();
-            int webViewHeight = webView.getView().getHeight();
-            final FrameLayout layout = (FrameLayout) webView.getView().getParent();
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
-            params.setMargins(left, top, right, bottom);
-            mapView.setLayoutParams(params);
-
-            layout.addView(mapView);
-            callbackContext.success();
-          }
-        });
-
-      } else if (ACTION_HIDE.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              ViewGroup vg = (ViewGroup) mapView.getParent();
-              if (vg != null) {
-                vg.removeView(mapView);
-              }
-              callbackContext.success();
-            }
-          });
+    } else if (ACTION_ADD_GEOJSON.equals(action)) {
+      cordova.getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          // TODO implement
+          callbackContext.success();
         }
+      });
 
-      } else if (ACTION_GET_ZOOMLEVEL.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              final double zoomLevel = mapView.getZoom();
-              callbackContext.success("" + zoomLevel);
-            }
-          });
-        }
+    } else if (ACTION_ADD_MARKERS.equals(action)) {
+//        cordova.getActivity().runOnUiThread(new Runnable() {
+//          @Override
+//          public void run() {
+//            try {
+//              addMarkers(args.getJSONArray(0));
+//              callbackContext.success();
+//            } catch (JSONException e) {
+//              callbackContext.error(e.getMessage());
+//            }
+//          }
+//        });
 
-      } else if (ACTION_SET_ZOOMLEVEL.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                final JSONObject options = args.getJSONObject(0);
-                final double zoom = options.getDouble("level");
-                if (zoom >= 0 && zoom <= 20) {
-                  final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
-                  mapView.setZoom(zoom, animated);
-                  callbackContext.success();
-                } else {
-                  callbackContext.error("invalid zoomlevel, use any double value from 0 to 20 (like 8.3)");
-                }
-              } catch (JSONException e) {
-                callbackContext.error(e.getMessage());
-              }
-            }
-          });
-        }
+    } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
+//        this.markerCallbackContext = callbackContext;
+//        mapView.setOnInfoWindowClickListener(new MarkerClickListener());
 
-      } else if (ACTION_GET_CENTER.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              final LatLng center = mapView.getLatLng();
-              Map<String, Double> result = new HashMap<String, Double>();
-              result.put("lat", center.getLatitude());
-              result.put("lng", center.getLongitude());
-              callbackContext.success(new JSONObject(result));
-            }
-          });
-        }
-
-      } else if (ACTION_SET_CENTER.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                final JSONObject options = args.getJSONObject(0);
-                final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
-                final double lat = options.getDouble("lat");
-                final double lng = options.getDouble("lng");
-                mapView.setLatLng(new LatLng(lat, lng), animated);
-                callbackContext.success();
-              } catch (JSONException e) {
-                callbackContext.error(e.getMessage());
-              }
-            }
-          });
-        }
-
-      } else if (ACTION_GET_TILT.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              final double tilt = mapView.getTilt();
-              callbackContext.success("" + tilt);
-            }
-          });
-        }
-
-      } else if (ACTION_SET_TILT.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                final JSONObject options = args.getJSONObject(0);
-                mapView.setTilt(
-                    options.optDouble("pitch", 20),      // default 20
-                    options.optLong("duration", 5000)); // default 5s
-                callbackContext.success();
-              } catch (JSONException e) {
-                callbackContext.error(e.getMessage());
-              }
-            }
-          });
-        }
-
-      } else if (ACTION_ANIMATE_CAMERA.equals(action)) {
-        if (mapView != null) {
-          cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                // TODO check mandatory elements
-                final JSONObject options = args.getJSONObject(0);
-
-                final JSONObject target = options.getJSONObject("target");
-                final double lat = target.getDouble("lat");
-                final double lng = target.getDouble("lng");
-
-                final CameraPosition.Builder builder =
-                    new CameraPosition.Builder()
-                        .target(new LatLng(lat, lng));
-
-                if (options.has("bearing")) {
-                  builder.bearing(((Double)options.getDouble("bearing")).floatValue());
-                }
-                if (options.has("tilt")) {
-                  builder.tilt(((Double)options.getDouble("tilt")).floatValue());
-                }
-                if (options.has("zoomLevel")) {
-                  builder.zoom(((Double)options.getDouble("zoomLevel")).floatValue());
-                }
-
-                mapView.animateCamera(
-                    CameraUpdateFactory.newCameraPosition(builder.build()),
-                    (options.optInt("duration", 15)) * 1000, // default 15 seconds
-                    null);
-
-                callbackContext.success();
-              } catch (JSONException e) {
-                callbackContext.error(e.getMessage());
-              }
-            }
-          });
-        }
-
-      } else if (ACTION_ADD_POLYGON.equals(action)) {
-        cordova.getActivity().runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            try {
-              final PolygonOptions polygon = new PolygonOptions();
-              final JSONObject options = args.getJSONObject(0);
-              final JSONArray points = options.getJSONArray("points");
-              for (int i = 0; i < points.length(); i++) {
-                final JSONObject marker = points.getJSONObject(i);
-                final double lat = marker.getDouble("lat");
-                final double lng = marker.getDouble("lng");
-                polygon.add(new LatLng(lat, lng));
-              }
-              mapView.addPolygon(polygon);
-
-              callbackContext.success();
-            } catch (JSONException e) {
-              callbackContext.error(e.getMessage());
-            }
-          }
-        });
-
-      } else if (ACTION_ADD_GEOJSON.equals(action)) {
-        cordova.getActivity().runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            // TODO implement
-            callbackContext.success();
-          }
-        });
-
-      } else if (ACTION_ADD_MARKERS.equals(action)) {
-        cordova.getActivity().runOnUiThread(new Runnable() {
-          @Override
-          public void run() {
-            try {
-              addMarkers(args.getJSONArray(0));
-              callbackContext.success();
-            } catch (JSONException e) {
-              callbackContext.error(e.getMessage());
-            }
-          }
-        });
-
-      } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
-        this.markerCallbackContext = callbackContext;
-        mapView.setOnInfoWindowClickListener(new MarkerClickListener());
-
-      } else {
-        return false;
-      }
-    } catch (Throwable t) {
-      t.printStackTrace();
-      callbackContext.error(t.getMessage());
+    } else {
+      return false;
     }
     return true;
   }
 
-  private void addMarkers(JSONArray markers) throws JSONException {
-    for (int i=0; i<markers.length(); i++) {
-      final JSONObject marker = markers.getJSONObject(i);
-      final MarkerOptions mo = new MarkerOptions();
-      mo.title(marker.isNull("title") ? null : marker.getString("title"));
-      mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
-      mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
-      mapView.addMarker(mo);
+  private void show(final JSONObject options, final CallbackContext callback) {
+//    this.showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
+
+    if (accessToken == null) {
+      callback.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
+      return;
     }
-  }
 
-  private class MarkerClickListener implements MapView.OnInfoWindowClickListener {
-
-    @Override
-    public boolean onMarkerClick(@NonNull Marker marker) {
-      // callback
-      if (markerCallbackContext != null) {
-        final JSONObject json = new JSONObject();
-        try {
-          json.put("title", marker.getTitle());
-          json.put("subtitle", marker.getSnippet());
-          json.put("lat", marker.getPosition().getLatitude());
-          json.put("lng", marker.getPosition().getLongitude());
-        } catch (JSONException e) {
-          PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
-              "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
-          pluginResult.setKeepCallback(true);
-          markerCallbackContext.sendPluginResult(pluginResult);
-        }
-        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
-        pluginResult.setKeepCallback(true);
-        markerCallbackContext.sendPluginResult(pluginResult);
-        return true;
+    MapInstance.createMap(this.webView.getContext(), accessToken, new MapInstance.MapCreatedCallback() {
+      @Override
+      public void onMapReady(final MapInstance map) {
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            JSONObject resp = new JSONObject();
+            try {
+              map.configure(options);
+              map.show(webView, retinaFactor, options);
+              resp.put("id", map.getId());
+              callback.success(resp);
+              return;
+            } catch (JSONException e) {
+              e.printStackTrace();
+              callback.error("Failed to create map.");
+              return;
+            }
+          }
+        });
       }
-      return false;
-    }
+    });
   }
 
-  private static int applyRetinaFactor(int i) {
-    return (int) (i * retinaFactor);
-  }
 
-  private static String getStyle(final String requested) {
-    if ("light".equalsIgnoreCase(requested)) {
-      return Style.LIGHT;
-    } else if ("dark".equalsIgnoreCase(requested)) {
-      return Style.DARK;
-    } else if ("emerald".equalsIgnoreCase(requested)) {
-      return Style.EMERALD;
-    } else if ("satellite".equalsIgnoreCase(requested)) {
-      return Style.SATELLITE;
-      // TODO not currently supported on Android
-//    } else if ("hybrid".equalsIgnoreCase(requested)) {
-//      return Style.HYBRID;
-    } else if ("streets".equalsIgnoreCase(requested)) {
-      return Style.MAPBOX_STREETS;
-    } else {
-      return requested;
-    }
-  }
+
+//  private void addMarkers(JSONArray markers) throws JSONException {
+//    for (int i=0; i<markers.length(); i++) {
+//      final JSONObject marker = markers.getJSONObject(i);
+//      final MarkerOptions mo = new MarkerOptions();
+//      mo.title(marker.isNull("title") ? null : marker.getString("title"));
+//      mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
+//      mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
+//      mapView.addMarker(mo);
+//    }
+//  }
+//
+//  private class MarkerClickListener implements MapView.OnInfoWindowClickListener {
+//
+//    @Override
+//    public boolean onMarkerClick(@NonNull Marker marker) {
+//      // callback
+//      if (markerCallbackContext != null) {
+//        final JSONObject json = new JSONObject();
+//        try {
+//          json.put("title", marker.getTitle());
+//          json.put("subtitle", marker.getSnippet());
+//          json.put("lat", marker.getPosition().getLatitude());
+//          json.put("lng", marker.getPosition().getLongitude());
+//        } catch (JSONException e) {
+//          PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
+//              "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
+//          pluginResult.setKeepCallback(true);
+//          markerCallbackContext.sendPluginResult(pluginResult);
+//        }
+//        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
+//        pluginResult.setKeepCallback(true);
+//        markerCallbackContext.sendPluginResult(pluginResult);
+//        return true;
+//      }
+//      return false;
+//    }
+//  }
 
   private boolean permissionGranted(String... types) {
     if (Build.VERSION.SDK_INT < 23) {
@@ -458,7 +360,7 @@ public class Mapbox extends CordovaPlugin {
   protected void showUserLocation() {
     if (permissionGranted(COARSE_LOCATION, FINE_LOCATION)) {
       //noinspection MissingPermission
-      mapView.setMyLocationEnabled(showUserLocation);
+//      mapView.setMyLocationEnabled(showUserLocation);
     } else {
       requestPermission(COARSE_LOCATION, FINE_LOCATION);
     }
@@ -487,15 +389,40 @@ public class Mapbox extends CordovaPlugin {
     }
   }
 
-  public void onPause(boolean multitasking) {
-    mapView.onPause();
+//  public void onPause(boolean multitasking) {
+//    mapView.onPause();
+//  }
+//
+//  public void onResume(boolean multitasking) {
+//    mapView.onResume();
+//  }
+//
+//  public void onDestroy() {
+//    mapView.onDestroy();
+//  }
+
+  private float getRetinaFactor() {
+    DisplayMetrics metrics = new DisplayMetrics();
+    this.cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+    return metrics.density;
   }
 
-  public void onResume(boolean multitasking) {
-    mapView.onResume();
-  }
+  private String getAccessToken() {
+    Activity activity = cordova.getActivity();
+    Resources res = activity.getResources();
+    String packageName = activity.getPackageName();
+    int resourceId;
+    String accessToken;
 
-  public void onDestroy() {
-    mapView.onDestroy();
+    try {
+      resourceId = res.getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", packageName);
+      accessToken = activity.getString(resourceId);
+    } catch (Resources.NotFoundException e) {
+      // we'll deal with this when the accessToken property is read, but for now let's dump the error:
+      e.printStackTrace();
+      throw e;
+    }
+
+    return accessToken;
   }
 }
