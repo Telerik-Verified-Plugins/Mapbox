@@ -1,9 +1,15 @@
-var exec = require("cordova/exec");
+var exec = require("cordova/exec"),
+    MapInstance = require("./MapInstance");
 
 module.exports = {
-  show: function (options, successCallback, errorCallback) {
-    cordova.exec(successCallback, errorCallback, "Mapbox", "show", [options]);
-  },
+    show: function (options, successCallback, errorCallback) {
+        console.log('Mapbox.js show()');
+        cordova.exec(function(resp) {
+            console.log('Mapbox.js show()', resp);
+            var map = new MapInstance(resp.id);
+            successCallback(map);
+        }, errorCallback, "Mapbox", "show", [options]);
+    },
 
   hide: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
@@ -60,5 +66,4 @@ module.exports = {
   convertPoint: function(options, successCallback, errorCallback){
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertPoint", [options]);
   }
-
 };

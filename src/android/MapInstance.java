@@ -22,9 +22,7 @@ public class MapInstance {
         void onMapReady(MapInstance map);
     }
 
-    public static MapInstance createMap(Context context, String accessToken, MapCreatedCallback callback) {
-        MapView mapView = new MapView(context);
-        mapView.setAccessToken(accessToken);
+    public static MapInstance createMap(MapView mapView, MapCreatedCallback callback) {
         MapInstance map = new MapInstance(mapView, callback);
         maps.put(map.getId(), map);
         return map;
@@ -55,6 +53,7 @@ public class MapInstance {
             @Override
             public void onMapReady(MapboxMap mMap) {
                 mapboxMap = mMap;
+                mapboxMap.setMyLocationEnabled(false);
                 constructorCallback.onMapReady(MapInstance.this);
             }
         });
@@ -82,28 +81,7 @@ public class MapInstance {
     }
 
     public void show(CordovaWebView webView, float retinaFactor, JSONObject options) throws JSONException {
-        final String style = getStyle(options.optString("style"));
-        final JSONObject center = options.isNull("center") ? null : options.getJSONObject("center");
 
-        final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-        final int left = (int) (retinaFactor * (margins == null || margins.isNull("left") ? 0 : margins.getInt("left")));
-        final int right = (int) (retinaFactor * (margins == null || margins.isNull("right") ? 0 : margins.getInt("right")));
-        final int top = (int) (retinaFactor * (margins == null || margins.isNull("top") ? 0 : margins.getInt("top")));
-        final int bottom = (int) (retinaFactor * (margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom")));
-
-        // need to do this to register a receiver which onPause later needs
-        mapView.onResume();
-        mapView.onCreate(null);
-
-        // position the mapView overlay
-        int webViewWidth = webView.getView().getWidth();
-        int webViewHeight = webView.getView().getHeight();
-        final FrameLayout layout = (FrameLayout) webView.getView().getParent();
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
-        params.setMargins(left, top, right, bottom);
-        mapView.setLayoutParams(params);
-
-        layout.addView(mapView);
     }
 
     private static String getStyle(final String requested) {

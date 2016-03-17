@@ -2,13 +2,14 @@ package com.telerik.plugins.mapbox;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
-
 import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
+import android.widget.FrameLayout;
+
+import com.mapbox.mapboxsdk.maps.MapView;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -274,14 +275,18 @@ public class Mapbox extends CordovaPlugin {
   }
 
   private void show(final JSONObject options, final CallbackContext callback) {
-//    this.showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
+    if (!this.permissionGranted(COARSE_LOCATION, FINE_LOCATION)) {
+      this.requestPermission(COARSE_LOCATION, FINE_LOCATION);
+      return;
+    }
 
     if (accessToken == null) {
       callback.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
       return;
     }
 
-    MapInstance.createMap(this.webView.getContext(), accessToken, new MapInstance.MapCreatedCallback() {
+    MapView mapView = this.createMapView(accessToken, options);
+    MapInstance.createMap(mapView, new MapInstance.MapCreatedCallback() {
       @Override
       public void onMapReady(final MapInstance map) {
         cordova.getActivity().runOnUiThread(new Runnable() {
@@ -305,7 +310,37 @@ public class Mapbox extends CordovaPlugin {
     });
   }
 
+  private MapView createMapView(String accessToken, JSONObject options) {
+    MapView mapView = new MapView(this.webView.getContext());
+    mapView.setAccessToken(accessToken);
 
+    try {
+  //    final String style = getStyle(options.optString("style"));
+  //    final JSONObject center = options.isNull("center") ? null : options.getJSONObject("center");
+      final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
+      final int left = (int) (retinaFactor * (margins == null || margins.isNull("left") ? 0 : margins.getInt("left")));
+      final int right = (int) (retinaFactor * (margins == null || margins.isNull("right") ? 0 : margins.getInt("right")));
+      final int top = (int) (retinaFactor * (margins == null || margins.isNull("top") ? 0 : margins.getInt("top")));
+      final int bottom = (int) (retinaFactor * (margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom")));
+
+      // need to do this to register a receiver which onPause later needs
+      mapView.onResume();
+      mapView.onCreate(null);
+
+      // position the mapView overlay
+      int webViewWidth = webView.getView().getWidth();
+      int webViewHeight = webView.getView().getHeight();
+      final FrameLayout layout = (FrameLayout) webView.getView().getParent();
+      FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
+      params.setMargins(left, top, right, bottom);
+      mapView.setLayoutParams(params);
+
+      layout.addView(mapView);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+    return mapView;
+  }
 
 //  private void addMarkers(JSONArray markers) throws JSONException {
 //    for (int i=0; i<markers.length(); i++) {
@@ -384,7 +419,6 @@ public class Mapbox extends CordovaPlugin {
     }
     switch (requestCode) {
       case LOCATION_REQ_CODE:
-        showUserLocation();
         break;
     }
   }
