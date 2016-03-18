@@ -2,7 +2,7 @@ var exec = require("cordova/exec"),
     MapInstance = require("./MapInstance");
 
 module.exports = {
-    show: function (options, successCallback, errorCallback) {
+    create: function (options, successCallback, errorCallback) {
         console.log('Mapbox.js show()');
         cordova.exec(function(resp) {
             console.log('Mapbox.js show()', resp);
