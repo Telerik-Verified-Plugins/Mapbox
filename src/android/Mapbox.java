@@ -284,14 +284,13 @@ public class Mapbox extends CordovaPlugin {
       callback.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
       return;
     }
-
-    MapView mapView = this.createMapView(accessToken, options);
-    MapInstance.createMap(mapView, new MapInstance.MapCreatedCallback() {
+    cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
-      public void onMapReady(final MapInstance map) {
-        cordova.getActivity().runOnUiThread(new Runnable() {
+      public void run() {
+        MapView mapView = createMapView(accessToken, options);
+        MapInstance.createMap(mapView, new MapInstance.MapCreatedCallback() {
           @Override
-          public void run() {
+          public void onMapReady(final MapInstance map) {
             JSONObject resp = new JSONObject();
             try {
               map.configure(options);
