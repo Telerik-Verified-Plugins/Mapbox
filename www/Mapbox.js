@@ -3,34 +3,35 @@ var exec = require("cordova/exec"),
 
 module.exports = {
     create: function (options, successCallback, errorCallback) {
-        console.log('Mapbox.js show()');
+        console.log('Mapbox.js create()');
         cordova.exec(function(resp) {
-            console.log('Mapbox.js show()', resp);
+            console.log('Mapbox.js create()', resp);
             var map = new MapInstance(resp.id);
             successCallback(map);
-        }, errorCallback, "Mapbox", "show", [options]);
+        }, errorCallback, "Mapbox", "create", [options]);
     },
 
-  hide: function (options, successCallback, errorCallback) {
-    cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
-  },
+  // hide: function (options, successCallback, errorCallback) {
+  //   cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
+  // },
 
-  addMarkers: function (options, successCallback, errorCallback) {
-    cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [options]);
-  },
+  // animateCamera: function (options, successCallback, errorCallback) {
+  //   cordova.exec(successCallback, errorCallback, "Mapbox", "animateCamera", [options]);
+  // },
 
-  addMarkerCallback: function (callback) {
-    cordova.exec(callback, null, "Mapbox", "addMarkerCallback", []);
-  },
+  // addGeoJSON: function (options, successCallback, errorCallback) {
+  //   cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJSON", [options]);
+  // },
 
-  animateCamera: function (options, successCallback, errorCallback) {
-    cordova.exec(successCallback, errorCallback, "Mapbox", "animateCamera", [options]);
-  },
+  // setTilt: function (options, successCallback, errorCallback) {
+  //   cordova.exec(successCallback, errorCallback, "Mapbox", "setTilt", [options]);
+  // },
 
-  addGeoJSON: function (options, successCallback, errorCallback) {
-    cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJSON", [options]);
-  },
+  // getTilt: function (successCallback, errorCallback) {
+  //   cordova.exec(successCallback, errorCallback, "Mapbox", "getTilt", []);
+  // },
 
+<<<<<<< 881cb4ce1ff2ab3dcdbb4afb9e31b6c4dbeb58be
   setCenter: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "setCenter", [options]);
   },

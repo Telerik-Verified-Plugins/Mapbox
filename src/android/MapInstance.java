@@ -1,16 +1,20 @@
 package com.telerik.plugins.mapbox;
 
-import android.content.Context;
-import android.webkit.WebView;
-import android.widget.FrameLayout;
-
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.UiSettings;
 
+import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -80,8 +84,54 @@ public class MapInstance {
         uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
     }
 
-    public void show(CordovaWebView webView, float retinaFactor, JSONObject options) throws JSONException {
+    public JSONArray getCenter() throws JSONException {
+        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+        double lat = cameraPosition.target.getLatitude();
+        double lng = cameraPosition.target.getLongitude();
+        double alt = cameraPosition.target.getAltitude();
+        return new JSONArray().put(lat).put(lng).put(alt);
+    }
 
+    public void setCenter(JSONArray coords) throws JSONException {
+        double lat = coords.getDouble(0);
+        double lng = coords.getDouble(1);
+        double alt = coords.getDouble(2);
+
+        mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+                new CameraPosition.Builder()
+                        .target(new LatLng(lat, lng, alt))
+                        .build()
+        ));
+    }
+
+    public double getZoom() {
+        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+        return cameraPosition.zoom;
+    }
+
+    public void setZoom(double zoom) {
+        mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+                new CameraPosition.Builder()
+                        .zoom(zoom)
+                        .build()
+        ));
+    }
+
+    public void addMarkers(JSONArray markers) throws JSONException {
+        for (int i = 0; i < markers.length(); i++) {
+            final JSONObject marker = markers.getJSONObject(i);
+            final MarkerOptions mo = new MarkerOptions();
+
+            mo.title(marker.isNull("title") ? null : marker.getString("title"));
+            mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
+            mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
+
+            mapboxMap.addMarker(mo);
+        }
+    }
+
+    public void addMarkerListener(MapboxMap.OnInfoWindowClickListener listener) {
+        mapboxMap.setOnInfoWindowClickListener(listener);
     }
 
     private static String getStyle(final String requested) {
