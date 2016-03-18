@@ -18,11 +18,12 @@ import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
-import org.apache.cordova.PluginResult;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.HashMap;
 
 // TODO for screen rotation, see https://www.mapbox.com/mapbox-android-sdk/#screen-rotation
 // TODO fox Xwalk compat, see nativepagetransitions plugin
@@ -31,14 +32,13 @@ public class Mapbox extends CordovaPlugin {
 
   public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
-  public static final int LOCATION_REQ_CODE = 0;
 
   public static final int PERMISSION_DENIED_ERROR = 20;
 
   private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
 
   private static final String ACTION_CREATE = "create";
-  private static final String ACTION_HIDE = "hide";
+  private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
@@ -53,9 +53,6 @@ public class Mapbox extends CordovaPlugin {
 
   private static float retinaFactor;
   private String accessToken;
-  private CallbackContext callback;
-
-//  private boolean showUserLocation;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -65,14 +62,33 @@ public class Mapbox extends CordovaPlugin {
     this.accessToken = this.getAccessToken();
   }
 
-
   @Override
   public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
-    callback = callbackContext;
+    Command command = Command.create(action, args, callbackContext);
+    return execute(command);
+  }
+
+  public boolean execute(Command command) throws JSONException {
+    final String action = command.getAction();
+    final CordovaArgs args = command.getArgs();
+    final CallbackContext callbackContext = command.getCallbackContext();
 
     if (ACTION_CREATE.equals(action)) {
       final JSONObject options = args.getJSONObject(0);
+      boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
+      if (showUserLocation && !requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
+        return false;
+      }
       this.create(options, callbackContext);
+    }
+
+    else if (ACTION_SHOW_USER_LOCATION.equals(action)) {
+      final int mapId = args.getInt(0);
+      final MapInstance map = MapInstance.getMap(mapId);
+      boolean enabled = args.getBoolean(1);
+      if (requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
+        map.showUserLocation(enabled);
+      }
     }
 
     else if (ACTION_GET_CENTER.equals(action)) {
@@ -255,15 +271,11 @@ public class Mapbox extends CordovaPlugin {
   }
 
   private void create(final JSONObject options, final CallbackContext callback) {
-    if (!this.permissionGranted(COARSE_LOCATION, FINE_LOCATION)) {
-      this.requestPermission(COARSE_LOCATION, FINE_LOCATION);
-      return;
-    }
-
     if (accessToken == null) {
       callback.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
       return;
     }
+
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -276,8 +288,7 @@ public class Mapbox extends CordovaPlugin {
               resp.put("id", map.getId());
               callback.success(resp);
               return;
-            }
-            catch (JSONException e) {
+            } catch (JSONException e) {
               e.printStackTrace();
               callback.error("Failed to create map.");
               return;
@@ -331,34 +342,30 @@ public class Mapbox extends CordovaPlugin {
   }
 
   protected void showUserLocation() {
-    if (permissionGranted(COARSE_LOCATION, FINE_LOCATION)) {
-      //noinspection MissingPermission
-//      mapView.setMyLocationEnabled(showUserLocation);
-    } else {
-      requestPermission(COARSE_LOCATION, FINE_LOCATION);
-    }
+
   }
 
 
-  private void requestPermission(String... types) {
-    ActivityCompat.requestPermissions(
-        this.cordova.getActivity(),
-        types,
-        LOCATION_REQ_CODE);
+  private boolean requestPermission(Command command, String... types) {
+    if (!permissionGranted(types)) {
+      int commandId = Command.save(command);
+      ActivityCompat.requestPermissions(this.cordova.getActivity(), types, commandId);
+      return false;
+    } else {
+      return true;
+    }
   }
 
   // TODO
-  public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+  public void onRequestPermissionResult(int commandId, String[] permissions, int[] grantResults) throws JSONException {
     for (int r : grantResults) {
       if (r == PackageManager.PERMISSION_DENIED) {
-        this.callback.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, PERMISSION_DENIED_ERROR));
+        Command.error(commandId, PERMISSION_DENIED_ERROR);
         return;
       }
     }
-    switch (requestCode) {
-      case LOCATION_REQ_CODE:
-        break;
-    }
+
+    Command.execute(this, commandId);
   }
 
 //  public void onPause(boolean multitasking) {
@@ -396,5 +403,85 @@ public class Mapbox extends CordovaPlugin {
     }
 
     return accessToken;
+  }
+
+}
+
+class Command {
+  private static int ids = 0;
+
+  private static HashMap<Integer, Command> commands = new HashMap<Integer, Command>();
+
+  public static Command create(final String action, final CordovaArgs args, final CallbackContext callbackContext) {
+    return new Command(action, args, callbackContext);
+  }
+
+  public static int save(final String action, final CordovaArgs args, final CallbackContext callbackContext) {
+    return save(create(action, args, callbackContext));
+  }
+
+  public static int save(Command command) {
+    int id = command.getId();
+    commands.put(id, command);
+    return id;
+  }
+
+  public static void execute(Mapbox plugin, int id) throws JSONException {
+    Command command = commands.remove(id);
+    plugin.execute(command);
+  }
+
+  public static void error(final int id, final int errorCode) {
+    error(id, errorCode, null);
+  }
+
+  public static void error(final int id, final int errorCode, final String errorMessage) {
+    Command command = commands.remove(id);
+    CallbackContext callback = command.getCallbackContext();
+    JSONObject error = new JSONObject();
+    String message = "Error (" + errorCode + ")";
+
+    if (errorMessage != null) {
+      message += ": "  + errorMessage;
+    }
+
+    try {
+      error.put("code", id);
+      error.put("message", message);
+      callback.error(error);
+    } catch (JSONException e) {
+      callback.error(message);
+    }
+  }
+
+  private int id;
+
+  private String action;
+
+  private CordovaArgs args;
+
+  private CallbackContext callbackContext;
+
+  private Command(final String action, final CordovaArgs args, final CallbackContext callbackContext) {
+    this.id = ids++;
+    this.action = action;
+    this.args = args;
+    this.callbackContext = callbackContext;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getAction() {
+    return action;
+  }
+
+  public CordovaArgs getArgs() {
+    return args;
+  }
+
+  public CallbackContext getCallbackContext() {
+    return callbackContext;
   }
 }

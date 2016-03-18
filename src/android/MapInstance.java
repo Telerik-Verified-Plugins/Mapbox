@@ -53,7 +53,6 @@ public class MapInstance {
             @Override
             public void onMapReady(MapboxMap mMap) {
                 mapboxMap = mMap;
-                mapboxMap.setMyLocationEnabled(false);
                 applyOptions(options);
                 constructorCallback.onMapReady(MapInstance.this);
             }
@@ -122,6 +121,10 @@ public class MapInstance {
         mapboxMap.setOnInfoWindowClickListener(listener);
     }
 
+    public void showUserLocation(boolean enabled) {
+        mapboxMap.setMyLocationEnabled(enabled);
+    }
+
     private static String getStyle(final String requested) {
         if ("light".equalsIgnoreCase(requested)) {
             return Style.LIGHT;
@@ -149,6 +152,10 @@ public class MapInstance {
             uiSettings.setScrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
             uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
             uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
+
+            if (!options.isNull("showUserLocation") && !options.getBoolean("showUserLocation")) {
+                this.showUserLocation(false);
+            }
 
             if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
                 uiSettings.setAttributionMargins(-300, 0, 0, 0);

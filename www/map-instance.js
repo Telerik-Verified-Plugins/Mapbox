@@ -41,4 +41,8 @@ MapInstance.prototype.setZoomLevel = function (zoom, successCallback, errorCallb
     this._exec(successCallback, errorCallback, "setZoomLevel", [zoom]);
 };
 
+MapInstance.prototype.showUserLocation = function (enabled, successCallback, errorCallback) {
+    this._exec(successCallback, errorCallback, "showUserLocation", [enabled]);
+};
+
 module.exports = MapInstance;
