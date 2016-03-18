@@ -268,16 +268,16 @@ public class Mapbox extends CordovaPlugin {
       @Override
       public void run() {
         MapView mapView = createMapView(accessToken, options);
-        MapInstance.createMap(mapView, new MapInstance.MapCreatedCallback() {
+        MapInstance.createMap(mapView, options, new MapInstance.MapCreatedCallback() {
           @Override
           public void onMapReady(final MapInstance map) {
             JSONObject resp = new JSONObject();
             try {
-              map.configure(options);
               resp.put("id", map.getId());
               callback.success(resp);
               return;
-            } catch (JSONException e) {
+            }
+            catch (JSONException e) {
               e.printStackTrace();
               callback.error("Failed to create map.");
               return;
@@ -293,8 +293,6 @@ public class Mapbox extends CordovaPlugin {
     mapView.setAccessToken(accessToken);
 
     try {
-  //    final String style = getStyle(options.optString("style"));
-  //    final JSONObject center = options.isNull("center") ? null : options.getJSONObject("center");
       final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
       final int left = (int) (retinaFactor * (margins == null || margins.isNull("left") ? 0 : margins.getInt("left")));
       final int right = (int) (retinaFactor * (margins == null || margins.isNull("right") ? 0 : margins.getInt("right")));
@@ -319,18 +317,6 @@ public class Mapbox extends CordovaPlugin {
     }
     return mapView;
   }
-
-//  private void addMarkers(JSONArray markers) throws JSONException {
-//    for (int i=0; i<markers.length(); i++) {
-//      final JSONObject marker = markers.getJSONObject(i);
-//      final MarkerOptions mo = new MarkerOptions();
-//      mo.title(marker.isNull("title") ? null : marker.getString("title"));
-//      mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
-//      mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
-//      mapView.addMarker(mo);
-//    }
-//  }
-//
 
   private boolean permissionGranted(String... types) {
     if (Build.VERSION.SDK_INT < 23) {

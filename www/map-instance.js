@@ -33,11 +33,11 @@ MapInstance.prototype.getCenter = function (successCallback, errorCallback) {
     this._exec(successCallback, errorCallback, "getCenter");
 };
 
-MapInstance.prototype.getZoomLevel: function (successCallback, errorCallback) {
+MapInstance.prototype.getZoomLevel = function (successCallback, errorCallback) {
     this._exec(successCallback, errorCallback, "getZoomLevel");
 };
 
-MapInstance.prototype.setZoomLevel: function (zoom, successCallback, errorCallback) {
+MapInstance.prototype.setZoomLevel = function (zoom, successCallback, errorCallback) {
     this._exec(successCallback, errorCallback, "setZoomLevel", [zoom]);
 };
 

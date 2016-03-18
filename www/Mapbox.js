@@ -9,7 +9,7 @@ module.exports = {
             var map = new MapInstance(resp.id);
             successCallback(map);
         }, errorCallback, "Mapbox", "create", [options]);
-    },
+    }
 
   // hide: function (options, successCallback, errorCallback) {
   //   cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
