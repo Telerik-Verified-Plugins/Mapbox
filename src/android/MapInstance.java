@@ -80,13 +80,13 @@ public class MapInstance {
     }
 
     public void setCenter(JSONArray coords) throws JSONException {
-        double lat = coords.getDouble(0);
-        double lng = coords.getDouble(1);
-        double alt = coords.getDouble(2);
+        double lng = coords.getDouble(0);
+        double lat = coords.getDouble(1);
+        //double alt = coords.getDouble(2);
 
         mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
-                        .target(new LatLng(lat, lng, alt))
+                        .target(new LatLng(lat, lng))
                         .build()
         ));
     }
@@ -102,6 +102,29 @@ public class MapInstance {
                         .zoom(zoom)
                         .build()
         ));
+    }
+
+    public void jumpTo(JSONObject options) throws JSONException {
+        CameraPosition current = mapboxMap.getCameraPosition();
+        CameraPosition.Builder builder = new CameraPosition.Builder(current);
+
+        if (!options.isNull("zoom")) {
+            builder.zoom(options.getDouble("zoom"));
+        }
+
+        if (!options.isNull("center")) {
+            JSONArray center = options.getJSONArray("center");
+            double lng = center.getDouble(0);
+            double lat = center.getDouble(1);
+            builder.target(new LatLng(lat, lng));
+        }
+
+        // TODO: Bearing
+
+        // TODO: Pitch
+
+        CameraPosition position = builder.build();
+        mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
     }
 
     public void addMarkers(JSONArray markers) throws JSONException {
@@ -144,18 +167,22 @@ public class MapInstance {
         }
     }
 
-    private void applyOptions(JSONObject options) {
+    public void applyOptions(JSONObject options) {
         try {
+            if (options.has("style")) {
+                this.mapView.setStyleUrl(this.getStyle(options.optString("style")));
+            }
+
+            if (!options.isNull("showUserLocation")) {
+                this.showUserLocation(options.getBoolean("showUserLocation"));
+            }
+
             UiSettings uiSettings = mapboxMap.getUiSettings();
             uiSettings.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
             uiSettings.setRotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
             uiSettings.setScrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
             uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
             uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
-
-            if (!options.isNull("showUserLocation")) {
-                this.showUserLocation(options.getBoolean("showUserLocation"));
-            }
 
             if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
                 uiSettings.setAttributionMargins(-300, 0, 0, 0);
@@ -165,21 +192,11 @@ public class MapInstance {
                 uiSettings.setLogoMargins(-300, 0, 0, 0);
             }
 
-            if (!options.isNull("center")) {
-                this.setCenter(options.getJSONArray("center"));
-            }
-
-            if (!options.isNull("zoomLevel")) {
-                this.setZoom(options.getDouble("zoom"));
-            }
-
             if (options.has("markers")) {
                 this.addMarkers(options.getJSONArray("markers"));
             }
 
-            if (options.has("style")) {
-                this.mapView.setStyleUrl(this.getStyle(options.optString("style")));
-            }
+            this.jumpTo(options);
         }
         catch (JSONException e) {
             e.printStackTrace();
