@@ -24,7 +24,9 @@
     <engine name="cordova-plugman" version=">=4.2.0"/><!-- needed for gradleReference support -->
   </engines>
 
-  <js-module src="www/map-instance.js" name="MapInstance" />
+  <js-module src="www/mixin.js" name="mixin" />
+  <js-module src="www/events-mixin.js" name="events-mixin" />
+  <js-module src="www/map-instance.js" name="map-instance" />
 
   <js-module src="www/Mapbox.js" name="Mapbox">
     <clobbers target="window.Mapbox" />

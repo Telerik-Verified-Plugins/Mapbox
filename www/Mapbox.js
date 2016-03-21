@@ -1,4 +1,4 @@
-var MapInstance = require("./MapInstance");
+var MapInstance = require("./map-instance");
 module.exports = {
     Map: MapInstance
 };

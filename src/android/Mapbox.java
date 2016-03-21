@@ -38,6 +38,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
 
   private static final String ACTION_CREATE = "create";
+  private static final String ACTION_JUMP_TO = "jumpTo";
   private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
@@ -93,6 +94,24 @@ public class Mapbox extends CordovaPlugin {
           }
         });
       }
+    }
+
+    else if (ACTION_JUMP_TO.equals(action)) {
+      final int mapId = args.getInt(0);
+      final MapInstance map = MapInstance.getMap(mapId);
+      final JSONObject options = args.getJSONObject(1);
+
+      cordova.getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            map.jumpTo(options);
+            callbackContext.success();
+          } catch (JSONException e) {
+            callbackContext.error(e.getMessage());
+          }
+        }
+      });
     }
 
     else if (ACTION_GET_CENTER.equals(action)) {
