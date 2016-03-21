@@ -13,30 +13,33 @@ var Events = Mixin({
             return this._channelPrefix + "." + type;
         },
 
-        _channel: function (type) {
+        _channel: function (type, sticky) {
             var t = this._prefix(type);
+            if (!this._channels) {
+                this._channels = {};
+            }
+            if (sticky !== undefined) {
+                this._channels[t] = sticky ?
+                    channel.createSticky(t) :
+                    channel.create(t);
+            }
             return this._channels[t];
         },
 
         createChannel: function (type) {
-            var t = this._prefix(type),
-                c = channel.create(t);
-            this._channels[t] = c;
+            this._channel(type, false);
         },
 
         createStickyChannel: function (type) {
-            var t = this._prefix(type),
-                c = channel.createSticky(t);
-            this._channels[type] = c;
+            this._channel(type, true);
         },
 
         once: function (type, listener) {
-            var t = this._prefix(type),
-                onEvent = function (e) {
+            var onEvent = function (e) {
                     listener(e);
-                    this.off(t, onEvent);
+                    this.off(type, onEvent);
                 };
-            this.on(t, onEvent);
+            this.on(type, onEvent.bind(this));
         },
 
         on: function (type, listener) {
@@ -52,9 +55,28 @@ var Events = Mixin({
         }
     });
 
+function assign(target) {
+    if (target === undefined || target === null) {
+        throw new TypeError('Cannot convert undefined or null to object');
+    }
+
+    var output = Object(target);
+    for (var index = 1; index < arguments.length; index++) {
+        var source = arguments[index];
+        if (source !== undefined && source !== null) {
+            for (var nextKey in source) {
+                if (source.hasOwnProperty(nextKey)) {
+                    output[nextKey] = source[nextKey];
+                }
+            }
+        }
+    }
+    return output;
+}
+
 function Mixin(behaviour) {
     return function(target) {
-        return Object.assign(target.behaviour);
+        return assign(target, behaviour);
     };
 }
 
@@ -67,7 +89,7 @@ function MapInstance(options) {
     this.initEvents("Mapbox.MapInstance");
     this.createStickyChannel("load");
 
-    this._exec(onLoad, this._error, "Mapbox", "create", [options]);
+    exec(onLoad, this._error, "Mapbox", "create", [options]);
 
     function _onLoad(resp) {
         this._id = resp.id;
@@ -80,7 +102,9 @@ function MapInstance(options) {
 Events(MapInstance.prototype);
 
 MapInstance.prototype._error = function (err) {
-    console.error("Map error (ID: " + this._id + "): ", err);
+    var error = new Error("Map error (ID: " + this._id + "): " + err);
+    console.warn("throwing MapError: ", error);
+    throw error;
 };
 
 MapInstance.prototype._exec = function (successCallback, errorCallback, method, args) {
