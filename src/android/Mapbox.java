@@ -84,9 +84,14 @@ public class Mapbox extends CordovaPlugin {
     else if (ACTION_SHOW_USER_LOCATION.equals(action)) {
       final int mapId = args.getInt(0);
       final MapInstance map = MapInstance.getMap(mapId);
-      boolean enabled = args.getBoolean(1);
+      final boolean enabled = args.getBoolean(1);
       if (requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
-        map.showUserLocation(enabled);
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            map.showUserLocation(enabled);
+          }
+        });
       }
     }
 
