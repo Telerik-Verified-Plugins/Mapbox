@@ -153,8 +153,8 @@ public class MapInstance {
             uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
             uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
 
-            if (!options.isNull("showUserLocation") && !options.getBoolean("showUserLocation")) {
-                this.showUserLocation(false);
+            if (!options.isNull("showUserLocation")) {
+                this.showUserLocation(options.getBoolean("showUserLocation"));
             }
 
             if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {

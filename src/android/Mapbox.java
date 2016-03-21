@@ -76,10 +76,9 @@ public class Mapbox extends CordovaPlugin {
     if (ACTION_CREATE.equals(action)) {
       final JSONObject options = args.getJSONObject(0);
       boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
-      if (showUserLocation && !requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
-        return false;
+      if (!showUserLocation || requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
+        this.create(options, callbackContext);
       }
-      this.create(options, callbackContext);
     }
 
     else if (ACTION_SHOW_USER_LOCATION.equals(action)) {
@@ -341,15 +340,10 @@ public class Mapbox extends CordovaPlugin {
     return true;
   }
 
-  protected void showUserLocation() {
-
-  }
-
-
   private boolean requestPermission(Command command, String... types) {
     if (!permissionGranted(types)) {
       int commandId = Command.save(command);
-      ActivityCompat.requestPermissions(this.cordova.getActivity(), types, commandId);
+      cordova.requestPermissions(this, commandId, types);
       return false;
     } else {
       return true;
