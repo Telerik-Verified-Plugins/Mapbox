@@ -5,10 +5,14 @@ import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.UiSettings;
+import com.mapbox.mapboxsdk.offline.OfflineManager;
+import com.mapbox.mapboxsdk.offline.OfflineRegion;
+import com.mapbox.mapboxsdk.offline.OfflineRegionDefinition;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -165,6 +169,35 @@ public class MapInstance {
         } else {
             return requested;
         }
+    }
+
+    public void createOfflineRegion(float pixelRatio, JSONObject options) {
+        OfflineManager mOfflineManager = OfflineManager.getInstance(this);
+        mOfflineManager.setAccessToken(ApiAccess.getToken(this));
+
+        // Definition
+        String styleURL = mapboxMap.getStyleUrl();
+        LatLngBounds bounds = mapboxMap.getProjection().getVisibleRegion().latLngBounds;
+        double minZoom = mapView.getZoom();
+        double maxZoom = mapView.getMaxZoom();
+        OfflineRegionDefinition definition = new OfflineRegionDefinition(styleURL, bounds, minZoom, maxZoom, pixelRatio);
+
+        // Your metadata
+        OfflineRegionMetadata metadata =...;
+
+        // Create region
+        mOfflineManager.createOfflineRegion(definition, metadata,
+                new OfflineManager.CreateOfflineRegionCallback() {
+                    @Override
+                    public void onCreate(OfflineRegion offlineRegion) {
+                        Log.d(LOG_TAG, "Offline region created: " + regionName);
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Log.e(LOG_TAG, "Error: " + error);
+                    }
+                });
     }
 
     public void applyOptions(JSONObject options) {

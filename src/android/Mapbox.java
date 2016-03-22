@@ -10,8 +10,10 @@ import android.util.DisplayMetrics;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.offline.OfflineManager;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -40,6 +42,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_CREATE = "create";
   private static final String ACTION_JUMP_TO = "jumpTo";
   private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
+  private static final String ACTION_CREATE_OFFLINE_REGION = "createOfflineRegion";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
@@ -185,6 +188,11 @@ public class Mapbox extends CordovaPlugin {
           }
         }
       );
+    }
+    else if (ACTION_CREATE_OFFLINE_REGION.equals(action)) {
+      final int mapId = args.getInt(0);
+      final JSONObject options = args.getJSONObject(1);
+      final MapInstance map = MapInstance.getMap(mapId);
     }
     else if (ACTION_GET_TILT.equals(action)) {
 //        if (mapView != null) {
