@@ -7,13 +7,18 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.offline.OfflineManager;
+import com.mapbox.mapboxsdk.offline.OfflineRegion;
+import com.mapbox.mapboxsdk.offline.OfflineRegionDefinition;
+import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -31,6 +36,12 @@ import java.util.HashMap;
 // TODO fox Xwalk compat, see nativepagetransitions plugin
 // TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
 public class Mapbox extends CordovaPlugin {
+
+  private static final String LOG_TAG = "MapboxCordovaPlugin";
+
+  // JSON encoding/decoding
+  public static final String JSON_CHARSET = "UTF-8";
+  public static final String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
 
   public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -190,9 +201,8 @@ public class Mapbox extends CordovaPlugin {
       );
     }
     else if (ACTION_CREATE_OFFLINE_REGION.equals(action)) {
-      final int mapId = args.getInt(0);
-      final JSONObject options = args.getJSONObject(1);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final JSONObject options = args.getJSONObject(0);
+      this.createOfflineRegion(options, callbackContext);
     }
     else if (ACTION_GET_TILT.equals(action)) {
 //        if (mapView != null) {
@@ -360,6 +370,53 @@ public class Mapbox extends CordovaPlugin {
     return mapView;
   }
 
+  public void createOfflineRegion(JSONObject options, final CallbackContext callbackContext) throws JSONException {
+    String styleURL = options.getString("style");
+
+    final String regionName = options.getString("name");
+    double minZoom = options.getDouble("minZoom");
+    double maxZoom = options.getDouble("maxZoom");
+    JSONObject boundsOptions = options.getJSONObject("bounds");
+    double north = boundsOptions.getDouble("north");
+    double east = boundsOptions.getDouble("east");
+    double south = boundsOptions.getDouble("south");
+    double west = boundsOptions.getDouble("west");
+
+    LatLngBounds bounds = new LatLngBounds.Builder()
+            .include(new LatLng(north, west))
+            .include(new LatLng(south, east))
+            .build();
+    OfflineRegionDefinition definition = new OfflineTilePyramidRegionDefinition(styleURL, bounds, minZoom, maxZoom, this.retinaFactor);
+
+    // Sample way of encoding metadata from a JSONObject
+    final JSONObject metadata = new JSONObject();
+    byte[] encodedMetadata;
+    try {
+      metadata.put(JSON_FIELD_REGION_NAME, regionName);
+      String json = metadata.toString();
+      encodedMetadata = json.getBytes(JSON_CHARSET);
+    } catch (Exception e) {
+      Log.e(LOG_TAG, "Failed to encode metadata: " + e.getMessage());
+      encodedMetadata = null;
+    }
+
+    OfflineManager offlineManager = OfflineManager.getInstance(this.webView.getContext());
+    offlineManager.setAccessToken(this.accessToken);
+    offlineManager.createOfflineRegion(definition, encodedMetadata, new OfflineManager.CreateOfflineRegionCallback() {
+      @Override
+      public void onCreate(OfflineRegion offlineRegion) {
+        Log.d(LOG_TAG, "Offline region created: " + regionName);
+        callbackContext.success(metadata);
+      }
+
+      @Override
+      public void onError(String error) {
+        Log.e(LOG_TAG, "Error: " + error);
+        callbackContext.error(error);
+      }
+    });
+  }
+
   private boolean permissionGranted(String... types) {
     if (Build.VERSION.SDK_INT < 23) {
       return true;
@@ -407,8 +464,9 @@ public class Mapbox extends CordovaPlugin {
 //  }
 
   private float getRetinaFactor() {
-    DisplayMetrics metrics = new DisplayMetrics();
-    this.cordova.getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+    Activity activity = this.cordova.getActivity();
+    Resources res = activity.getResources();
+    DisplayMetrics metrics = res.getDisplayMetrics();
     return metrics.density;
   }
 
