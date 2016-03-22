@@ -3,7 +3,6 @@ package com.telerik.plugins.mapbox;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
-import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
@@ -16,27 +15,28 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 
-public class MapInstance {
+public class Map {
+    private static HashMap<Integer, Map> maps = new HashMap<Integer, Map>();
 
-    private final static String LOG_TAG = "MapInstance";
+    private static int ids = 0;
 
     public interface MapCreatedCallback {
-        void onMapReady(MapInstance map);
+        void onCreate(Map map);
+        void onError(String error);
     }
 
-    public static MapInstance createMap(MapView mapView, JSONObject options, MapCreatedCallback callback) {
-        MapInstance map = new MapInstance(mapView, options, callback);
+    public static void create(MapView mapView, JSONObject options, MapCreatedCallback callback) {
+        Map map = new Map(mapView, options, callback);
         maps.put(map.getId(), map);
-        return map;
     }
 
-    public static MapInstance getMap(int id) {
+    public static Map getMap(int id) {
         return maps.get(id);
     }
 
-    private static HashMap<Integer, MapInstance> maps = new HashMap<Integer, MapInstance>();
-
-    private static int ids = 0;
+    public static void removeMap(int id) {
+        maps.remove(id);
+    }
 
     private int id;
 
@@ -46,7 +46,7 @@ public class MapInstance {
 
     private MapCreatedCallback constructorCallback;
 
-    private MapInstance(final MapView mapView, final JSONObject options, final MapCreatedCallback callback) {
+    private Map(final MapView mapView, final JSONObject options, final MapCreatedCallback callback) {
         this.id = this.ids++;
         this.constructorCallback = callback;
         this.mapView = mapView;
@@ -55,8 +55,13 @@ public class MapInstance {
             @Override
             public void onMapReady(MapboxMap mMap) {
                 mapboxMap = mMap;
-                applyOptions(options);
-                constructorCallback.onMapReady(MapInstance.this);
+                try {
+                    applyOptions(options);
+                    constructorCallback.onCreate(Map.this);
+                } catch (JSONException e) {
+                    Map.removeMap(getId());
+                    constructorCallback.onError(e.getMessage());
+                }
             }
         });
     }
@@ -150,58 +155,34 @@ public class MapInstance {
         mapboxMap.setMyLocationEnabled(enabled);
     }
 
-    private static String getStyle(final String requested) {
-        if ("light".equalsIgnoreCase(requested)) {
-            return Style.LIGHT;
-        } else if ("dark".equalsIgnoreCase(requested)) {
-            return Style.DARK;
-        } else if ("emerald".equalsIgnoreCase(requested)) {
-            return Style.EMERALD;
-        } else if ("satellite".equalsIgnoreCase(requested)) {
-            return Style.SATELLITE;
-        // TODO not currently supported on Android
-        //} else if ("hybrid".equalsIgnoreCase(requested)) {
-        //    return Style.HYBRID;
-        } else if ("streets".equalsIgnoreCase(requested)) {
-            return Style.MAPBOX_STREETS;
-        } else {
-            return requested;
+    private void applyOptions(JSONObject options) throws JSONException {
+        if (options.has("style")) {
+            this.mapView.setStyleUrl(Mapbox.getStyle(options.optString("style")));
         }
-    }
 
-    private void applyOptions(JSONObject options) {
-        try {
-            if (options.has("style")) {
-                this.mapView.setStyleUrl(this.getStyle(options.optString("style")));
-            }
-
-            if (!options.isNull("showUserLocation")) {
-                this.showUserLocation(options.getBoolean("showUserLocation"));
-            }
-
-            UiSettings uiSettings = mapboxMap.getUiSettings();
-            uiSettings.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
-            uiSettings.setRotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
-            uiSettings.setScrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
-            uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
-            uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
-
-            if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
-                uiSettings.setAttributionMargins(-300, 0, 0, 0);
-            }
-
-            if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
-                uiSettings.setLogoMargins(-300, 0, 0, 0);
-            }
-
-            if (options.has("markers")) {
-                this.addMarkers(options.getJSONArray("markers"));
-            }
-
-            this.jumpTo(options);
+        if (!options.isNull("showUserLocation")) {
+            this.showUserLocation(options.getBoolean("showUserLocation"));
         }
-        catch (JSONException e) {
-            e.printStackTrace();
+
+        UiSettings uiSettings = mapboxMap.getUiSettings();
+        uiSettings.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
+        uiSettings.setRotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
+        uiSettings.setScrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
+        uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
+        uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
+
+        if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
+            uiSettings.setAttributionMargins(-300, 0, 0, 0);
         }
+
+        if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
+            uiSettings.setLogoMargins(-300, 0, 0, 0);
+        }
+
+        if (options.has("markers")) {
+            this.addMarkers(options.getJSONArray("markers"));
+        }
+
+        this.jumpTo(options);
     }
 }

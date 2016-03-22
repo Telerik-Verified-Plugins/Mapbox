@@ -11,14 +11,10 @@ import android.util.Log;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.geometry.LatLngBounds;
+import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.offline.OfflineManager;
-import com.mapbox.mapboxsdk.offline.OfflineRegion;
-import com.mapbox.mapboxsdk.offline.OfflineRegionDefinition;
-import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -26,6 +22,7 @@ import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
 
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,10 +36,6 @@ public class Mapbox extends CordovaPlugin {
 
   private static final String LOG_TAG = "MapboxCordovaPlugin";
 
-  // JSON encoding/decoding
-  public static final String JSON_CHARSET = "UTF-8";
-  public static final String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
-
   public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
 
@@ -54,6 +47,8 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_JUMP_TO = "jumpTo";
   private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
   private static final String ACTION_CREATE_OFFLINE_REGION = "createOfflineRegion";
+  private static final String ACTION_DOWNLOAD_OFFLINE_REGION = "downloadOfflineRegion";
+  private static final String ACTION_PAUSE_OFFLINE_REGION = "pauseOfflineRegion";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
@@ -98,7 +93,7 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_SHOW_USER_LOCATION.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       final boolean enabled = args.getBoolean(1);
       if (requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
@@ -112,7 +107,7 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_JUMP_TO.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       final JSONObject options = args.getJSONObject(1);
 
       cordova.getActivity().runOnUiThread(new Runnable() {
@@ -130,7 +125,7 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_GET_CENTER.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       try {
         callbackContext.success(map.getCenter());
       } catch (JSONException e) {
@@ -140,7 +135,7 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_SET_CENTER.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       final JSONArray center = args.getJSONArray(1);
       try {
         map.setCenter(center);
@@ -152,13 +147,13 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_GET_ZOOMLEVEL.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       callbackContext.success("" + map.getZoom());
     }
 
     else if (ACTION_SET_ZOOMLEVEL.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       final double zoom = args.getDouble(1);
       map.setZoom(zoom);
       callbackContext.success();
@@ -166,7 +161,7 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_ADD_MARKERS.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       try {
         map.addMarkers(args.getJSONArray(1));
         callbackContext.success();
@@ -177,7 +172,7 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
       final int mapId = args.getInt(0);
-      final MapInstance map = MapInstance.getMap(mapId);
+      final Map map = Map.getMap(mapId);
       map.addMarkerListener(
         new MapboxMap.OnInfoWindowClickListener() {
           @Override
@@ -200,10 +195,24 @@ public class Mapbox extends CordovaPlugin {
         }
       );
     }
+
     else if (ACTION_CREATE_OFFLINE_REGION.equals(action)) {
       final JSONObject options = args.getJSONObject(0);
-      this.createOfflineRegion(options, callbackContext);
+      final String progressCallbackId = args.getString(1);
+      final CallbackContext onProgress = new CallbackContext(progressCallbackId, this.webView);
+      this.createOfflineRegion(options, callbackContext, onProgress);
     }
+
+    else if (ACTION_DOWNLOAD_OFFLINE_REGION.equals(action)) {
+      final int offlineRegionId = args.getInt(0);
+      final OfflineRegion region = OfflineRegion.getOfflineRegion(offlineRegionId);
+      region.download();
+    }
+
+    else if (ACTION_PAUSE_OFFLINE_REGION.equals(action)) {
+
+    }
+
     else if (ACTION_GET_TILT.equals(action)) {
 //        if (mapView != null) {
 //          cordova.getActivity().runOnUiThread(new Runnable() {
@@ -321,19 +330,27 @@ public class Mapbox extends CordovaPlugin {
       @Override
       public void run() {
         MapView mapView = createMapView(accessToken, options);
-        MapInstance.createMap(mapView, options, new MapInstance.MapCreatedCallback() {
+        Map.create(mapView, options, new Map.MapCreatedCallback() {
           @Override
-          public void onMapReady(final MapInstance map) {
+          public void onCreate(final Map map) {
             JSONObject resp = new JSONObject();
             try {
               resp.put("id", map.getId());
               callback.success(resp);
               return;
             } catch (JSONException e) {
-              e.printStackTrace();
-              callback.error("Failed to create map.");
+              String error = "Failed to create map: " + e.getMessage();
+              Log.e(LOG_TAG, error);
+              callback.error(error);
               return;
             }
+          }
+
+          @Override
+          public void onError(String error) {
+            String message = "Failed to create map: " + error;
+            Log.e(LOG_TAG, message);
+            callback.error(message);
           }
         });
       }
@@ -370,49 +387,37 @@ public class Mapbox extends CordovaPlugin {
     return mapView;
   }
 
-  public void createOfflineRegion(JSONObject options, final CallbackContext callbackContext) throws JSONException {
-    String styleURL = options.getString("style");
-
-    final String regionName = options.getString("name");
-    double minZoom = options.getDouble("minZoom");
-    double maxZoom = options.getDouble("maxZoom");
-    JSONObject boundsOptions = options.getJSONObject("bounds");
-    double north = boundsOptions.getDouble("north");
-    double east = boundsOptions.getDouble("east");
-    double south = boundsOptions.getDouble("south");
-    double west = boundsOptions.getDouble("west");
-
-    LatLngBounds bounds = new LatLngBounds.Builder()
-            .include(new LatLng(north, west))
-            .include(new LatLng(south, east))
-            .build();
-    OfflineRegionDefinition definition = new OfflineTilePyramidRegionDefinition(styleURL, bounds, minZoom, maxZoom, this.retinaFactor);
-
-    // Sample way of encoding metadata from a JSONObject
-    final JSONObject metadata = new JSONObject();
-    byte[] encodedMetadata;
-    try {
-      metadata.put(JSON_FIELD_REGION_NAME, regionName);
-      String json = metadata.toString();
-      encodedMetadata = json.getBytes(JSON_CHARSET);
-    } catch (Exception e) {
-      Log.e(LOG_TAG, "Failed to encode metadata: " + e.getMessage());
-      encodedMetadata = null;
-    }
-
+  public void createOfflineRegion(JSONObject options, final CallbackContext callback, final CallbackContext onProgress) throws JSONException {
     OfflineManager offlineManager = OfflineManager.getInstance(this.webView.getContext());
     offlineManager.setAccessToken(this.accessToken);
-    offlineManager.createOfflineRegion(definition, encodedMetadata, new OfflineManager.CreateOfflineRegionCallback() {
+    OfflineRegion.create(offlineManager, this.retinaFactor, options, new OfflineRegion.OfflineRegionCreatedCallback() {
       @Override
-      public void onCreate(OfflineRegion offlineRegion) {
-        Log.d(LOG_TAG, "Offline region created: " + regionName);
-        callbackContext.success(metadata);
+      public void onCreate(OfflineRegion region) {
+        JSONObject resp = new JSONObject();
+        try {
+          resp.put("id", region.getId());
+          callback.success(resp);
+          return;
+        } catch (JSONException e) {
+          String error = "Failed to create offline region: " + e.getMessage();
+          Log.e(LOG_TAG, error);
+          callback.error(error);
+          return;
+        }
+      }
+
+      @Override
+      public void onProgress(JSONObject progress) {
+        PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
+        result.setKeepCallback(true);
+        onProgress.sendPluginResult(result);
       }
 
       @Override
       public void onError(String error) {
-        Log.e(LOG_TAG, "Error: " + error);
-        callbackContext.error(error);
+        String message = "Failed to create offline region: " + error;
+        Log.e(LOG_TAG, message);
+        callback.error(message);
       }
     });
   }
@@ -487,6 +492,25 @@ public class Mapbox extends CordovaPlugin {
     }
 
     return accessToken;
+  }
+
+  public static String getStyle(final String requested) {
+    if ("light".equalsIgnoreCase(requested)) {
+      return Style.LIGHT;
+    } else if ("dark".equalsIgnoreCase(requested)) {
+      return Style.DARK;
+    } else if ("emerald".equalsIgnoreCase(requested)) {
+      return Style.EMERALD;
+    } else if ("satellite".equalsIgnoreCase(requested)) {
+      return Style.SATELLITE;
+      // TODO not currently supported on Android
+      //} else if ("hybrid".equalsIgnoreCase(requested)) {
+      //    return Style.HYBRID;
+    } else if ("streets".equalsIgnoreCase(requested)) {
+      return Style.MAPBOX_STREETS;
+    } else {
+      return requested;
+    }
   }
 
 }

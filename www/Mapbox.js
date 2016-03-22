@@ -1,4 +1,7 @@
-var MapInstance = require("./map-instance");
+var MapInstance = require("./map-instance"),
+    OfflineRegion = require("./offline-region");
+
 module.exports = {
-    Map: MapInstance
+    Map: MapInstance,
+    OfflineRegion: OfflineRegion
 };
