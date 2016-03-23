@@ -5,26 +5,22 @@ var cordova = require("cordova"),
 function OfflineRegion(options) {
     var onLoad = _onLoad.bind(this),
         onProgress = _onProgress.bind(this),
-        onError = this._error.bind(this),
-        onProgressId = this._registerCallback('onProgress', onProgress);
+        onComplete = _onComplete.bind(this),
+        onError = _onError.bind(this),
+        onProgressId = this._registerCallback('onProgress', onProgress),
+        onCompleteId = this._registerCallback('onComplete', onComplete, onError);
 
-    this._error = onError;
+    this._error = this._error.bind(this);
     this._downloaded = false;
     this._downloading = false;
 
     this.initEvents("Mapbox.MapInstance");
     this.createStickyChannel("load");
+    this.createChannel("progress");
     this.createStickyChannel("complete");
     this.createStickyChannel("error");
-    this.createChannel("progress");
 
-    if (options.progress) {
-        var progress = options.progress;
-        delete options.progress;
-        this.on("progress", progress);
-    }
-
-    exec(onLoad, this._error, "Mapbox", "createOfflineRegion", [options, onProgressId]);
+    exec(onLoad, this._error, "Mapbox", "createOfflineRegion", [options, onProgressId, onCompleteId]);
 
     function _onLoad(resp) {
         this._id = resp.id;
@@ -35,6 +31,22 @@ function OfflineRegion(options) {
 
     function _onProgress(progress) {
         this.fire("progress", progress);
+    }
+
+    function _onComplete(resp) {
+        this._downloading = false;
+        this._downloaded = true;
+        this.fire("complete", resp);
+    }
+
+    function _onError(error) {
+        this._downloading = false;
+        this._downloaded = false;
+        try {
+            this._error(error);
+        } catch (e) {
+            this.fire("error", e);
+        }
     }
 }
 
@@ -72,28 +84,24 @@ OfflineRegion.prototype._registerCallback = function (name, success, fail) {
 
 OfflineRegion.prototype.download = function () {
     this._downloading = true;
-
     this._execAfterLoad(onSuccess, onError, "downloadOfflineRegion");
-
-    function onSuccess(resp) {
-        this._downloading = false;
-        this._downloaded = true;
-        this.fire("complete", resp);
-    }
-
-    function onError(error) {
-        this._downloading = false;
-        this._downloaded = false;
-        try {
-            this._error(error);
-        } catch (e) {
-            this.fire("error", e);
-        }
-    }
 };
 
 OfflineRegion.prototype.pause = function () {
+    this._downloading = false;
     this._execAfterLoad(successCallback, errorCallback, "pauseOfflineRegion");
 };
+
+Object.defineProperty(OfflineRegion, "downloading", {
+    get: function () {
+        return this._downloading;
+    }
+});
+
+Object.defineProperty(OfflineRegion, "downloaded", {
+    get: function () {
+        return this._downloaded;
+    }
+});
 
 module.exports = OfflineRegion;

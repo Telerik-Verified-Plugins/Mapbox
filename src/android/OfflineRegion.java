@@ -27,6 +27,7 @@ public class OfflineRegion {
 
     public interface OfflineRegionCreatedCallback {
         void onCreate(OfflineRegion region);
+        void onComplete(JSONObject progress);
         void onProgress(JSONObject progress);
         void onError(String error);
     }
@@ -131,14 +132,23 @@ public class OfflineRegion {
 
         @Override
         public void onStatusChanged(OfflineRegionStatus status) {
+            long completedCount = status.getCompletedResourceCount();
+            long requiredCount = status.getRequiredResourceCount();
+            JSONObject progress = new JSONObject();
+
             try {
-                JSONObject progress = new JSONObject();
                 progress.put("completedCount", status.getCompletedResourceCount());
                 progress.put("completedSize", status.getCompletedResourceSize());
                 progress.put("requiredCount", status.getRequiredResourceCount());
-                constructorCallback.onProgress(progress);
             } catch (JSONException e) {
                 constructorCallback.onError(e.getMessage());
+                return;
+            }
+
+            constructorCallback.onProgress(progress);
+
+            if (completedCount == requiredCount) {
+                constructorCallback.onComplete(progress);
             }
         }
 
