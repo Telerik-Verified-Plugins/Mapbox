@@ -207,10 +207,14 @@ public class Mapbox extends CordovaPlugin {
       final int offlineRegionId = args.getInt(0);
       final OfflineRegion region = OfflineRegion.getOfflineRegion(offlineRegionId);
       region.download();
+      // TODO: Need to fire callbackContext.success() upon completion and callbackContext.error() upon error.
     }
 
     else if (ACTION_PAUSE_OFFLINE_REGION.equals(action)) {
-
+      final int offlineRegionId = args.getInt(0);
+      final OfflineRegion region = OfflineRegion.getOfflineRegion(offlineRegionId);
+      region.pause();
+      // TODO: Need to fire callbackContext.success() upon completion and callbackContext.error() upon error.
     }
 
     else if (ACTION_GET_TILT.equals(action)) {
