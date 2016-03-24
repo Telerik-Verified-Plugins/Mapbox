@@ -41,12 +41,10 @@ function OfflineRegion(options) {
     function _onComplete(resp) {
         this._downloading = false;
         this._downloaded = true;
-        console.log("_onComplete()", resp);
         this.fire("complete", resp);
     }
 
     function _onError(error) {
-        console.log("_onError()", error);
         try {
             this._error(error);
         } catch (e) {
@@ -91,7 +89,7 @@ OfflineRegion.prototype.download = function () {
     this._downloading = true;
     this._execAfterLoad(onSuccess, this._error, "downloadOfflineRegion");
     function onSuccess() {
-        console.log("Download started!");
+        console.log("Mapbox OfflineRegion download started.");
     }
 };
 
@@ -99,7 +97,7 @@ OfflineRegion.prototype.pause = function () {
     this._downloading = false;
     this._execAfterLoad(onSuccess, this._error, "pauseOfflineRegion");
     function onSuccess() {
-        console.log("Download paused!");
+        console.log("Mapbox OfflineRegion download paused.");
     }
 };
 
