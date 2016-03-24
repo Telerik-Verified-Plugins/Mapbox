@@ -1,5 +1,7 @@
 package com.telerik.plugins.mapbox;
 
+import android.util.Log;
+
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.offline.OfflineManager;
@@ -15,6 +17,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 public class OfflineRegion {
+    public static final String LOG_TAG = "OfflineRegion";
+
     // JSON encoding/decoding
     public static final String JSON_CHARSET = "UTF-8";
     public static final String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
@@ -75,6 +79,7 @@ public class OfflineRegion {
                 @Override
                 public void onError(String error) {
                     constructorCallback.onError(error);
+                    Log.e(LOG_TAG, error);
                     OfflineRegion.removeOfflineRegion(getId());
                 }
             });
@@ -98,10 +103,12 @@ public class OfflineRegion {
     }
 
     public void download() {
+        Log.d(LOG_TAG, "download()");
         mapboxRegions.get(this.mapboxOfflineRegionId).setDownloadState(com.mapbox.mapboxsdk.offline.OfflineRegion.STATE_ACTIVE);
     }
 
     public void pause() {
+        Log.d(LOG_TAG, "pause()");
         mapboxRegions.get(this.mapboxOfflineRegionId).setDownloadState(com.mapbox.mapboxsdk.offline.OfflineRegion.STATE_INACTIVE);
     }
 
@@ -134,27 +141,32 @@ public class OfflineRegion {
         public void onStatusChanged(OfflineRegionStatus status) {
             long completedCount = status.getCompletedResourceCount();
             long requiredCount = status.getRequiredResourceCount();
+            double percentage = requiredCount >= 0 ? (100.0 * completedCount / requiredCount) : 0.0;
             JSONObject progress = new JSONObject();
 
             try {
-                progress.put("completedCount", status.getCompletedResourceCount());
+                progress.put("completedCount", completedCount);
                 progress.put("completedSize", status.getCompletedResourceSize());
-                progress.put("requiredCount", status.getRequiredResourceCount());
+                progress.put("requiredCount", requiredCount);
+                progress.put("percentage", percentage);
             } catch (JSONException e) {
                 constructorCallback.onError(e.getMessage());
                 return;
             }
 
-            constructorCallback.onProgress(progress);
-
-            if (completedCount == requiredCount) {
+            if (status.isComplete()) {
                 constructorCallback.onComplete(progress);
+            } else {
+                constructorCallback.onProgress(progress);
             }
         }
 
         @Override
         public void onError(OfflineRegionError error) {
-            constructorCallback.onError(error.getMessage());
+            String message = "OfflineRegionError: [" + error.getReason() + "] " + error.getMessage();
+            constructorCallback.onError(message);
+            Log.e(LOG_TAG, message);
+            pause();
         }
 
         @Override

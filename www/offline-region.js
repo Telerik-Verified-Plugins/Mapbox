@@ -36,12 +36,12 @@ function OfflineRegion(options) {
     function _onComplete(resp) {
         this._downloading = false;
         this._downloaded = true;
+        console.log("_onComplete()", resp);
         this.fire("complete", resp);
     }
 
     function _onError(error) {
-        this._downloading = false;
-        this._downloaded = false;
+        console.log("_onError()", error);
         try {
             this._error(error);
         } catch (e) {
@@ -54,6 +54,8 @@ EventsMixin(OfflineRegion.prototype);
 
 OfflineRegion.prototype._error = function (err) {
     var error = new Error("OfflineRegion error (ID: " + this._id + "): " + err);
+    this._downloading = false;
+    this._downloaded = false;
     console.warn("throwing OfflineRegionError: ", error);
     throw error;
 };
@@ -83,22 +85,30 @@ OfflineRegion.prototype._registerCallback = function (name, success, fail) {
 };
 
 OfflineRegion.prototype.download = function () {
+    console.log("download", this);
     this._downloading = true;
-    this._execAfterLoad(onSuccess, onError, "downloadOfflineRegion");
+    this._execAfterLoad(onSuccess, this._error, "downloadOfflineRegion");
+    function onSuccess() {
+        console.log("Download started!");
+    }
 };
 
 OfflineRegion.prototype.pause = function () {
+    console.log("pause", this);
     this._downloading = false;
-    this._execAfterLoad(successCallback, errorCallback, "pauseOfflineRegion");
+    this._execAfterLoad(onSuccess, this._error, "pauseOfflineRegion");
+    function onSuccess() {
+        console.log("Download paused!");
+    }
 };
 
-Object.defineProperty(OfflineRegion, "downloading", {
+Object.defineProperty(OfflineRegion.prototype, "downloading", {
     get: function () {
         return this._downloading;
     }
 });
 
-Object.defineProperty(OfflineRegion, "downloaded", {
+Object.defineProperty(OfflineRegion.prototype, "downloaded", {
     get: function () {
         return this._downloaded;
     }
