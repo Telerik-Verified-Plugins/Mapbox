@@ -80,8 +80,6 @@ OfflineRegion.prototype._execAfterLoad = function () {
 OfflineRegion.prototype._registerCallback = function (name, success, fail) {
     var callbackId = "MapboxOfflineRegion" + name + cordova.callbackId++;
 
-    console.log("_registerCallback(): " + callbackId);
-
     success = success ||  function () { console.log(callbackId + "() success!", arguments); };
     fail = fail ||  function () { console.log(callbackId + "() fail :(", arguments); };
 
@@ -90,7 +88,6 @@ OfflineRegion.prototype._registerCallback = function (name, success, fail) {
 };
 
 OfflineRegion.prototype.download = function () {
-    console.log("download", this);
     this._downloading = true;
     this._execAfterLoad(onSuccess, this._error, "downloadOfflineRegion");
     function onSuccess() {
@@ -99,7 +96,6 @@ OfflineRegion.prototype.download = function () {
 };
 
 OfflineRegion.prototype.pause = function () {
-    console.log("pause", this);
     this._downloading = false;
     this._execAfterLoad(onSuccess, this._error, "pauseOfflineRegion");
     function onSuccess() {
