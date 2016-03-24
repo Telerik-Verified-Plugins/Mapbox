@@ -10,7 +10,7 @@ function MapInstance(options) {
     this.initEvents("Mapbox.MapInstance");
     this.createStickyChannel("load");
 
-    exec(onLoad, this._error, "Mapbox", "create", [options]);
+    exec(onLoad, this._error, "Mapbox", "createMap", [options]);
 
     function _onLoad(resp) {
         this._id = resp.id;

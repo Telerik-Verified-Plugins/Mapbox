@@ -43,7 +43,7 @@ public class Mapbox extends CordovaPlugin {
 
   private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
 
-  private static final String ACTION_CREATE = "create";
+  private static final String ACTION_CREATE_MAP = "createMap";
   private static final String ACTION_JUMP_TO = "jumpTo";
   private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
   private static final String ACTION_CREATE_OFFLINE_REGION = "createOfflineRegion";
@@ -83,11 +83,11 @@ public class Mapbox extends CordovaPlugin {
     final CordovaArgs args = command.getArgs();
     final CallbackContext callbackContext = command.getCallbackContext();
 
-    if (ACTION_CREATE.equals(action)) {
+    if (ACTION_CREATE_MAP.equals(action)) {
       final JSONObject options = args.getJSONObject(0);
       boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
       if (!showUserLocation || requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
-        this.create(options, callbackContext);
+        this.createMap(options, callbackContext);
       }
     }
 
@@ -324,7 +324,7 @@ public class Mapbox extends CordovaPlugin {
     return true;
   }
 
-  private void create(final JSONObject options, final CallbackContext callback) {
+  private void createMap(final JSONObject options, final CallbackContext callback) {
     if (accessToken == null) {
       callback.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
       return;
@@ -469,17 +469,40 @@ public class Mapbox extends CordovaPlugin {
     Command.execute(this, commandId);
   }
 
-//  public void onPause(boolean multitasking) {
-//    mapView.onPause();
-//  }
-//
-//  public void onResume(boolean multitasking) {
-//    mapView.onResume();
-//  }
-//
-//  public void onDestroy() {
-//    mapView.onDestroy();
-//  }
+  @Override
+  public void onStart() {
+    for (Map map : Map.maps()) {
+      map.getMapView().onStart();
+    }
+  }
+
+  @Override
+  public void onResume(boolean multitasking) {
+    for (Map map : Map.maps()) {
+      map.getMapView().onResume();
+    }
+  }
+
+  @Override
+  public void onPause(boolean multitasking) {
+    for (Map map : Map.maps()) {
+      map.getMapView().onPause();
+    }
+  }
+
+  @Override
+  public void onStop() {
+    for (Map map : Map.maps()) {
+      map.getMapView().onStop();
+    }
+  }
+
+  @Override
+  public void onDestroy() {
+    for (Map map : Map.maps()) {
+      map.getMapView().onDestroy();
+    }
+  }
 
   private float getRetinaFactor() {
     Activity activity = this.cordova.getActivity();

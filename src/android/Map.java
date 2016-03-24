@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 public class Map {
@@ -28,6 +29,10 @@ public class Map {
     public static void create(MapView mapView, JSONObject options, MapCreatedCallback callback) {
         Map map = new Map(mapView, options, callback);
         maps.put(map.getId(), map);
+    }
+
+    public static Collection<Map> maps() {
+        return maps.values();
     }
 
     public static Map getMap(int id) {
