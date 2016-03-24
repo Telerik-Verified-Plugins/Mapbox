@@ -1,7 +1,5 @@
 package com.telerik.plugins.mapbox;
 
-import android.util.Log;
-
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.offline.OfflineManager;
@@ -17,8 +15,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 public class OfflineRegion {
-    public static final String LOG_TAG = "OfflineRegion";
-
     // JSON encoding/decoding
     public static final String JSON_CHARSET = "UTF-8";
     public static final String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
@@ -79,7 +75,6 @@ public class OfflineRegion {
                 @Override
                 public void onError(String error) {
                     constructorCallback.onError(error);
-                    Log.e(LOG_TAG, error);
                     OfflineRegion.removeOfflineRegion(getId());
                 }
             });
@@ -103,12 +98,10 @@ public class OfflineRegion {
     }
 
     public void download() {
-        Log.d(LOG_TAG, "download()");
         mapboxRegions.get(this.mapboxOfflineRegionId).setDownloadState(com.mapbox.mapboxsdk.offline.OfflineRegion.STATE_ACTIVE);
     }
 
     public void pause() {
-        Log.d(LOG_TAG, "pause()");
         mapboxRegions.get(this.mapboxOfflineRegionId).setDownloadState(com.mapbox.mapboxsdk.offline.OfflineRegion.STATE_INACTIVE);
     }
 
@@ -165,7 +158,6 @@ public class OfflineRegion {
         public void onError(OfflineRegionError error) {
             String message = "OfflineRegionError: [" + error.getReason() + "] " + error.getMessage();
             constructorCallback.onError(message);
-            Log.e(LOG_TAG, message);
             pause();
         }
 

@@ -421,7 +421,6 @@ public class Mapbox extends CordovaPlugin {
       public void onComplete(JSONObject progress) {
         Log.d(LOG_TAG, "complete");
         PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
-        result.setKeepCallback(true);
         onComplete.sendPluginResult(result);
       }
 
