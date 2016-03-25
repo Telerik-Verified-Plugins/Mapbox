@@ -186,6 +186,27 @@
   }];
 }
 
+- (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
+    NSDictionary *args = [command.arguments objectAtIndex:0];
+
+    NSNumber *lat = [args valueForKey:@"lat"];
+    NSNumber *lng = [args valueForKey:@"lng"];
+
+    CGPoint screenPoint = [_mapView  convertCoordinate:CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue)
+                                         toPointToView:_mapView];
+
+    NSArray * point = [NSArray arrayWithObjects:
+                       [NSNumber numberWithFloat:screenPoint.x],
+                       [NSNumber numberWithFloat:screenPoint.y],
+                       nil];
+    
+    CDVPluginResult *pluginResult = [ CDVPluginResult
+                                     resultWithStatus: CDVCommandStatus_OK
+                                     messageAsArray: point
+                                     ];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 #pragma mark - MGLMapViewDelegate
 
 // this method is invoked every time an annotation is clicked

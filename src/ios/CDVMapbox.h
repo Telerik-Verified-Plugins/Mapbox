@@ -23,4 +23,7 @@
 - (void) getZoomLevel:(CDVInvokedUrlCommand*)command;
 - (void) setZoomLevel:(CDVInvokedUrlCommand*)command;
 
+- (void) convertCoordinate:(CDVInvokedUrlCommand*)command;
+- (void) convertPoint:(CDVInvokedUrlCommand*)command;
+
 @end
