@@ -50,6 +50,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_CREATE_OFFLINE_REGION = "createOfflineRegion";
   private static final String ACTION_DOWNLOAD_OFFLINE_REGION = "downloadOfflineRegion";
   private static final String ACTION_PAUSE_OFFLINE_REGION = "pauseOfflineRegion";
+  private static final String ACTION_OFFLINE_REGION_STATUS = "offlineRegionStatus";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
@@ -225,6 +226,23 @@ public class Mapbox extends CordovaPlugin {
       callbackContext.success();
     }
 
+    else if (ACTION_OFFLINE_REGION_STATUS.equals(action)) {
+      final int offlineRegionId = args.getInt(0);
+      final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
+
+      region.getStatus(new MapboxManager.OfflineRegionStatusCallback() {
+        @Override
+        public void onStatus(JSONObject status) {
+          callbackContext.success(status);
+        }
+
+        @Override
+        public void onError(String error) {
+          callbackContext.error(error);
+        }
+      });
+    }
+
     else if (ACTION_GET_TILT.equals(action)) {
 //        if (mapView != null) {
 //          cordova.getActivity().runOnUiThread(new Runnable() {
@@ -333,69 +351,65 @@ public class Mapbox extends CordovaPlugin {
   }
 
   private void createMap(final JSONObject options, final CallbackContext callback) {
-    if (accessToken == null) {
-      callback.error(MAPBOX_ACCESSTOKEN_RESOURCE_KEY + " not set in strings.xml");
-      return;
-    }
-
-    cordova.getActivity().runOnUiThread(new Runnable() {
+      cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        MapView mapView = createMapView(accessToken, options);
-        Map.create(mapView, options, new Map.MapCreatedCallback() {
-          @Override
-          public void onCreate(final Map map) {
-            JSONObject resp = new JSONObject();
-            try {
-              resp.put("id", map.getId());
-              callback.success(resp);
-              return;
-            } catch (JSONException e) {
-              String error = "Failed to create map: " + e.getMessage();
-              Log.e(LOG_TAG, error);
-              callback.error(error);
-              return;
+        try {
+          MapView mapView = createMapView(accessToken, options);
+          Map.create(mapView, options, new Map.MapCreatedCallback() {
+            @Override
+            public void onCreate(final Map map) {
+              JSONObject resp = new JSONObject();
+              try {
+                resp.put("id", map.getId());
+                callback.success(resp);
+                return;
+              } catch (JSONException e) {
+                String error = "Failed to create map: " + e.getMessage();
+                Log.e(LOG_TAG, error);
+                callback.error(error);
+                return;
+              }
             }
-          }
 
-          @Override
-          public void onError(String error) {
-            String message = "Failed to create map: " + error;
-            Log.e(LOG_TAG, message);
-            callback.error(message);
-          }
-        });
+            @Override
+            public void onError(String error) {
+              String message = "Failed to create map: " + error;
+              Log.e(LOG_TAG, message);
+              callback.error(message);
+            }
+          });
+        } catch (JSONException e) {
+          callback.error(e.getMessage());
+        }
       }
     });
   }
 
-  private MapView createMapView(String accessToken, JSONObject options) {
+  private MapView createMapView(String accessToken, JSONObject options) throws JSONException {
     MapView mapView = new MapView(this.webView.getContext());
     mapView.setAccessToken(accessToken);
 
-    try {
-      final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-      final int left = (int) (retinaFactor * (margins == null || margins.isNull("left") ? 0 : margins.getInt("left")));
-      final int right = (int) (retinaFactor * (margins == null || margins.isNull("right") ? 0 : margins.getInt("right")));
-      final int top = (int) (retinaFactor * (margins == null || margins.isNull("top") ? 0 : margins.getInt("top")));
-      final int bottom = (int) (retinaFactor * (margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom")));
+    final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
+    final int left = (int) (retinaFactor * (margins == null || margins.isNull("left") ? 0 : margins.getInt("left")));
+    final int right = (int) (retinaFactor * (margins == null || margins.isNull("right") ? 0 : margins.getInt("right")));
+    final int top = (int) (retinaFactor * (margins == null || margins.isNull("top") ? 0 : margins.getInt("top")));
+    final int bottom = (int) (retinaFactor * (margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom")));
 
-      // need to do this to register a receiver which onPause later needs
-      mapView.onResume();
-      mapView.onCreate(null);
+    // need to do this to register a receiver which onPause later needs
+    mapView.onResume();
+    mapView.onCreate(null);
 
-      // position the mapView overlay
-      int webViewWidth = webView.getView().getWidth();
-      int webViewHeight = webView.getView().getHeight();
-      final FrameLayout layout = (FrameLayout) webView.getView().getParent();
-      FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
-      params.setMargins(left, top, right, bottom);
-      mapView.setLayoutParams(params);
+    // position the mapView overlay
+    int webViewWidth = webView.getView().getWidth();
+    int webViewHeight = webView.getView().getHeight();
+    final FrameLayout layout = (FrameLayout) webView.getView().getParent();
+    FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
+    params.setMargins(left, top, right, bottom);
+    mapView.setLayoutParams(params);
 
-      layout.addView(mapView);
-    } catch (JSONException e) {
-      e.printStackTrace();
-    }
+    layout.addView(mapView);
+
     return mapView;
   }
 
@@ -427,7 +441,7 @@ public class Mapbox extends CordovaPlugin {
       public void run() {
         OfflineManager offlineManager = OfflineManager.getInstance(webView.getContext());
         offlineManager.setAccessToken(accessToken);
-        mapboxManager.createOfflineRegion(options, callback, new MapboxManager.OfflineRegionStatusCallback() {
+        mapboxManager.createOfflineRegion(options, callback, new MapboxManager.OfflineRegionProgressCallback() {
           @Override
           public void onProgress(JSONObject progress) {
             PluginResult result = new PluginResult(PluginResult.Status.OK, progress);

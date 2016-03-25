@@ -1,42 +1,51 @@
 package com.telerik.plugins.mapbox;
 
-import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.geometry.LatLngBounds;
-import com.mapbox.mapboxsdk.offline.OfflineManager;
-import com.mapbox.mapboxsdk.offline.OfflineRegionDefinition;
 import com.mapbox.mapboxsdk.offline.OfflineRegionError;
 import com.mapbox.mapboxsdk.offline.OfflineRegionStatus;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+
 public class OfflineRegion {
-    protected interface OfflineRegionCreateCallback {
-        void onCreate(OfflineRegion region);
-        void onError(String error);
-    }
 
-    private int id;
+    public static final String JSON_CHARSET = "UTF-8";
 
-    private long mapboxOfflineRegionId;
-
-    private OfflineRegionCreateCallback createCallback;
-
-    private String regionName;
+    private JSONObject metadata;
 
     private com.mapbox.mapboxsdk.offline.OfflineRegion region;
 
-    protected OfflineRegion(int id, com.mapbox.mapboxsdk.offline.OfflineRegion region) {
-        this.id = id;
+    protected OfflineRegion(com.mapbox.mapboxsdk.offline.OfflineRegion region) throws JSONException, UnsupportedEncodingException {
         this.region = region;
+        byte[] encodedMetadata = region.getMetadata();
+        this.metadata = new JSONObject(new String(encodedMetadata, JSON_CHARSET));
     }
 
-    public int getId() {
-        return this.id;
+    public Long getId() {
+        return this.region.getID();
     }
 
-    public void setRegionName(String regionName) {
-        this.regionName = regionName;
+    public JSONObject getMetadata() {
+        return this.metadata;
+    }
+
+    public void getStatus(final MapboxManager.OfflineRegionStatusCallback statusCallback) {
+        this.region.getStatus(new com.mapbox.mapboxsdk.offline.OfflineRegion.OfflineRegionStatusCallback() {
+            @Override
+            public void onStatus(OfflineRegionStatus status) {
+                try {
+                    statusCallback.onStatus(statusToJSON(status));
+                } catch (JSONException e) {
+                    this.onError(e.getMessage());
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                statusCallback.onError(error);
+            }
+        });
     }
 
     public void download() {
@@ -47,51 +56,54 @@ public class OfflineRegion {
         this.region.setDownloadState(com.mapbox.mapboxsdk.offline.OfflineRegion.STATE_INACTIVE);
     }
 
-    public void setObserver(MapboxManager.OfflineRegionStatusCallback statusCallback) {
+    public void setObserver(MapboxManager.OfflineRegionProgressCallback statusCallback) {
         this.region.setObserver(new OfflineRegionObserver(statusCallback));
     }
 
-    private class OfflineRegionObserver implements com.mapbox.mapboxsdk.offline.OfflineRegion.OfflineRegionObserver {
-        MapboxManager.OfflineRegionStatusCallback statusCallback;
+    private JSONObject statusToJSON(OfflineRegionStatus status) throws JSONException {
+        long completedCount = status.getCompletedResourceCount();
+        long requiredCount = status.getRequiredResourceCount();
+        double percentage = requiredCount >= 0 ? (100.0 * completedCount / requiredCount) : 0.0;
+        JSONObject jsonStatus = new JSONObject()
+            .put("completedCount", completedCount)
+            .put("completedSize", status.getCompletedResourceSize())
+            .put("requiredCount", requiredCount)
+            .put("percentage", percentage);
 
-        OfflineRegionObserver(MapboxManager.OfflineRegionStatusCallback callback) {
-            this.statusCallback = callback;
+        return jsonStatus;
+    }
+
+    private class OfflineRegionObserver implements com.mapbox.mapboxsdk.offline.OfflineRegion.OfflineRegionObserver {
+        private MapboxManager.OfflineRegionProgressCallback progressCallback;
+
+        OfflineRegionObserver(MapboxManager.OfflineRegionProgressCallback callback) {
+            this.progressCallback = callback;
         }
 
         @Override
         public void onStatusChanged(OfflineRegionStatus status) {
-            long completedCount = status.getCompletedResourceCount();
-            long requiredCount = status.getRequiredResourceCount();
-            double percentage = requiredCount >= 0 ? (100.0 * completedCount / requiredCount) : 0.0;
-            JSONObject progress = new JSONObject();
-
             try {
-                progress.put("completedCount", completedCount);
-                progress.put("completedSize", status.getCompletedResourceSize());
-                progress.put("requiredCount", requiredCount);
-                progress.put("percentage", percentage);
+                JSONObject progress = statusToJSON(status);
+                if (!status.isComplete()) {
+                    progressCallback.onProgress(progress);
+                } else {
+                    progressCallback.onComplete(progress);
+                }
             } catch (JSONException e) {
-                statusCallback.onError(e.getMessage());
-                return;
-            }
-
-            if (status.isComplete()) {
-                statusCallback.onComplete(progress);
-            } else {
-                statusCallback.onProgress(progress);
+                progressCallback.onError(e.getMessage());
             }
         }
 
         @Override
         public void onError(OfflineRegionError error) {
             String message = "OfflineRegionError: [" + error.getReason() + "] " + error.getMessage();
-            statusCallback.onError(message);
+            progressCallback.onError(message);
             pause();
         }
 
         @Override
         public void mapboxTileCountLimitExceeded(long limit) {
-            statusCallback.onError("Tile limit exceeded (limit: " + limit + ")");
+            progressCallback.onError("Tile limit exceeded (limit: " + limit + ")");
         }
     }
 }

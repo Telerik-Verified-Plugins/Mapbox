@@ -19,23 +19,21 @@ class MapboxManager {
 
     // JSON encoding/decoding
     public static final String JSON_CHARSET = "UTF-8";
-    public static final String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
-
-    private String mapboxAccessToken;
+    public static final String JSON_FIELD_ID = "id";
+    public static final String JSON_FIELD_REGION_NAME = "name";
 
     private Float density;
 
-    private CordovaWebView cordovaWebView;
-
     private OfflineManager offlineManager;
 
-    private HashMap<Integer, OfflineRegion> regions = new HashMap<Integer, OfflineRegion>();
-
-    private HashMap<Long, com.mapbox.mapboxsdk.offline.OfflineRegion> mapboxRegions = new HashMap<Long, com.mapbox.mapboxsdk.offline.OfflineRegion>();
-
-    private int ids = 0;
+    private HashMap<Long, OfflineRegion> regions = new HashMap<Long, OfflineRegion>();
 
     public interface OfflineRegionStatusCallback {
+        void onStatus(JSONObject status);
+        void onError(String error);
+    }
+
+    public interface OfflineRegionProgressCallback {
         void onComplete(JSONObject progress);
         void onProgress(JSONObject progress);
         void onError(String error);
@@ -47,10 +45,9 @@ class MapboxManager {
     }
 
     public MapboxManager(String accessToken, Float screenDensity, CordovaWebView webView) {
-        this.mapboxAccessToken = accessToken;
         this.density = screenDensity;
-        this.cordovaWebView = webView;
         this.offlineManager = OfflineManager.getInstance(webView.getContext());
+        this.offlineManager.setAccessToken(accessToken);
     }
 
     public void loadOfflineRegions(final LoadOfflineRegionsCallback callback) {
@@ -58,29 +55,35 @@ class MapboxManager {
             @Override
             public void onList(com.mapbox.mapboxsdk.offline.OfflineRegion[] offlineRegions) {
                 try {
-                    JSONArray regions = new JSONArray();
+                    JSONArray responses = new JSONArray();
                     JSONObject response;
+                    OfflineRegion region;
                     for (com.mapbox.mapboxsdk.offline.OfflineRegion offlineRegion : offlineRegions) {
-                        OfflineRegion region = createOfflineRegion(offlineRegion);
-                        response = new JSONObject();
-                        response.put("id", region.getId());
-                        regions.put(response);
+                        if (regions.containsKey(offlineRegion.getID())) {
+                            region = regions.get(offlineRegion.getID());
+                        } else {
+                            region = createOfflineRegion(offlineRegion);
+                        }
+                        response = region.getMetadata();
+                        response.put(JSON_FIELD_ID, region.getId());
+                        responses.put(response);
                     }
-                    callback.onList(regions);
+                    callback.onList(responses);
                 } catch (JSONException e) {
-                    String error = "Error loading OfflineRegions: " + e.getMessage();
-                    callback.onError(error);
+                    this.onError(e.getMessage());
+                } catch (UnsupportedEncodingException e) {
+                    this.onError(e.getMessage());
                 }
             }
 
             @Override
             public void onError(String error) {
-
+                callback.onError(error);
             }
         });
     }
 
-    public void createOfflineRegion(final JSONObject options, final CallbackContext callback, final OfflineRegionStatusCallback offlineRegionStatusCallback) {
+    public void createOfflineRegion(final JSONObject options, final CallbackContext callback, final OfflineRegionProgressCallback offlineRegionStatusCallback) {
         try {
             final String regionName = options.getString("name");
 
@@ -95,10 +98,12 @@ class MapboxManager {
                     try {
                         OfflineRegion region = createOfflineRegion(offlineRegion);
                         region.setObserver(offlineRegionStatusCallback);
-                        JSONObject resp = new JSONObject();
-                        resp.put("id", region.getId());
-                        callback.success(resp);
+                        JSONObject response = region.getMetadata();
+                        response.put(JSON_FIELD_ID, region.getId());
+                        callback.success(response);
                     } catch (JSONException e) {
+                        this.onError(e.getMessage());
+                    } catch (UnsupportedEncodingException e) {
                         this.onError(e.getMessage());
                     }
                 }
@@ -116,21 +121,17 @@ class MapboxManager {
         }
     }
 
-    private OfflineRegion createOfflineRegion(com.mapbox.mapboxsdk.offline.OfflineRegion offlineRegion) throws JSONException {
-        int id = this.ids++;
-        OfflineRegion region = new OfflineRegion(id, offlineRegion);
-        byte[] encodedMetadata = offlineRegion.getMetadata();
-        JSONObject metadata = new JSONObject(encodedMetadata.toString());
-        region.setRegionName(metadata.getString(JSON_FIELD_REGION_NAME));
-        regions.put(id, region);
+    private OfflineRegion createOfflineRegion(com.mapbox.mapboxsdk.offline.OfflineRegion offlineRegion) throws JSONException, UnsupportedEncodingException {
+        OfflineRegion region = new OfflineRegion(offlineRegion);
+        regions.put(offlineRegion.getID(), region);
         return region;
     }
 
-    public OfflineRegion getOfflineRegion(int id) {
+    public OfflineRegion getOfflineRegion(long id) {
         return regions.get(id);
     }
 
-    public void removeOfflineRegion(int id) {
+    public void removeOfflineRegion(long id) {
         regions.remove(id);
     }
 

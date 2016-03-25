@@ -1,23 +1,9 @@
 var exec = require("cordova/exec"),
     MapInstance = require("./map-instance"),
-    OfflineRegion = require("./offline-region"),
-    offlineRegions = [];
-
-
-function listOfflineRegions(successCallback, errorCallback) {
-    exec(
-        function (regions) {
-            console.log("Offline regions: ", regions);
-        },
-        function (error) {
-            console.error("Error getting offline regions: ", error);
-        },
-        "Mapbox",
-        "listOfflineRegions"
-    );
-}
+    offline = require("./offline-region");
 
 module.exports = {
     Map: MapInstance,
-    OfflineRegion: OfflineRegion
+    createOfflineRegion: offline.createOfflineRegion,
+    listOfflineRegions: offline.listOfflineRegions
 };
