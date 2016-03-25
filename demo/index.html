@@ -28,7 +28,8 @@
             <button onclick="zoomOut()">-</button>
             <button onclick="setCenter()">set center</button>
             <button onclick="getCenter()">get center</button>
-            <button onclick="getScreenCoords()">ctr2screen</button>
+            <button onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
+            <button onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
             <button onclick="hideMap()">hide</button>
         </div>
     </div>
@@ -178,10 +179,20 @@
     }
 
 
-    function getScreenCoords() {
-        Mapbox.convertCoordinate({
-                    'lat': 52.3732160,
-                    'lng': 4.8941680
+    function coords2Screen(coords) {
+        Mapbox.convertCoordinate(coords,
+                function (result) {
+                    alert(result)
+                },
+                function (error) {
+                    alert(error)
+                })
+    }
+
+    function screen2Coords(point){
+        Mapbox.convertPoint({
+                    'x':point.x,
+                    'y':point.y
                 },
                 function (result) {
                     alert(result)
