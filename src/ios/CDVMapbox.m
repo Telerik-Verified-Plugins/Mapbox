@@ -189,50 +189,46 @@
 - (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
   NSDictionary *args = command.arguments[0];
 
-  NSNumber *lat = [args valueForKey:@"lat"];
-  NSNumber *lng = [args valueForKey:@"lng"];
+  double lat = [[args valueForKey:@"lat"]doubleValue];
+  double lng = [[args valueForKey:@"lng"]doubleValue];
 
-  if (lat == nil || lng == nil ){
+  if ((fabs(lat) > 90)||(fabs(lng) > 180)){
     CDVPluginResult * pluginResult = [CDVPluginResult
             resultWithStatus:CDVCommandStatus_ERROR
-             messageAsString:@"Incorrect point coordinates."];
+             messageAsString:@"Incorrect Leaflet.LatLng value."];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
   }
 
-  CGPoint screenPoint = [_mapView  convertCoordinate:CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue)
+  CGPoint screenPoint = [_mapView  convertCoordinate:CLLocationCoordinate2DMake(lat, lng)
                                        toPointToView:_mapView];
 
-  NSArray * point = @[@(screenPoint.x), @(screenPoint.y)];
+  NSDictionary *point = @{@"x" : @(screenPoint.x), @"y" : @(screenPoint.y)};
 
-  CDVPluginResult *pluginResult = [ CDVPluginResult
-          resultWithStatus: CDVCommandStatus_OK
-            messageAsArray: point
-  ];
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:point];
+
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) convertPoint:(CDVInvokedUrlCommand *)command {
   NSDictionary *args = command.arguments[0];
 
-  NSNumber *x = [args valueForKey:@"x"];
-  NSNumber *y = [args valueForKey:@"y"];
+  float x = [[args valueForKey:@"x"] floatValue];
+  float y = [[args valueForKey:@"y"] floatValue];
 
-  if (x == nil || y == nil ){
+  if ((x < 0 || y < 0)){
     CDVPluginResult * pluginResult = [CDVPluginResult
             resultWithStatus:CDVCommandStatus_ERROR
-             messageAsString:@"Incorrect point coordinates."];
+             messageAsString:@"Incorrect Leaflet.Point point coordinates."];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
   }
 
-  CLLocationCoordinate2D location = [_mapView convertPoint:CGPointMake(x.floatValue,  y.floatValue)
+  CLLocationCoordinate2D location = [_mapView convertPoint:CGPointMake(x, y)
                                       toCoordinateFromView:_mapView];
 
-  NSArray * coordinates = @[@(location.longitude), @(location.latitude)];
+  NSDictionary *coordinates = @{@"lat" : @(location.latitude), @"lng" : @(location.longitude)};
 
-  CDVPluginResult *pluginResult = [ CDVPluginResult
-          resultWithStatus: CDVCommandStatus_OK
-            messageAsArray: coordinates
-  ];
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:coordinates];
+
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 

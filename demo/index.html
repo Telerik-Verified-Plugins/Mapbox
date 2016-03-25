@@ -181,8 +181,8 @@
 
     function coords2Screen(coords) {
         Mapbox.convertCoordinate(coords,
-                function (result) {
-                    alert(result)
+                function (point) {
+                    alert("x:"+point.x+" - y:"+point.y);
                 },
                 function (error) {
                     alert(error)
@@ -194,8 +194,8 @@
                     'x':point.x,
                     'y':point.y
                 },
-                function (result) {
-                    alert(result)
+                function (latlng) {
+                    alert("lat:"+latlng.lat+" - lng:"+latlng.lng);
                 },
                 function (error) {
                     alert(error)
