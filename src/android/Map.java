@@ -161,10 +161,6 @@ public class Map {
     }
 
     private void applyOptions(JSONObject options) throws JSONException {
-        if (options.has("style")) {
-            this.mapView.setStyleUrl(Mapbox.getStyle(options.optString("style")));
-        }
-
         if (!options.isNull("showUserLocation")) {
             this.showUserLocation(options.getBoolean("showUserLocation"));
         }

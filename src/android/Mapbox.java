@@ -389,6 +389,7 @@ public class Mapbox extends CordovaPlugin {
   private MapView createMapView(String accessToken, JSONObject options) throws JSONException {
     MapView mapView = new MapView(this.webView.getContext());
     mapView.setAccessToken(accessToken);
+    mapView.setStyleUrl(Mapbox.getStyle(options.optString("style")));
 
     final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
     final int left = (int) (retinaFactor * (margins == null || margins.isNull("left") ? 0 : margins.getInt("left")));
