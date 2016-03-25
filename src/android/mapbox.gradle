@@ -2,11 +2,12 @@ ext.cdvMinSdkVersion = 15
 
 repositories {
     mavenCentral()
+    maven { url "http://oss.sonatype.org/content/repositories/snapshots/" }
 }
 
 dependencies {
     compile 'com.android.support:appcompat-v7:23.0.1'
-    compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:4.0.0-beta.2@aar'){
+    compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:4.0.0-SNAPSHOT@aar'){
         transitive=true
     }
 }

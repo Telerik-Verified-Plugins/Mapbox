@@ -46,6 +46,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_CREATE_MAP = "createMap";
   private static final String ACTION_JUMP_TO = "jumpTo";
   private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
+  private static final String ACTION_LIST_OFFLINE_REGIONS = "listOfflineRegions";
   private static final String ACTION_CREATE_OFFLINE_REGION = "createOfflineRegion";
   private static final String ACTION_DOWNLOAD_OFFLINE_REGION = "downloadOfflineRegion";
   private static final String ACTION_PAUSE_OFFLINE_REGION = "pauseOfflineRegion";
@@ -64,12 +65,15 @@ public class Mapbox extends CordovaPlugin {
   private static float retinaFactor;
   private String accessToken;
 
+  private MapboxManager mapboxManager;
+
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
 
     this.retinaFactor = this.getRetinaFactor();
     this.accessToken = this.getAccessToken();
+    this.mapboxManager = new MapboxManager(accessToken, retinaFactor, webView);
   }
 
   @Override
@@ -196,6 +200,10 @@ public class Mapbox extends CordovaPlugin {
       );
     }
 
+    else if (ACTION_LIST_OFFLINE_REGIONS.equals(action)) {
+      this.listOfflineRegions(callbackContext);
+    }
+
     else if (ACTION_CREATE_OFFLINE_REGION.equals(action)) {
       final JSONObject options = args.getJSONObject(0);
       final CallbackContext onProgress = new CallbackContext(args.getString(1), this.webView);
@@ -205,14 +213,14 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_DOWNLOAD_OFFLINE_REGION.equals(action)) {
       final int offlineRegionId = args.getInt(0);
-      final OfflineRegion region = OfflineRegion.getOfflineRegion(offlineRegionId);
+      final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
       region.download();
       callbackContext.success();
     }
 
     else if (ACTION_PAUSE_OFFLINE_REGION.equals(action)) {
       final int offlineRegionId = args.getInt(0);
-      final OfflineRegion region = OfflineRegion.getOfflineRegion(offlineRegionId);
+      final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
       region.pause();
       callbackContext.success();
     }
@@ -391,46 +399,58 @@ public class Mapbox extends CordovaPlugin {
     return mapView;
   }
 
-  public void createOfflineRegion(JSONObject options, final CallbackContext callback, final CallbackContext onProgress, final CallbackContext onComplete) throws JSONException {
-    OfflineManager offlineManager = OfflineManager.getInstance(this.webView.getContext());
-    offlineManager.setAccessToken(this.accessToken);
-    OfflineRegion.create(offlineManager, this.retinaFactor, options, new OfflineRegion.OfflineRegionCreatedCallback() {
+  public void listOfflineRegions(final CallbackContext callback) {
+    cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
-      public void onCreate(OfflineRegion region) {
-        JSONObject resp = new JSONObject();
-        try {
-          resp.put("id", region.getId());
-          callback.success(resp);
-          return;
-        } catch (JSONException e) {
-          String error = "Failed to create offline region: " + e.getMessage();
-          Log.e(LOG_TAG, error);
-          callback.error(error);
-          return;
-        }
-      }
+      public void run() {
+        OfflineManager offlineManager = OfflineManager.getInstance(webView.getContext());
+        offlineManager.setAccessToken(accessToken);
+        mapboxManager.loadOfflineRegions(new MapboxManager.LoadOfflineRegionsCallback() {
+          @Override
+          public void onList(JSONArray offlineRegions) {
+            callback.success(offlineRegions);
+          }
 
-      @Override
-      public void onProgress(JSONObject progress) {
-        PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
-        result.setKeepCallback(true);
-        onProgress.sendPluginResult(result);
+          @Override
+          public void onError(String error) {
+            String message = "Error loading offline regions: " + error;
+            callback.error(message);
+          }
+        });
       }
+    });
+  }
 
+  public void createOfflineRegion(final JSONObject options, final CallbackContext callback, final CallbackContext onProgress, final CallbackContext onComplete) throws JSONException {
+    cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
-      public void onComplete(JSONObject progress) {
-        Log.d(LOG_TAG, "complete");
-        PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
-        onComplete.sendPluginResult(result);
-      }
+      public void run() {
+        OfflineManager offlineManager = OfflineManager.getInstance(webView.getContext());
+        offlineManager.setAccessToken(accessToken);
+        mapboxManager.createOfflineRegion(options, callback, new MapboxManager.OfflineRegionStatusCallback() {
+          @Override
+          public void onProgress(JSONObject progress) {
+            PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
+            result.setKeepCallback(true);
+            onProgress.sendPluginResult(result);
+          }
 
-      @Override
-      public void onError(String error) {
-        String message = "Failed to create offline region: " + error;
-        Log.e(LOG_TAG, message);
-        PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
-        result.setKeepCallback(true);
-        onComplete.error(message);
+          @Override
+          public void onComplete(JSONObject progress) {
+            Log.d(LOG_TAG, "complete");
+            PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
+            onComplete.sendPluginResult(result);
+          }
+
+          @Override
+          public void onError(String error) {
+            String message = "Failed to create offline region: " + error;
+            Log.e(LOG_TAG, message);
+            PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
+            result.setKeepCallback(true);
+            onComplete.error(message);
+          }
+        });
       }
     });
   }

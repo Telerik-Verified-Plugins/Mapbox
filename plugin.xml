@@ -57,6 +57,7 @@
 
     <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
     <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
+    <source-file src="src/android/MapboxManager.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/OfflineRegion.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/Map.java" target-dir="src/com/telerik/plugins/mapbox"/>
 

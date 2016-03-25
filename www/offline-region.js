@@ -20,12 +20,7 @@ function OfflineRegion(options) {
     this.createStickyChannel("complete");
     this.createStickyChannel("error");
 
-    // TODO: For some reason calling exec within Cordova's 'deviceready'
-    //       callback causes cordova to freeze and stop loading. Delaying it by
-    //       one 'tick' seems to avoid the issue.
-    window.setTimeout(function () {
-        exec(onLoad, this._error, "Mapbox", "createOfflineRegion", [options, onProgressId, onCompleteId]);
-    }, 0);
+    exec(onLoad, this._error, "Mapbox", "createOfflineRegion", [options, onProgressId, onCompleteId]);
 
     function _onLoad(resp) {
         this._id = resp.id;
