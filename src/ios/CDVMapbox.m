@@ -5,7 +5,7 @@
 - (void) show:(CDVInvokedUrlCommand*)command {
   NSDictionary *args = [command.arguments objectAtIndex:0];
 
-  NSString* mapStyle = [self getMapStyle:[args objectForKey:@"style"]];
+  NSURL* mapStyle = [self getMapStyle:[args objectForKey:@"style"]];
 
   // where shall we show the map overlay?
   NSDictionary *margins = [args objectForKey:@"margins"];
@@ -16,9 +16,11 @@
   int bottom = [[margins objectForKey:@"bottom"] intValue];
 
   CGRect webviewFrame = self.webView.frame;
-  CGRect mapFrame = CGRectMake(left, top, webviewFrame.size.width - left - right, webviewFrame.size.height - top - bottom);
 
-  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame styleURL:[NSURL URLWithString:[NSString stringWithFormat:@"asset://styles/%@-v8.json", mapStyle]]];
+  CGRect mapFrame = CGRectMake(left, top, webviewFrame.size.width - left - right, webviewFrame.size.height - top - bottom);
+  
+  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame
+                                      styleURL:mapStyle];
 
   _mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
@@ -37,13 +39,13 @@
   } else {
     [_mapView setZoomLevel:zoomLevel.doubleValue];
   }
-
-
+  
+  
   _mapView.delegate = self;
 
   // default NO, note that this requires adding `NSLocationWhenInUseUsageDescription` or `NSLocationAlwaysUsageDescription` to the plist
   _mapView.showsUserLocation = [[args objectForKey:@"showUserLocation"] boolValue];
-
+  
   // default NO
   _mapView.attributionButton.hidden = [[args objectForKey:@"hideAttribution"] boolValue];
 
@@ -52,7 +54,7 @@
 
   // default NO
   _mapView.compassView.hidden = [[args objectForKey:@"hideCompass"] boolValue];
-
+  
   // default YES
   _mapView.rotateEnabled = ![[args objectForKey:@"disableRotation"] boolValue];
 
@@ -60,8 +62,11 @@
   _mapView.pitchEnabled = ![[args objectForKey:@"disablePitch"] boolValue];
 
   // default YES
+  _mapView.allowsTilting = ![[args objectForKey:@"disableTilt"] boolValue];
+  
+  // default YES
   _mapView.scrollEnabled = ![[args objectForKey:@"disableScroll"] boolValue];
-
+  
   // default YES
   _mapView.zoomEnabled = ![[args objectForKey:@"disableZoom"] boolValue];
 
@@ -73,7 +78,7 @@
     // Draw the markers after the map has initialized
     [self performSelector:@selector(putMarkersOnTheMap:) withObject:markers afterDelay:1.0];
   }
-
+  
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   // keep the callback because there are various events the developer may be interested in
   pluginResult.keepCallback = [NSNumber numberWithBool:YES];
@@ -92,6 +97,18 @@
   [_mapView setCenterCoordinate:CLLocationCoordinate2DMake(clat.doubleValue, clng.doubleValue) animated:animated];
 
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) setTilt:(CDVInvokedUrlCommand*)command {
+  // TODO tilt/pitch seems not to be implemented in Mapbox iOS SDK (yet)
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) getTilt:(CDVInvokedUrlCommand*)command {
+  // TODO seems not to be implemented in Mapbox iOS SDK (yet)
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -119,10 +136,49 @@
 - (void) getCenter:(CDVInvokedUrlCommand*)command {
   CLLocationCoordinate2D ctr = _mapView.centerCoordinate;
   NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:
-          [NSNumber numberWithDouble:ctr.latitude], @"lat",
-          [NSNumber numberWithDouble:ctr.longitude], @"lng",
-          nil];
+                                        [NSNumber numberWithDouble:ctr.latitude], @"lat",
+                                        [NSNumber numberWithDouble:ctr.longitude], @"lng",
+                                        nil];
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dic];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)animateCamera:(CDVInvokedUrlCommand*)command {
+  NSDictionary *args = [command.arguments objectAtIndex:0];
+
+  MGLMapCamera * cam = [MGLMapCamera camera];
+
+  NSNumber *altitude = [args valueForKey:@"altitude"];
+  if (altitude != nil) {
+    cam.altitude = [altitude doubleValue];
+  }
+
+  NSNumber *tilt = [args valueForKey:@"tilt"];
+  if (tilt != nil) {
+    cam.pitch = [tilt floatValue];
+  }
+
+  NSNumber *bearing = [args valueForKey:@"bearing"];
+  if (bearing != nil) {
+    cam.heading = [bearing floatValue];
+  }
+
+  NSTimeInterval durInt = 15; // default 15
+  NSNumber *duration = [args valueForKey:@"duration"];
+  if (duration != nil) {
+    durInt = [duration intValue];
+  }
+  
+  NSDictionary *target = [args objectForKey:@"target"];
+  if (target != nil) {
+    NSNumber *clat = [target valueForKey:@"lat"];
+    NSNumber *clng = [target valueForKey:@"lng"];
+    cam.centerCoordinate = CLLocationCoordinate2DMake(clat.doubleValue, clng.doubleValue);
+  }
+
+  [_mapView setCamera:cam withDuration:durInt animationTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
+  
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -131,18 +187,18 @@
   NSArray* points = [args objectForKey:@"points"];
   if (points != nil) {
     [self.commandDelegate runInBackground:^{
-        CLLocationCoordinate2D *coordinates = malloc(points.count * sizeof(CLLocationCoordinate2D));
-        for (int i=0; i<points.count; i++) {
-          NSDictionary* point = points[i];
-          NSNumber *lat = [point valueForKey:@"lat"];
-          NSNumber *lng = [point valueForKey:@"lng"];
-          coordinates[i] = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
-        }
-        NSUInteger numberOfCoordinates = points.count; // sizeof(coordinates) / sizeof(CLLocationCoordinate2D);
-        MGLPolygon *shape = [MGLPolygon polygonWithCoordinates:coordinates count:numberOfCoordinates];
-        [_mapView addAnnotation:shape];
-        CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+      CLLocationCoordinate2D *coordinates = malloc(points.count * sizeof(CLLocationCoordinate2D));
+      for (int i=0; i<points.count; i++) {
+        NSDictionary* point = points[i];
+        NSNumber *lat = [point valueForKey:@"lat"];
+        NSNumber *lng = [point valueForKey:@"lng"];
+        coordinates[i] = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
+      }
+      NSUInteger numberOfCoordinates = points.count; // sizeof(coordinates) / sizeof(CLLocationCoordinate2D);
+      MGLPolygon *shape = [MGLPolygon polygonWithCoordinates:coordinates count:numberOfCoordinates];
+      [_mapView addAnnotation:shape];
+      CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
   } else {
     CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
@@ -173,16 +229,16 @@
 
 - (void) putMarkersOnTheMap:(NSArray *)markers {
   [self.commandDelegate runInBackground:^{
-      for (int i = 0; i < markers.count; i++) {
-        NSDictionary* marker = markers[i];
-        MGLPointAnnotation *point = [[MGLPointAnnotation alloc] init];
-        NSNumber *lat = [marker valueForKey:@"lat"];
-        NSNumber *lng = [marker valueForKey:@"lng"];
-        point.coordinate = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
-        point.title = [marker valueForKey:@"title"];
-        point.subtitle = [marker valueForKey:@"subtitle"];
-        [_mapView addAnnotation:point];
-      }
+    for (int i = 0; i < markers.count; i++) {
+      NSDictionary* marker = markers[i];
+      MGLPointAnnotation *point = [[MGLPointAnnotation alloc] init];
+      NSNumber *lat = [marker valueForKey:@"lat"];
+      NSNumber *lng = [marker valueForKey:@"lng"];
+      point.coordinate = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
+      point.title = [marker valueForKey:@"title"];
+      point.subtitle = [marker valueForKey:@"subtitle"];
+      [_mapView addAnnotation:point];
+    }
   }];
 }
 
@@ -240,15 +296,15 @@
 }
 
 //- (MGLAnnotationImage *)mapView:(MGLMapView *)mapView imageForAnnotation:(id <MGLAnnotation>)annotation {
-// TODO should be able to use an img from www/
+  // TODO should be able to use an img from www/
 //  MGLAnnotationImage *annotationImage = [mapView dequeueReusableAnnotationImageWithIdentifier:@"pisa"];
-
+  
 //  if (!annotationImage) {
-// Leaning Tower of Pisa by Stefan Spieler from the Noun Project
+    // Leaning Tower of Pisa by Stefan Spieler from the Noun Project
 //    UIImage *image = [UIImage imageNamed:@"pisa"];
 //    annotationImage = [MGLAnnotationImage annotationImageWithImage:image reuseIdentifier:@"pisa"];
 //  }
-
+  
 //  return annotationImage;
 //}
 
@@ -279,19 +335,20 @@
   }
 }
 
-// mapping the passed-in style here so we are future-proof
-- (NSString*) getMapStyle:(NSString*) input {
+- (NSURL*) getMapStyle:(NSString*) input {
   if ([input isEqualToString:@"light"]) {
-    return @"light";
+    return [MGLStyle lightStyleURL];
   } else if ([input isEqualToString:@"dark"]) {
-    return @"dark";
+    return [MGLStyle darkStyleURL];
   } else if ([input isEqualToString:@"emerald"]) {
-    return @"emerald";
+    return [MGLStyle emeraldStyleURL];
   } else if ([input isEqualToString:@"satellite"]) {
-    return @"satellite";
+    return [MGLStyle satelliteStyleURL];
+  } else if ([input isEqualToString:@"hybrid"]) {
+    return [MGLStyle hybridStyleURL];
   } else {
-    // default
-    return @"streets";
+    // default (TODO allow an arbitrary url (see Android))
+    return [MGLStyle streetsStyleURL];
   }
 }
 

@@ -13,6 +13,8 @@
 - (void) addMarkers:(CDVInvokedUrlCommand*)command;
 - (void) addMarkerCallback:(CDVInvokedUrlCommand*)command;
 
+- (void) animateCamera:(CDVInvokedUrlCommand*)command;
+
 - (void) addPolygon:(CDVInvokedUrlCommand*)command;
 
 - (void) addGeoJSON:(CDVInvokedUrlCommand*)command;
@@ -22,6 +24,9 @@
 
 - (void) getZoomLevel:(CDVInvokedUrlCommand*)command;
 - (void) setZoomLevel:(CDVInvokedUrlCommand*)command;
+
+- (void) getTilt:(CDVInvokedUrlCommand*)command;
+- (void) setTilt:(CDVInvokedUrlCommand*)command;
 
 - (void) convertCoordinate:(CDVInvokedUrlCommand*)command;
 - (void) convertPoint:(CDVInvokedUrlCommand*)command;
