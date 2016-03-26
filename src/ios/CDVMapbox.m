@@ -242,6 +242,52 @@
   }];
 }
 
+- (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
+  NSDictionary *args = command.arguments[0];
+
+  double lat = [[args valueForKey:@"lat"]doubleValue];
+  double lng = [[args valueForKey:@"lng"]doubleValue];
+
+  if ((fabs(lat) > 90)||(fabs(lng) > 180)){
+    CDVPluginResult * pluginResult = [CDVPluginResult
+            resultWithStatus:CDVCommandStatus_ERROR
+             messageAsString:@"Incorrect Leaflet.LatLng value."];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }
+
+  CGPoint screenPoint = [_mapView  convertCoordinate:CLLocationCoordinate2DMake(lat, lng)
+                                       toPointToView:_mapView];
+
+  NSDictionary *point = @{@"x" : @(screenPoint.x), @"y" : @(screenPoint.y)};
+
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:point];
+
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) convertPoint:(CDVInvokedUrlCommand *)command {
+  NSDictionary *args = command.arguments[0];
+
+  float x = [[args valueForKey:@"x"] floatValue];
+  float y = [[args valueForKey:@"y"] floatValue];
+
+  if ((x < 0 || y < 0)){
+    CDVPluginResult * pluginResult = [CDVPluginResult
+            resultWithStatus:CDVCommandStatus_ERROR
+             messageAsString:@"Incorrect Leaflet.Point point coordinates."];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }
+
+  CLLocationCoordinate2D location = [_mapView convertPoint:CGPointMake(x, y)
+                                      toCoordinateFromView:_mapView];
+
+  NSDictionary *coordinates = @{@"lat" : @(location.latitude), @"lng" : @(location.longitude)};
+
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:coordinates];
+
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 #pragma mark - MGLMapViewDelegate
 
 // this method is invoked every time an annotation is clicked

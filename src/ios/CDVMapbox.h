@@ -28,4 +28,7 @@
 - (void) getTilt:(CDVInvokedUrlCommand*)command;
 - (void) setTilt:(CDVInvokedUrlCommand*)command;
 
+- (void) convertCoordinate:(CDVInvokedUrlCommand*)command;
+- (void) convertPoint:(CDVInvokedUrlCommand*)command;
+
 @end
