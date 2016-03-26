@@ -17,6 +17,10 @@ module.exports = {
     cordova.exec(callback, null, "Mapbox", "addMarkerCallback", []);
   },
 
+  animateCamera: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "animateCamera", [options]);
+  },
+
   addGeoJSON: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJSON", [options]);
   },
@@ -29,6 +33,14 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "getCenter", []);
   },
 
+  setTilt: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setTilt", [options]);
+  },
+
+  getTilt: function (successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getTilt", []);
+  },
+
   getZoomLevel: function (successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "getZoomLevel", []);
   },
@@ -39,5 +51,14 @@ module.exports = {
 
   addPolygon: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addPolygon", [options]);
+  },
+
+  convertCoordinate: function(options, successCallback, errorCallback){
+    cordova.exec(successCallback, errorCallback, "Mapbox", "convertCoordinate", [options]);
+  },
+
+  convertPoint: function(options, successCallback, errorCallback){
+    cordova.exec(successCallback, errorCallback, "Mapbox", "convertPoint", [options]);
   }
+
 };

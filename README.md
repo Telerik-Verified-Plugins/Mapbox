@@ -44,7 +44,9 @@ Mapbox.js is brought in automatically. There is no need to change or add anythin
 
 ## 4. Usage
 
-Check the [demo code](demo/index.html) for all the tricks in the book!
+[We've documented the Mapbox plugin API here.](http://plugins.telerik.com/cordova/plugin/mapbox)
+
+For a quick demo, check the [demo code](demo/index.html) which shows all the tricks in the book.
 
 ## 5. License
 

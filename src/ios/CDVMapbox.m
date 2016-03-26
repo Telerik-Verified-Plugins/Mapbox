@@ -5,7 +5,7 @@
 - (void) show:(CDVInvokedUrlCommand*)command {
   NSDictionary *args = [command.arguments objectAtIndex:0];
 
-  NSString* mapStyle = [self getMapStyle:[args objectForKey:@"style"]];
+  NSURL* mapStyle = [self getMapStyle:[args objectForKey:@"style"]];
 
   // where shall we show the map overlay?
   NSDictionary *margins = [args objectForKey:@"margins"];
@@ -16,9 +16,11 @@
   int bottom = [[margins objectForKey:@"bottom"] intValue];
 
   CGRect webviewFrame = self.webView.frame;
+
   CGRect mapFrame = CGRectMake(left, top, webviewFrame.size.width - left - right, webviewFrame.size.height - top - bottom);
   
-  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame styleURL:[NSURL URLWithString:[NSString stringWithFormat:@"asset://styles/%@-v8.json", mapStyle]]];
+  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame
+                                      styleURL:mapStyle];
 
   _mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
@@ -60,6 +62,9 @@
   _mapView.pitchEnabled = ![[args objectForKey:@"disablePitch"] boolValue];
 
   // default YES
+  _mapView.allowsTilting = ![[args objectForKey:@"disableTilt"] boolValue];
+  
+  // default YES
   _mapView.scrollEnabled = ![[args objectForKey:@"disableScroll"] boolValue];
   
   // default YES
@@ -95,6 +100,18 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) setTilt:(CDVInvokedUrlCommand*)command {
+  // TODO tilt/pitch seems not to be implemented in Mapbox iOS SDK (yet)
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) getTilt:(CDVInvokedUrlCommand*)command {
+  // TODO seems not to be implemented in Mapbox iOS SDK (yet)
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) setZoomLevel:(CDVInvokedUrlCommand*)command {
   NSDictionary *args = [command.arguments objectAtIndex:0];
   NSNumber *level = [args objectForKey:@"level"];
@@ -123,6 +140,45 @@
                                         [NSNumber numberWithDouble:ctr.longitude], @"lng",
                                         nil];
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dic];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)animateCamera:(CDVInvokedUrlCommand*)command {
+  NSDictionary *args = [command.arguments objectAtIndex:0];
+
+  MGLMapCamera * cam = [MGLMapCamera camera];
+
+  NSNumber *altitude = [args valueForKey:@"altitude"];
+  if (altitude != nil) {
+    cam.altitude = [altitude doubleValue];
+  }
+
+  NSNumber *tilt = [args valueForKey:@"tilt"];
+  if (tilt != nil) {
+    cam.pitch = [tilt floatValue];
+  }
+
+  NSNumber *bearing = [args valueForKey:@"bearing"];
+  if (bearing != nil) {
+    cam.heading = [bearing floatValue];
+  }
+
+  NSTimeInterval durInt = 15; // default 15
+  NSNumber *duration = [args valueForKey:@"duration"];
+  if (duration != nil) {
+    durInt = [duration intValue];
+  }
+  
+  NSDictionary *target = [args objectForKey:@"target"];
+  if (target != nil) {
+    NSNumber *clat = [target valueForKey:@"lat"];
+    NSNumber *clng = [target valueForKey:@"lng"];
+    cam.centerCoordinate = CLLocationCoordinate2DMake(clat.doubleValue, clng.doubleValue);
+  }
+
+  [_mapView setCamera:cam withDuration:durInt animationTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
+  
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -186,6 +242,52 @@
   }];
 }
 
+- (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
+  NSDictionary *args = command.arguments[0];
+
+  double lat = [[args valueForKey:@"lat"]doubleValue];
+  double lng = [[args valueForKey:@"lng"]doubleValue];
+
+  if ((fabs(lat) > 90)||(fabs(lng) > 180)){
+    CDVPluginResult * pluginResult = [CDVPluginResult
+            resultWithStatus:CDVCommandStatus_ERROR
+             messageAsString:@"Incorrect Leaflet.LatLng value."];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }
+
+  CGPoint screenPoint = [_mapView  convertCoordinate:CLLocationCoordinate2DMake(lat, lng)
+                                       toPointToView:_mapView];
+
+  NSDictionary *point = @{@"x" : @(screenPoint.x), @"y" : @(screenPoint.y)};
+
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:point];
+
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) convertPoint:(CDVInvokedUrlCommand *)command {
+  NSDictionary *args = command.arguments[0];
+
+  float x = [[args valueForKey:@"x"] floatValue];
+  float y = [[args valueForKey:@"y"] floatValue];
+
+  if ((x < 0 || y < 0)){
+    CDVPluginResult * pluginResult = [CDVPluginResult
+            resultWithStatus:CDVCommandStatus_ERROR
+             messageAsString:@"Incorrect Leaflet.Point point coordinates."];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }
+
+  CLLocationCoordinate2D location = [_mapView convertPoint:CGPointMake(x, y)
+                                      toCoordinateFromView:_mapView];
+
+  NSDictionary *coordinates = @{@"lat" : @(location.latitude), @"lng" : @(location.longitude)};
+
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:coordinates];
+
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 #pragma mark - MGLMapViewDelegate
 
 // this method is invoked every time an annotation is clicked
@@ -233,19 +335,20 @@
   }
 }
 
-// mapping the passed-in style here so we are future-proof
-- (NSString*) getMapStyle:(NSString*) input {
+- (NSURL*) getMapStyle:(NSString*) input {
   if ([input isEqualToString:@"light"]) {
-    return @"light";
+    return [MGLStyle lightStyleURL];
   } else if ([input isEqualToString:@"dark"]) {
-    return @"dark";
+    return [MGLStyle darkStyleURL];
   } else if ([input isEqualToString:@"emerald"]) {
-    return @"emerald";
+    return [MGLStyle emeraldStyleURL];
   } else if ([input isEqualToString:@"satellite"]) {
-    return @"satellite";
+    return [MGLStyle satelliteStyleURL];
+  } else if ([input isEqualToString:@"hybrid"]) {
+    return [MGLStyle hybridStyleURL];
   } else {
-    // default
-    return @"streets";
+    // default (TODO allow an arbitrary url (see Android))
+    return [MGLStyle streetsStyleURL];
   }
 }
 
