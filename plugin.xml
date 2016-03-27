@@ -25,6 +25,7 @@
   </engines>
 
   <js-module src="www/mixin.js" name="mixin" />
+  <js-module src="www/mapbox-plugin-api-mixin.js" name="mapbox-plugin-api-mixin" />
   <js-module src="www/events-mixin.js" name="events-mixin" />
   <js-module src="www/map-instance.js" name="map-instance" />
   <js-module src="www/offline-region.js" name="offline-region" />

@@ -1,161 +1,72 @@
 var exec = require("cordova/exec"),
+    MapboxPluginAPI = require("./mapbox-plugin-api-mixin"),
     EventsMixin = require("./events-mixin");
 
 function MapInstance(options) {
-    var onLoad = _onLoad.bind(this),
+    var onLoad = this._onLoad.bind(this),
         onError = this._error.bind(this);
 
-    this._error = onError;
-
-    this.initEvents("Mapbox.MapInstance");
     this.createStickyChannel("load");
 
-    exec(onLoad, this._error, "Mapbox", "createMap", [options]);
-
-    function _onLoad(resp) {
-        this._id = resp.id;
-        this.loaded = true;
-
-        this.fire("load", {map: this});
-    }
+    exec(onLoad, onError, "Mapbox", "createMap", [options]);
 }
 
-EventsMixin(MapInstance.prototype);
-
-MapInstance.prototype._error = function (err) {
-    var error = new Error("Map error (ID: " + this._id + "): " + err);
-    console.warn("throwing MapError: ", error);
-    throw error;
-};
-
-MapInstance.prototype._exec = function (successCallback, errorCallback, method, args) {
-    args = [this._id].concat(args || []);
-    exec(successCallback, errorCallback, "Mapbox", method, args);
-};
-
-MapInstance.prototype._execAfterLoad = function () {
-    var args = arguments;
-    this.once('load', function (map) {
-        this._exec.apply(this, args);
-    }.bind(this));
-};
+MapboxPluginAPI('MapInstance', MapInstance.prototype);
+EventsMixin('MapInstance', MapInstance.prototype);
 
 MapInstance.prototype.jumpTo = function (options, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "jumpTo",
-        [options]
-    );
+    return this._execAfterLoad(callback, "jumpTo", [options]);
 };
 
 MapInstance.prototype.setCenter = function (options, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "setCenter",
-        [options]
-    );
+    return this._execAfterLoad(callback, "setCenter", [options]);
 };
 
 MapInstance.prototype.getCenter = function (callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "getCenter"
-    );
+    return this._execAfterLoad(callback, "getCenter");
 };
 
 MapInstance.prototype.addMarkers = function (options, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "addMarkers",
-        [options]
-    );
+    return this._execAfterLoad(callback, "addMarkers", [options]);
 };
 
-MapInstance.prototype.addMarkerCallback = function (callback) {
-    this._execAfterLoad(callback, null, "addMarkerCallback");
+MapInstance.prototype.addMarkerCallback = function (markerCallback, callback) {
+    return this._execAfterLoad(callback, "addMarkerCallback", [markerCallback]);
 };
 
 MapInstance.prototype.setCenter = function (center, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "setCenter",
-        [center]
-    );
+    return this._execAfterLoad(callback, "setCenter", [center]);
 };
 
 MapInstance.prototype.getCenter = function (callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "getCenter"
-    );
+    return this._execAfterLoad(callback, "getCenter");
 };
 
 MapInstance.prototype.getZoomLevel = function (callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "getZoomLevel"
-    );
+    return this._execAfterLoad(callback, "getZoomLevel");
 };
 
 MapInstance.prototype.setZoomLevel = function (zoom, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "setZoomLevel",
-        [zoom]
-    );
+    return this._execAfterLoad(callback, "setZoomLevel", [zoom]);
 };
 
 MapInstance.prototype.showUserLocation = function (enabled, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "showUserLocation",
-        [enabled]
-    );
+    return this._execAfterLoad(callback, "showUserLocation", [enabled]);
 };
 
 MapInstance.prototype.addSource = function (name, source, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "addSource",
-        [name, source]
-    );
+    return this._execAfterLoad(callback, "addSource", [name, source]);
 };
 
 MapInstance.prototype.addLayer = function (layer, callback) {
-    var result = wrapCallback(callback);
-    this._execAfterLoad(
-        result.success,
-        result.error,
-        "addLayer",
-        [layer]
-    );
+    return this._execAfterLoad(callback, "addLayer", [layer]);
 };
 
-function wrapCallback(callback) {
-    return {
-        success: function (response) { callback(null, response); },
-        error: function (err) { callback(err); }
-    };
-}
+MapInstance.prototype._onLoad = function (resp) {
+    this._id = resp.id;
+    this.loaded = true;
+
+    this.fire("load", {map: this});
+};
 
 module.exports = MapInstance;

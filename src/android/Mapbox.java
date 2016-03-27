@@ -170,28 +170,31 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
       final long mapId = args.getLong(0);
+      final CallbackContext markerCallback = new CallbackContext(args.getString(1), this.webView);
       final Map map = mapboxManager.getMap(mapId);
       map.addMarkerListener(
         new MapboxMap.OnInfoWindowClickListener() {
           @Override
           public boolean onInfoWindowClick(Marker marker) {
             try {
-              callbackContext.success(
-                new JSONObject()
-                        .put("title", marker.getTitle())
-                        .put("subtitle", marker.getSnippet())
-                        .put("lat", marker.getPosition().getLatitude())
-                        .put("lng", marker.getPosition().getLongitude())
-              );
+              JSONObject markerInfo = new JSONObject()
+                      .put("title", marker.getTitle())
+                      .put("subtitle", marker.getSnippet())
+                      .put("lat", marker.getPosition().getLatitude())
+                      .put("lng", marker.getPosition().getLongitude());
+              PluginResult result = new PluginResult(PluginResult.Status.OK, markerInfo);
+              result.setKeepCallback(true);
+              markerCallback.sendPluginResult(result);
               return true;
             } catch (JSONException e) {
               String message = "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage();
-              callbackContext.error(message);
+              markerCallback.error(message);
               return false;
             }
           }
         }
       );
+      callbackContext.success();
     }
 
     else if (ACTION_ADD_SOURCE.equals(action)) {

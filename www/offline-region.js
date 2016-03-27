@@ -1,5 +1,5 @@
-var cordova = require("cordova"),
-    exec = require("cordova/exec"),
+var exec = require("cordova/exec"),
+    MapboxPluginAPI = require("./mapbox-plugin-api-mixin"),
     EventsMixin = require("./events-mixin");
 
 var OFFLINE_REGIONS = {};
@@ -18,7 +18,6 @@ function OfflineRegion() {
 
     this._downloading = false;
 
-    this.initEvents("Mapbox.MapInstance");
     this.createStickyChannel("load");
     this.createChannel("progress");
     this.createStickyChannel("complete");
@@ -42,7 +41,20 @@ function OfflineRegion() {
     }
 }
 
-EventsMixin(OfflineRegion.prototype);
+MapboxPluginAPI('OfflineRegion', OfflineRegion.prototype);
+EventsMixin('OfflineRegion', OfflineRegion.prototype);
+
+Object.defineProperty(OfflineRegion.prototype, "downloading", {
+    get: function () {
+        return this._downloading;
+    }
+});
+
+Object.defineProperty(OfflineRegion.prototype, "name", {
+    get: function () {
+        return this._name;
+    }
+});
 
 OfflineRegion.prototype._create = function (options) {
     var args = [options, this._onProgressId, this._onCompleteId];
@@ -57,72 +69,27 @@ OfflineRegion.prototype._instance = function (response) {
     OFFLINE_REGIONS[this._id] = this;
 };
 
-OfflineRegion.prototype._error = function (err) {
-    var error = new Error("OfflineRegion error (ID: " + this._id + "): " + err);
-    this._downloading = false;
-    console.warn("throwing OfflineRegionError: ", error);
-    throw error;
-};
-
-OfflineRegion.prototype._exec = function (successCallback, errorCallback, method, args) {
-    args = [this._id].concat(args || []);
-    exec(successCallback, errorCallback, "Mapbox", method, args);
-};
-
-OfflineRegion.prototype._execAfterLoad = function () {
-    var args = arguments;
-    this.once('load', function (map) {
-        this._exec.apply(this, args);
-    }.bind(this));
-};
-
-OfflineRegion.prototype._registerCallback = function (name, success, fail) {
-    var callbackId = "MapboxOfflineRegion" + name + cordova.callbackId++;
-
-    success = success ||  function () { console.log(callbackId + "() success!", arguments); };
-    fail = fail ||  function () { console.log(callbackId + "() fail :(", arguments); };
-
-    cordova.callbacks[callbackId] = {success: success, fail: fail};
-    return callbackId;
-};
-
-OfflineRegion.prototype.download = function () {
+OfflineRegion.prototype.download = function (callback) {
     this._downloading = true;
-    this._execAfterLoad(onSuccess, this._error, "downloadOfflineRegion");
-    function onSuccess() {
+    return this._execAfterLoad(onSuccess, "downloadOfflineRegion");
+    function onSuccess(err) {
+        if (err) return (callback || this._err)(err);
         console.log("Mapbox OfflineRegion download started.");
     }
 };
 
-OfflineRegion.prototype.pause = function () {
+OfflineRegion.prototype.pause = function (callback) {
     this._downloading = false;
-    this._execAfterLoad(onSuccess, this._error, "pauseOfflineRegion");
+    return this._execAfterLoad(onSuccess, "pauseOfflineRegion");
     function onSuccess() {
+        if (err) return (callback || this._err)(err);
         console.log("Mapbox OfflineRegion download paused.");
     }
 };
 
 OfflineRegion.prototype.getStatus = function (callback) {
-    this._execAfterLoad(onSuccess, onError, "offlineRegionStatus");
-    function onSuccess(status) {
-        callback(null, status);
-    }
-    function onError(error) {
-        callback(error);
-    }
+    return this._execAfterLoad(callback, "offlineRegionStatus");
 };
-
-Object.defineProperty(OfflineRegion.prototype, "downloading", {
-    get: function () {
-        return this._downloading;
-    }
-});
-
-Object.defineProperty(OfflineRegion.prototype, "name", {
-    get: function () {
-        return this._name;
-    }
-});
 
 module.exports = {
     createOfflineRegion: function (options) {
@@ -132,31 +99,36 @@ module.exports = {
     },
 
     listOfflineRegions: function (callback) {
-        exec(
-            function (responses) {
-                console.log("Offline regions: ", responses);
-                var regions = responses.map(function (response) {
-                        var region = OFFLINE_REGIONS[response.id];
-                        if (!region) {
-                            region = new OfflineRegion();
-                            region._instance(response);
-                        }
-                        return region;
-                    }),
-                    byName = regions.reduce(function (regionsByName, region) {
-                        regionsByName[region.name] = region;
-                        return regionsByName;
-                    }, {});
-                callback(null, byName);
-            },
-            function (errorMessage) {
-                var error = "Error getting offline regions: " + errorMessage;
-                console.error(error);
-                callback(error);
-            },
-            "Mapbox",
-            "listOfflineRegions",
-            []
-        );
+        callback = callback || function (err, response) {};
+        return new Promise(function (resolve, reject) {
+            exec(
+                function (responses) {
+                    console.log("Offline regions: ", responses);
+                    var regions = responses.map(function (response) {
+                            var region = OFFLINE_REGIONS[response.id];
+                            if (!region) {
+                                region = new OfflineRegion();
+                                region._instance(response);
+                            }
+                            return region;
+                        }),
+                        byName = regions.reduce(function (regionsByName, region) {
+                            regionsByName[region.name] = region;
+                            return regionsByName;
+                        }, {});
+                    callback(null, byName);
+                    resolve(byName);
+                },
+                function (errorMessage) {
+                    var error = "Error getting offline regions: " + errorMessage;
+                    console.error(error);
+                    callback(error);
+                    reject(error);
+                },
+                "Mapbox",
+                "listOfflineRegions",
+                []
+            );
+        });
     }
 };
