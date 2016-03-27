@@ -98,6 +98,7 @@ class MapboxManager {
                 public void onMapReady(MapboxMap mMap) {
                     try {
                         map.setMapboxMap(mMap);
+                        map.setFeatureManager(new FeatureManager(webView.getContext(), mMap));
 
                         if (options.has("markers")) {
                             map.addMarkers(options.getJSONArray("markers"));

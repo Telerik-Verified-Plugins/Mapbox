@@ -57,6 +57,8 @@ public class Map {
 
     private MapboxMap mapboxMap;
 
+    private FeatureManager features;
+
     public Map(long id, final MapView mapView) {
         this.id = id;
         this.mapView = mapView;
@@ -72,6 +74,10 @@ public class Map {
 
     public void setMapboxMap(MapboxMap mMap) {
         this.mapboxMap = mMap;
+    }
+
+    public void setFeatureManager(FeatureManager featureManager) {
+        this.features = featureManager;
     }
 
     public MapboxMap getMapboxMap() {
@@ -135,5 +141,62 @@ public class Map {
 
     public void showUserLocation(boolean enabled) {
         mapboxMap.setMyLocationEnabled(enabled);
+    }
+
+    public void addSource(String name, JSONObject source) throws UnsupportedTypeException, JSONException {
+        final String sourceType = source.getString("type");
+
+        if (sourceType.equals("geojson") && source.has("data")) {
+            final JSONObject data = source.getJSONObject("data");
+            features.addGeoJSONSource(name, data);
+        } else {
+            throw new UnsupportedTypeException("source:" + sourceType);
+        }
+    }
+
+    public void addLayer(JSONObject layer) throws UnknownSourceException, UnsupportedTypeException, JSONException {
+        final String layerType = layer.getString("type");
+        final String source = layer.getString("source");
+        final String id = layer.getString("id");
+
+        if (features.hasSource(source)) {
+            if (layerType.equals("fill")) {
+                features.addFillLayer(id, source, layer);
+            } else if (layerType.equals("line")) {
+                features.addLineLayer(id, source, layer);
+            } else if (layerType.equals("symbol")) {
+                features.addMarkerLayer(id, source, layer);
+            } else {
+                throw new UnsupportedTypeException("layer:" + layerType);
+            }
+        } else {
+            throw new UnknownSourceException(source);
+        }
+    }
+}
+
+class UnsupportedTypeException extends Exception {
+    String type;
+
+    public UnsupportedTypeException(String type) {
+        this.type = type;
+    }
+
+    @Override
+    public String getMessage() {
+        return "Unsupported type: " + this.type;
+    }
+}
+
+class UnknownSourceException extends Exception {
+    String source;
+
+    public UnknownSourceException(String source) {
+        this.source = source;
+    }
+
+    @Override
+    public String getMessage() {
+        return "Unknown source: " + this.source;
     }
 }

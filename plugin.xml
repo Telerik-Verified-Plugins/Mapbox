@@ -56,10 +56,12 @@
     </config-file>
 
     <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
+    <framework src="com.android.support:appcompat-v7:22.+" />
     <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/MapboxManager.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/OfflineRegion.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/Map.java" target-dir="src/com/telerik/plugins/mapbox"/>
+    <source-file src="src/android/FeatureManager.java" target-dir="src/com/telerik/plugins/mapbox"/>
 
     <!-- This leads to trouble in AppBuilder when compiling for Cordova-Android 4 -->
     <!--source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />

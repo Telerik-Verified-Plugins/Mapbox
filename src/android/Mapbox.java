@@ -51,6 +51,8 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
+  private static final String ACTION_ADD_SOURCE = "addSource";
+  private static final String ACTION_ADD_LAYER = "addLayer";
   private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
   private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
   private static final String ACTION_GET_CENTER = "getCenter";
@@ -69,7 +71,7 @@ public class Mapbox extends CordovaPlugin {
 
   @Override
   public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
-    Command command = Command.create(action, args, callbackContext);
+  Command command = Command.create(action, args, callbackContext);
     return execute(command);
   }
 
@@ -95,6 +97,7 @@ public class Mapbox extends CordovaPlugin {
           @Override
           public void run() {
             map.showUserLocation(enabled);
+            callbackContext.success();
           }
         });
       }
@@ -189,6 +192,36 @@ public class Mapbox extends CordovaPlugin {
           }
         }
       );
+    }
+
+    else if (ACTION_ADD_SOURCE.equals(action)) {
+      final long mapId = args.getLong(0);
+      final String name = args.getString(1);
+      final JSONObject source = args.getJSONObject(2);
+      final Map map = mapboxManager.getMap(mapId);
+      try {
+        map.addSource(name, source);
+        callbackContext.success();
+      } catch (Exception e) {
+        callbackContext.error("Unable to add data source to map: " + e.getMessage());
+      }
+    }
+
+    else if (ACTION_ADD_LAYER.equals(action)) {
+      final long mapId = args.getLong(0);
+      final JSONObject layer = args.getJSONObject(1);
+      final Map map = mapboxManager.getMap(mapId);
+      cordova.getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            map.addLayer(layer);
+            callbackContext.success();
+          } catch (Exception e) {
+            callbackContext.error("Unable to add layer to map: " + e.getMessage());
+          }
+        }
+      });
     }
 
     else if (ACTION_LIST_OFFLINE_REGIONS.equals(action)) {
@@ -442,7 +475,6 @@ public class Mapbox extends CordovaPlugin {
     }
   }
 
-  @Override
   public void onResume(boolean multitasking) {
     for (Map map : mapboxManager.maps()) {
       map.getMapView().onResume();
