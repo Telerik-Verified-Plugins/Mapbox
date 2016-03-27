@@ -63,18 +63,12 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_SET_TILT = "setTilt";
   private static final String ACTION_ANIMATE_CAMERA = "animateCamera";
 
-  private static float retinaFactor;
-  private String accessToken;
-
   private MapboxManager mapboxManager;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
-
-    this.retinaFactor = this.getRetinaFactor();
-    this.accessToken = this.getAccessToken();
-    this.mapboxManager = new MapboxManager(accessToken, retinaFactor, webView);
+    this.mapboxManager = new MapboxManager(this.getAccessToken(), this.getRetinaFactor(), webView);
   }
 
   @Override
@@ -97,8 +91,8 @@ public class Mapbox extends CordovaPlugin {
     }
 
     else if (ACTION_SHOW_USER_LOCATION.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       final boolean enabled = args.getBoolean(1);
       if (requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
@@ -111,8 +105,8 @@ public class Mapbox extends CordovaPlugin {
     }
 
     else if (ACTION_JUMP_TO.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       final JSONObject options = args.getJSONObject(1);
 
       cordova.getActivity().runOnUiThread(new Runnable() {
@@ -129,8 +123,8 @@ public class Mapbox extends CordovaPlugin {
     }
 
     else if (ACTION_GET_CENTER.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       try {
         callbackContext.success(map.getCenter());
       } catch (JSONException e) {
@@ -139,8 +133,8 @@ public class Mapbox extends CordovaPlugin {
     }
 
     else if (ACTION_SET_CENTER.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       final JSONArray center = args.getJSONArray(1);
       try {
         map.setCenter(center);
@@ -151,22 +145,22 @@ public class Mapbox extends CordovaPlugin {
     }
 
     else if (ACTION_GET_ZOOMLEVEL.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       callbackContext.success("" + map.getZoom());
     }
 
     else if (ACTION_SET_ZOOMLEVEL.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       final double zoom = args.getDouble(1);
       map.setZoom(zoom);
       callbackContext.success();
     }
 
     else if (ACTION_ADD_MARKERS.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       try {
         map.addMarkers(args.getJSONArray(1));
         callbackContext.success();
@@ -176,8 +170,8 @@ public class Mapbox extends CordovaPlugin {
     }
 
     else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
-      final int mapId = args.getInt(0);
-      final Map map = Map.getMap(mapId);
+      final long mapId = args.getLong(0);
+      final Map map = mapboxManager.getMap(mapId);
       map.addMarkerListener(
         new MapboxMap.OnInfoWindowClickListener() {
           @Override
@@ -213,21 +207,21 @@ public class Mapbox extends CordovaPlugin {
     }
 
     else if (ACTION_DOWNLOAD_OFFLINE_REGION.equals(action)) {
-      final int offlineRegionId = args.getInt(0);
+      final long offlineRegionId = args.getLong(0);
       final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
       region.download();
       callbackContext.success();
     }
 
     else if (ACTION_PAUSE_OFFLINE_REGION.equals(action)) {
-      final int offlineRegionId = args.getInt(0);
+      final long offlineRegionId = args.getLong(0);
       final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
       region.pause();
       callbackContext.success();
     }
 
     else if (ACTION_OFFLINE_REGION_STATUS.equals(action)) {
-      final int offlineRegionId = args.getInt(0);
+      final long offlineRegionId = args.getLong(0);
       final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
 
       region.getStatus(new MapboxManager.OfflineRegionStatusCallback() {
@@ -354,72 +348,15 @@ public class Mapbox extends CordovaPlugin {
       cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        try {
-          MapView mapView = createMapView(accessToken, options);
-          Map.create(mapView, options, new Map.MapCreatedCallback() {
-            @Override
-            public void onCreate(final Map map) {
-              JSONObject resp = new JSONObject();
-              try {
-                resp.put("id", map.getId());
-                callback.success(resp);
-                return;
-              } catch (JSONException e) {
-                String error = "Failed to create map: " + e.getMessage();
-                Log.e(LOG_TAG, error);
-                callback.error(error);
-                return;
-              }
-            }
-
-            @Override
-            public void onError(String error) {
-              String message = "Failed to create map: " + error;
-              Log.e(LOG_TAG, message);
-              callback.error(message);
-            }
-          });
-        } catch (JSONException e) {
-          callback.error(e.getMessage());
-        }
+        mapboxManager.createMap(options, callback);
       }
     });
-  }
-
-  private MapView createMapView(String accessToken, JSONObject options) throws JSONException {
-    MapView mapView = new MapView(this.webView.getContext());
-    mapView.setAccessToken(accessToken);
-    mapView.setStyleUrl(Mapbox.getStyle(options.optString("style")));
-
-    final JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-    final int left = (int) (retinaFactor * (margins == null || margins.isNull("left") ? 0 : margins.getInt("left")));
-    final int right = (int) (retinaFactor * (margins == null || margins.isNull("right") ? 0 : margins.getInt("right")));
-    final int top = (int) (retinaFactor * (margins == null || margins.isNull("top") ? 0 : margins.getInt("top")));
-    final int bottom = (int) (retinaFactor * (margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom")));
-
-    // need to do this to register a receiver which onPause later needs
-    mapView.onResume();
-    mapView.onCreate(null);
-
-    // position the mapView overlay
-    int webViewWidth = webView.getView().getWidth();
-    int webViewHeight = webView.getView().getHeight();
-    final FrameLayout layout = (FrameLayout) webView.getView().getParent();
-    FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
-    params.setMargins(left, top, right, bottom);
-    mapView.setLayoutParams(params);
-
-    layout.addView(mapView);
-
-    return mapView;
   }
 
   public void listOfflineRegions(final CallbackContext callback) {
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        OfflineManager offlineManager = OfflineManager.getInstance(webView.getContext());
-        offlineManager.setAccessToken(accessToken);
         mapboxManager.loadOfflineRegions(new MapboxManager.LoadOfflineRegionsCallback() {
           @Override
           public void onList(JSONArray offlineRegions) {
@@ -440,8 +377,6 @@ public class Mapbox extends CordovaPlugin {
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        OfflineManager offlineManager = OfflineManager.getInstance(webView.getContext());
-        offlineManager.setAccessToken(accessToken);
         mapboxManager.createOfflineRegion(options, callback, new MapboxManager.OfflineRegionProgressCallback() {
           @Override
           public void onProgress(JSONObject progress) {
@@ -506,35 +441,35 @@ public class Mapbox extends CordovaPlugin {
 
   @Override
   public void onStart() {
-    for (Map map : Map.maps()) {
+    for (Map map : mapboxManager.maps()) {
       map.getMapView().onStart();
     }
   }
 
   @Override
   public void onResume(boolean multitasking) {
-    for (Map map : Map.maps()) {
+    for (Map map : mapboxManager.maps()) {
       map.getMapView().onResume();
     }
   }
 
   @Override
   public void onPause(boolean multitasking) {
-    for (Map map : Map.maps()) {
+    for (Map map : mapboxManager.maps()) {
       map.getMapView().onPause();
     }
   }
 
   @Override
   public void onStop() {
-    for (Map map : Map.maps()) {
+    for (Map map : mapboxManager.maps()) {
       map.getMapView().onStop();
     }
   }
 
   @Override
   public void onDestroy() {
-    for (Map map : Map.maps()) {
+    for (Map map : mapboxManager.maps()) {
       map.getMapView().onDestroy();
     }
   }
@@ -564,26 +499,6 @@ public class Mapbox extends CordovaPlugin {
 
     return accessToken;
   }
-
-  public static String getStyle(final String requested) {
-    if ("light".equalsIgnoreCase(requested)) {
-      return Style.LIGHT;
-    } else if ("dark".equalsIgnoreCase(requested)) {
-      return Style.DARK;
-    } else if ("emerald".equalsIgnoreCase(requested)) {
-      return Style.EMERALD;
-    } else if ("satellite".equalsIgnoreCase(requested)) {
-      return Style.SATELLITE;
-      // TODO not currently supported on Android
-      //} else if ("hybrid".equalsIgnoreCase(requested)) {
-      //    return Style.HYBRID;
-    } else if ("streets".equalsIgnoreCase(requested)) {
-      return Style.MAPBOX_STREETS;
-    } else {
-      return requested;
-    }
-  }
-
 }
 
 class Command {

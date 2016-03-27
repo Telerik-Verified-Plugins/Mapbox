@@ -6,77 +6,58 @@ import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.UiSettings;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Collection;
-import java.util.HashMap;
-
 public class Map {
-    private static HashMap<Integer, Map> maps = new HashMap<Integer, Map>();
-
-    private static int ids = 0;
-
-    public interface MapCreatedCallback {
-        void onCreate(Map map);
-        void onError(String error);
-    }
-
-    public static void create(MapView mapView, JSONObject options, MapCreatedCallback callback) {
-        Map map = new Map(mapView, options, callback);
-        maps.put(map.getId(), map);
-    }
-
-    public static Collection<Map> maps() {
-        return maps.values();
-    }
-
-    public static Map getMap(int id) {
-        return maps.get(id);
-    }
-
-    public static void removeMap(int id) {
-        maps.remove(id);
-    }
-
-    private int id;
+    private long id;
 
     private MapView mapView;
 
     private MapboxMap mapboxMap;
 
-    private MapCreatedCallback constructorCallback;
-
-    private Map(final MapView mapView, final JSONObject options, final MapCreatedCallback callback) {
-        this.id = this.ids++;
-        this.constructorCallback = callback;
+    public Map(long id, final MapView mapView, final JSONObject options) throws JSONException {
+        this.id = id;
         this.mapView = mapView;
-
-        mapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(MapboxMap mMap) {
-                mapboxMap = mMap;
-                try {
-                    applyOptions(options);
-                    constructorCallback.onCreate(Map.this);
-                } catch (JSONException e) {
-                    Map.removeMap(getId());
-                    constructorCallback.onError(e.getMessage());
-                }
-            }
-        });
     }
 
-    public int getId() {
+    public long getId() {
         return this.id;
     }
 
     public MapView getMapView() {
         return this.mapView;
+    }
+
+    public void setMapboxMap(MapboxMap mMap, JSONObject options) throws JSONException {
+        this.mapboxMap = mMap;
+        UiSettings uiSettings = mMap.getUiSettings();
+        uiSettings.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
+        uiSettings.setRotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
+        uiSettings.setScrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
+        uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
+        uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
+
+        if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
+            uiSettings.setAttributionMargins(-300, 0, 0, 0);
+        }
+
+        if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
+            uiSettings.setLogoMargins(-300, 0, 0, 0);
+        }
+
+        if (!options.isNull("showUserLocation")) {
+            this.showUserLocation(options.getBoolean("showUserLocation"));
+        }
+
+        if (options.has("markers")) {
+            this.addMarkers(options.getJSONArray("markers"));
+        }
+
+        this.jumpTo(options);
     }
 
     public MapboxMap getMapboxMap() {
@@ -158,32 +139,5 @@ public class Map {
 
     public void showUserLocation(boolean enabled) {
         mapboxMap.setMyLocationEnabled(enabled);
-    }
-
-    private void applyOptions(JSONObject options) throws JSONException {
-        if (!options.isNull("showUserLocation")) {
-            this.showUserLocation(options.getBoolean("showUserLocation"));
-        }
-
-        UiSettings uiSettings = mapboxMap.getUiSettings();
-        uiSettings.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
-        uiSettings.setRotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
-        uiSettings.setScrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
-        uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
-        uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
-
-        if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
-            uiSettings.setAttributionMargins(-300, 0, 0, 0);
-        }
-
-        if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
-            uiSettings.setLogoMargins(-300, 0, 0, 0);
-        }
-
-        if (options.has("markers")) {
-            this.addMarkers(options.getJSONArray("markers"));
-        }
-
-        this.jumpTo(options);
     }
 }
