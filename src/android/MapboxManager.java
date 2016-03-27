@@ -7,6 +7,7 @@ import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.offline.OfflineManager;
 import com.mapbox.mapboxsdk.offline.OfflineRegionDefinition;
@@ -87,26 +88,28 @@ class MapboxManager {
 
     public void createMap(final JSONObject options, final CallbackContext callback) {
         try {
-            final long id = ids++;
-            final MapView mapView = createMapView(this.accessToken, options);
-            final Map map = new Map(id, mapView, options);
+            PositionInfo position = new PositionInfo(options.isNull("margins") ? null : options.getJSONObject("margins"), density);
+            MapView mapView = createMapView(Map.createMapboxMapOptions(options), position);
 
-            mapView.setStyleUrl(MapboxManager.getStyle(options.getString("style")));
-            JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-
-            positionMapView(mapView, margins);
+            long id = ids++;
+            final Map map = new Map(id, mapView);
             mapView.getMapAsync(new OnMapReadyCallback() {
                 @Override
                 public void onMapReady(MapboxMap mMap) {
                     try {
-                        map.setMapboxMap(mMap, options);
-                        maps.put(id, map);
+                        map.setMapboxMap(mMap);
+
+                        if (options.has("markers")) {
+                            map.addMarkers(options.getJSONArray("markers"));
+                        }
+
+                        maps.put(map.getId(), map);
 
                         JSONObject resp = new JSONObject();
-                        resp.put("id", id);
+                        resp.put("id", map.getId());
                         callback.success(resp);
                     } catch (JSONException e) {
-                        removeMap(id);
+                        removeMap(map.getId());
                         callback.error("Failed to create map: " + e.getMessage());
                     }
                 }
@@ -116,36 +119,28 @@ class MapboxManager {
         }
     }
 
-
-    private MapView createMapView(String accessToken, JSONObject options) throws JSONException {
-        MapView mapView = new MapView(this.webView.getContext());
-        mapView.setAccessToken(accessToken);
+    private MapView createMapView(MapboxMapOptions options, PositionInfo position) throws JSONException {
+        options.accessToken(accessToken);
+        MapView mapView = new MapView(this.webView.getContext(), options);
 
         // need to do this to register a receiver which onPause later needs
         mapView.onResume();
         mapView.onCreate(null);
 
-        return mapView;
-    }
-
-    private void positionMapView(MapView mapView, JSONObject margins) throws JSONException {
-        PositionInfo positionInfo = new PositionInfo(margins);
-        int top = (int) (density * positionInfo.top);
-        int right = (int) (density * positionInfo.right);
-        int bottom = (int) (density * positionInfo.bottom);
-        int left = (int) (density * positionInfo.left);
         int webViewWidth = webView.getView().getWidth();
         int webViewHeight = webView.getView().getHeight();
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                webViewWidth - left - right,
-                webViewHeight - top - bottom
+                webViewWidth - position.left - position.right,
+                webViewHeight - position.top - position.bottom
         );
 
-        params.setMargins(left, top, right, bottom);
+        params.setMargins(position.left, position.top, position.right, position.bottom);
         mapView.setLayoutParams(params);
 
         final FrameLayout layout = (FrameLayout) webView.getView().getParent();
         layout.addView(mapView);
+
+        return mapView;
     }
 
     public Collection<Map> maps() {
@@ -272,11 +267,11 @@ class MapboxManager {
         int bottom = 0;
         int left = 0;
 
-        public PositionInfo(JSONObject margins) throws JSONException {
-            this.top = margins == null || margins.isNull("top") ? 0 : margins.getInt("top");
-            this.right = margins == null || margins.isNull("right") ? 0 : margins.getInt("right");
-            this.bottom = margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom");
-            this.left = margins == null || margins.isNull("left") ? 0 : margins.getInt("left");
+        public PositionInfo(JSONObject margins, float density) throws JSONException {
+            this.top = margins == null || margins.isNull("top") ? 0 : (int) (density * margins.getInt("top"));
+            this.right = margins == null || margins.isNull("right") ? 0 : (int) (density * margins.getInt("right"));
+            this.bottom = margins == null || margins.isNull("bottom") ? 0 : (int) (density * margins.getInt("bottom"));
+            this.left = margins == null || margins.isNull("left") ? 0 : (int) (density * margins.getInt("left"));
         }
     }
 }

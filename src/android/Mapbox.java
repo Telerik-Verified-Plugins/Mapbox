@@ -8,13 +8,9 @@ import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.constants.Style;
-import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.offline.OfflineManager;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -345,7 +341,7 @@ public class Mapbox extends CordovaPlugin {
   }
 
   private void createMap(final JSONObject options, final CallbackContext callback) {
-      cordova.getActivity().runOnUiThread(new Runnable() {
+    cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
         mapboxManager.createMap(options, callback);

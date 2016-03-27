@@ -1,25 +1,63 @@
 package com.telerik.plugins.mapbox;
 
+import android.support.annotation.Nullable;
+
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.maps.UiSettings;
+import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Map {
+    public static MapboxMapOptions createMapboxMapOptions(JSONObject options) throws JSONException {
+        MapboxMapOptions opts = new MapboxMapOptions();
+        opts.styleUrl(MapboxManager.getStyle(options.getString("style")));
+        opts.attributionEnabled(options.isNull("hideAttribution") || !options.getBoolean("hideAttribution"));
+        opts.logoEnabled(options.isNull("hideLogo") || options.getBoolean("hideLogo"));
+        opts.locationEnabled(!options.isNull("showUserLocation") && options.getBoolean("showUserLocation"));
+        opts.camera(Map.getCameraPostion(options, null));
+        opts.compassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
+        opts.rotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
+        opts.scrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
+        opts.zoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
+        opts.tiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
+        return opts;
+    }
+
+    public static CameraPosition getCameraPostion(JSONObject options, @Nullable CameraPosition start) throws JSONException {
+        CameraPosition.Builder builder = new CameraPosition.Builder(start);
+
+        if (!options.isNull("zoom")) {
+            builder.zoom(options.getDouble("zoom"));
+        }
+
+        if (!options.isNull("center")) {
+            JSONArray center = options.getJSONArray("center");
+            double lng = center.getDouble(0);
+            double lat = center.getDouble(1);
+            builder.target(new LatLng(lat, lng));
+        }
+
+        // TODO: Bearing
+
+        // TODO: Pitch
+
+        return builder.build();
+    }
+
     private long id;
 
     private MapView mapView;
 
     private MapboxMap mapboxMap;
 
-    public Map(long id, final MapView mapView, final JSONObject options) throws JSONException {
+    public Map(long id, final MapView mapView) {
         this.id = id;
         this.mapView = mapView;
     }
@@ -32,32 +70,8 @@ public class Map {
         return this.mapView;
     }
 
-    public void setMapboxMap(MapboxMap mMap, JSONObject options) throws JSONException {
+    public void setMapboxMap(MapboxMap mMap) {
         this.mapboxMap = mMap;
-        UiSettings uiSettings = mMap.getUiSettings();
-        uiSettings.setCompassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
-        uiSettings.setRotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
-        uiSettings.setScrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
-        uiSettings.setZoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
-        uiSettings.setTiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
-
-        if (!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) {
-            uiSettings.setAttributionMargins(-300, 0, 0, 0);
-        }
-
-        if (!options.isNull("hideLogo") && options.getBoolean("hideLogo")) {
-            uiSettings.setLogoMargins(-300, 0, 0, 0);
-        }
-
-        if (!options.isNull("showUserLocation")) {
-            this.showUserLocation(options.getBoolean("showUserLocation"));
-        }
-
-        if (options.has("markers")) {
-            this.addMarkers(options.getJSONArray("markers"));
-        }
-
-        this.jumpTo(options);
     }
 
     public MapboxMap getMapboxMap() {
@@ -98,25 +112,7 @@ public class Map {
     }
 
     public void jumpTo(JSONObject options) throws JSONException {
-        CameraPosition current = mapboxMap.getCameraPosition();
-        CameraPosition.Builder builder = new CameraPosition.Builder(current);
-
-        if (!options.isNull("zoom")) {
-            builder.zoom(options.getDouble("zoom"));
-        }
-
-        if (!options.isNull("center")) {
-            JSONArray center = options.getJSONArray("center");
-            double lng = center.getDouble(0);
-            double lat = center.getDouble(1);
-            builder.target(new LatLng(lat, lng));
-        }
-
-        // TODO: Bearing
-
-        // TODO: Pitch
-
-        CameraPosition position = builder.build();
+        CameraPosition position = Map.getCameraPostion(options, mapboxMap.getCameraPosition());
         mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
     }
 
