@@ -6,6 +6,9 @@
 @property (retain) MGLMapView *mapView;
 @property (retain) NSString *markerCallbackId;
 @property (retain) MGLPointAnnotation *selectedAnnotation;
+@property (retain) NSString *regionWillChangeAnimatedCallbackId;
+@property (retain) NSString *regionIsChangingCallbackId;
+@property (retain) NSString *regionDidChangeAnimatedCallbackId;
 
 - (void) show:(CDVInvokedUrlCommand*)command;
 - (void) hide:(CDVInvokedUrlCommand*)command;
@@ -30,5 +33,9 @@
 
 - (void) convertCoordinate:(CDVInvokedUrlCommand*)command;
 - (void) convertPoint:(CDVInvokedUrlCommand*)command;
+
+- (void) addRegionWillChangeAnimatedCallback:(CDVInvokedUrlCommand*)command;
+- (void) addRegionIsChangingCallback:(CDVInvokedUrlCommand*)command;
+- (void) addRegionDidChangeAnimatedCallback:(CDVInvokedUrlCommand*)command;
 
 @end

@@ -18,7 +18,7 @@
   CGRect webviewFrame = self.webView.frame;
 
   CGRect mapFrame = CGRectMake(left, top, webviewFrame.size.width - left - right, webviewFrame.size.height - top - bottom);
-  
+
   _mapView = [[MGLMapView alloc] initWithFrame:mapFrame
                                       styleURL:mapStyle];
 
@@ -39,13 +39,13 @@
   } else {
     [_mapView setZoomLevel:zoomLevel.doubleValue];
   }
-  
-  
+
+
   _mapView.delegate = self;
 
   // default NO, note that this requires adding `NSLocationWhenInUseUsageDescription` or `NSLocationAlwaysUsageDescription` to the plist
   _mapView.showsUserLocation = [[args objectForKey:@"showUserLocation"] boolValue];
-  
+
   // default NO
   _mapView.attributionButton.hidden = [[args objectForKey:@"hideAttribution"] boolValue];
 
@@ -54,7 +54,7 @@
 
   // default NO
   _mapView.compassView.hidden = [[args objectForKey:@"hideCompass"] boolValue];
-  
+
   // default YES
   _mapView.rotateEnabled = ![[args objectForKey:@"disableRotation"] boolValue];
 
@@ -63,10 +63,10 @@
 
   // default YES
   _mapView.allowsTilting = ![[args objectForKey:@"disableTilt"] boolValue];
-  
+
   // default YES
   _mapView.scrollEnabled = ![[args objectForKey:@"disableScroll"] boolValue];
-  
+
   // default YES
   _mapView.zoomEnabled = ![[args objectForKey:@"disableZoom"] boolValue];
 
@@ -78,7 +78,7 @@
     // Draw the markers after the map has initialized
     [self performSelector:@selector(putMarkersOnTheMap:) withObject:markers afterDelay:1.0];
   }
-  
+
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   // keep the callback because there are various events the developer may be interested in
   pluginResult.keepCallback = [NSNumber numberWithBool:YES];
@@ -136,9 +136,9 @@
 - (void) getCenter:(CDVInvokedUrlCommand*)command {
   CLLocationCoordinate2D ctr = _mapView.centerCoordinate;
   NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:
-                                        [NSNumber numberWithDouble:ctr.latitude], @"lat",
-                                        [NSNumber numberWithDouble:ctr.longitude], @"lng",
-                                        nil];
+          [NSNumber numberWithDouble:ctr.latitude], @"lat",
+          [NSNumber numberWithDouble:ctr.longitude], @"lng",
+          nil];
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dic];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -168,7 +168,7 @@
   if (duration != nil) {
     durInt = [duration intValue];
   }
-  
+
   NSDictionary *target = [args objectForKey:@"target"];
   if (target != nil) {
     NSNumber *clat = [target valueForKey:@"lat"];
@@ -177,7 +177,7 @@
   }
 
   [_mapView setCamera:cam withDuration:durInt animationTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
-  
+
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -187,18 +187,18 @@
   NSArray* points = [args objectForKey:@"points"];
   if (points != nil) {
     [self.commandDelegate runInBackground:^{
-      CLLocationCoordinate2D *coordinates = malloc(points.count * sizeof(CLLocationCoordinate2D));
-      for (int i=0; i<points.count; i++) {
-        NSDictionary* point = points[i];
-        NSNumber *lat = [point valueForKey:@"lat"];
-        NSNumber *lng = [point valueForKey:@"lng"];
-        coordinates[i] = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
-      }
-      NSUInteger numberOfCoordinates = points.count; // sizeof(coordinates) / sizeof(CLLocationCoordinate2D);
-      MGLPolygon *shape = [MGLPolygon polygonWithCoordinates:coordinates count:numberOfCoordinates];
-      [_mapView addAnnotation:shape];
-      CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        CLLocationCoordinate2D *coordinates = malloc(points.count * sizeof(CLLocationCoordinate2D));
+        for (int i=0; i<points.count; i++) {
+          NSDictionary* point = points[i];
+          NSNumber *lat = [point valueForKey:@"lat"];
+          NSNumber *lng = [point valueForKey:@"lng"];
+          coordinates[i] = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
+        }
+        NSUInteger numberOfCoordinates = points.count; // sizeof(coordinates) / sizeof(CLLocationCoordinate2D);
+        MGLPolygon *shape = [MGLPolygon polygonWithCoordinates:coordinates count:numberOfCoordinates];
+        [_mapView addAnnotation:shape];
+        CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
   } else {
     CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
@@ -229,16 +229,16 @@
 
 - (void) putMarkersOnTheMap:(NSArray *)markers {
   [self.commandDelegate runInBackground:^{
-    for (int i = 0; i < markers.count; i++) {
-      NSDictionary* marker = markers[i];
-      MGLPointAnnotation *point = [[MGLPointAnnotation alloc] init];
-      NSNumber *lat = [marker valueForKey:@"lat"];
-      NSNumber *lng = [marker valueForKey:@"lng"];
-      point.coordinate = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
-      point.title = [marker valueForKey:@"title"];
-      point.subtitle = [marker valueForKey:@"subtitle"];
-      [_mapView addAnnotation:point];
-    }
+      for (int i = 0; i < markers.count; i++) {
+        NSDictionary* marker = markers[i];
+        MGLPointAnnotation *point = [[MGLPointAnnotation alloc] init];
+        NSNumber *lat = [marker valueForKey:@"lat"];
+        NSNumber *lng = [marker valueForKey:@"lng"];
+        point.coordinate = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
+        point.title = [marker valueForKey:@"title"];
+        point.subtitle = [marker valueForKey:@"subtitle"];
+        [_mapView addAnnotation:point];
+      }
   }];
 }
 
@@ -288,6 +288,17 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) addRegionWillChangeAnimatedCallback:(CDVInvokedUrlCommand*)command {
+  self.regionWillChangeAnimatedCallbackId = command.callbackId;
+}
+
+- (void) addRegionIsChangingCallback:(CDVInvokedUrlCommand*)command {
+  self.regionIsChangingCallbackId = command.callbackId;
+}
+
+- (void) addRegionDidChangeAnimatedCallback:(CDVInvokedUrlCommand*)command {
+  self.regionDidChangeAnimatedCallbackId = command.callbackId;
+}
 #pragma mark - MGLMapViewDelegate
 
 // this method is invoked every time an annotation is clicked
@@ -296,15 +307,15 @@
 }
 
 //- (MGLAnnotationImage *)mapView:(MGLMapView *)mapView imageForAnnotation:(id <MGLAnnotation>)annotation {
-  // TODO should be able to use an img from www/
+// TODO should be able to use an img from www/
 //  MGLAnnotationImage *annotationImage = [mapView dequeueReusableAnnotationImageWithIdentifier:@"pisa"];
-  
+
 //  if (!annotationImage) {
-    // Leaning Tower of Pisa by Stefan Spieler from the Noun Project
+// Leaning Tower of Pisa by Stefan Spieler from the Noun Project
 //    UIImage *image = [UIImage imageNamed:@"pisa"];
 //    annotationImage = [MGLAnnotationImage annotationImageWithImage:image reuseIdentifier:@"pisa"];
 //  }
-  
+
 //  return annotationImage;
 //}
 
@@ -351,5 +362,47 @@
     return [MGLStyle streetsStyleURL];
   }
 }
+
+- (void)mapView:(nonnull MGLMapView *)mapView regionWillChangeAnimated:(BOOL)animated {
+  if (self.regionWillChangeAnimatedCallbackId != nil) {
+
+    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
+
+    returnInfo[@"lat"] = @(_mapView.centerCoordinate.latitude);
+    returnInfo[@"lng"] = @(_mapView.centerCoordinate.longitude);
+
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:self.regionWillChangeAnimatedCallbackId];
+  }
+};
+
+- (void)mapViewRegionIsChanging:(nonnull MGLMapView *)mapView{
+  if (self.regionIsChangingCallbackId != nil) {
+
+    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
+
+    returnInfo[@"lat"] = @(_mapView.centerCoordinate.latitude);
+    returnInfo[@"lng"] = @(_mapView.centerCoordinate.longitude);
+
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:self.regionIsChangingCallbackId];
+  }
+};
+
+- (void)mapView:(nonnull MGLMapView *)mapView regionDidChangeAnimated:(BOOL)animated{
+  if (self.regionDidChangeAnimatedCallbackId != nil) {
+
+    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
+
+    returnInfo[@"lat"] = @(_mapView.centerCoordinate.latitude);
+    returnInfo[@"lng"] = @(_mapView.centerCoordinate.longitude);
+
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:self.regionDidChangeAnimatedCallbackId];
+  }
+};
 
 @end
