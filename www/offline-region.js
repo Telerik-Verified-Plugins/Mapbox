@@ -57,23 +57,31 @@ Object.defineProperty(OfflineRegion.prototype, "name", {
 });
 
 OfflineRegion.prototype._create = function (options) {
-    var args = [options, this._onProgressId, this._onCompleteId];
+    var args = [options];
     exec(this._instance, this._error, "Mapbox", "createOfflineRegion", args);
 };
 
 OfflineRegion.prototype._instance = function (response) {
     this._id = response.id;
     this._name = response.name;
-    this.loaded = true;
-    this.fire("load", {offlineRegion: this});
-    OFFLINE_REGIONS[this._id] = this;
+    return this._exec(
+        onSuccess.bind(this),
+        'bindOfflineRegionCallbacks',
+        [this._onProgressId, this._onCompleteId]
+    );
+    function onSuccess(err) {
+        if (err) return this._error(err);
+        OFFLINE_REGIONS[this._id] = this;
+        this.loaded = true;
+        this.fire("load", {offlineRegion: this});
+    }
 };
 
 OfflineRegion.prototype.download = function (callback) {
     this._downloading = true;
     return this._execAfterLoad(onSuccess, "downloadOfflineRegion");
     function onSuccess(err) {
-        if (err) return (callback || this._err)(err);
+        if (err) return (callback || this._error)(err);
         console.log("Mapbox OfflineRegion download started.");
     }
 };
@@ -81,8 +89,8 @@ OfflineRegion.prototype.download = function (callback) {
 OfflineRegion.prototype.pause = function (callback) {
     this._downloading = false;
     return this._execAfterLoad(onSuccess, "pauseOfflineRegion");
-    function onSuccess() {
-        if (err) return (callback || this._err)(err);
+    function onSuccess(err) {
+        if (err) return (callback || this._error)(err);
         console.log("Mapbox OfflineRegion download paused.");
     }
 };
@@ -90,6 +98,21 @@ OfflineRegion.prototype.pause = function (callback) {
 OfflineRegion.prototype.getStatus = function (callback) {
     return this._execAfterLoad(callback, "offlineRegionStatus");
 };
+
+function listOfflineRegions() {
+    return new Promise(function (resolve, reject) {
+        exec(resolve, reject, "Mapbox", "listOfflineRegions", []);
+    });
+}
+
+function createRegionFromResponse(response) {
+    var region = OFFLINE_REGIONS[response.id];
+    if (!region) {
+        region = new OfflineRegion();
+        region._instance(response);
+    }
+    return region;
+}
 
 module.exports = {
     createOfflineRegion: function (options) {
@@ -100,35 +123,25 @@ module.exports = {
 
     listOfflineRegions: function (callback) {
         callback = callback || function (err, response) {};
-        return new Promise(function (resolve, reject) {
-            exec(
-                function (responses) {
-                    console.log("Offline regions: ", responses);
-                    var regions = responses.map(function (response) {
-                            var region = OFFLINE_REGIONS[response.id];
-                            if (!region) {
-                                region = new OfflineRegion();
-                                region._instance(response);
-                            }
-                            return region;
-                        }),
-                        byName = regions.reduce(function (regionsByName, region) {
-                            regionsByName[region.name] = region;
-                            return regionsByName;
-                        }, {});
-                    callback(null, byName);
-                    resolve(byName);
-                },
-                function (errorMessage) {
-                    var error = "Error getting offline regions: " + errorMessage;
-                    console.error(error);
-                    callback(error);
-                    reject(error);
-                },
-                "Mapbox",
-                "listOfflineRegions",
-                []
-            );
-        });
+
+        return listOfflineRegions()
+            .then(function (responses) {
+                return Promise.all(responses.map(createRegionFromResponse));
+            })
+            .then(function (regions) {
+                return regions.reduce(function (regionsByName, region) {
+                    regionsByName[region.name] = region;
+                    return regionsByName;
+                }, {});
+            })
+            .then(function (regionsByName) {
+                callback(null, regionsByName);
+                return regionsByName;
+            })
+            .catch(function (errorMessage) {
+                var error = "Error getting offline regions: " + errorMessage;
+                console.error(error);
+                callback(error);
+            });
     }
 };

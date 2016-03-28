@@ -65,6 +65,8 @@ public class OfflineRegion {
         long requiredCount = status.getRequiredResourceCount();
         double percentage = requiredCount >= 0 ? (100.0 * completedCount / requiredCount) : 0.0;
         JSONObject jsonStatus = new JSONObject()
+            .put("completed", status.isComplete())
+            .put("downloading", status.getDownloadState() == com.mapbox.mapboxsdk.offline.OfflineRegion.STATE_ACTIVE)
             .put("completedCount", completedCount)
             .put("completedSize", status.getCompletedResourceSize())
             .put("requiredCount", requiredCount)

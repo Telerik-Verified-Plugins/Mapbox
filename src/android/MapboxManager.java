@@ -1,5 +1,6 @@
 package com.telerik.plugins.mapbox;
 
+import android.util.Log;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.constants.Style;
@@ -15,6 +16,7 @@ import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -189,7 +191,7 @@ class MapboxManager {
         });
     }
 
-    public void createOfflineRegion(final JSONObject options, final CallbackContext callback, final OfflineRegionProgressCallback offlineRegionStatusCallback) {
+    public void createOfflineRegion(final JSONObject options, final CallbackContext callback) {
         try {
             final String regionName = options.getString("name");
 
@@ -203,16 +205,14 @@ class MapboxManager {
                 public void onCreate(com.mapbox.mapboxsdk.offline.OfflineRegion offlineRegion) {
                     try {
                         OfflineRegion region = createOfflineRegion(offlineRegion);
-                        region.setObserver(offlineRegionStatusCallback);
-
                         JSONObject response = region.getMetadata();
                         response.put(JSON_FIELD_ID, region.getId());
                         callback.success(response);
                     } catch (JSONException e) {
                         this.onError(e.getMessage());
+                        removeOfflineRegion(offlineRegion.getID());
                     } catch (UnsupportedEncodingException e) {
                         this.onError(e.getMessage());
-                    } finally {
                         removeOfflineRegion(offlineRegion.getID());
                     }
                 }

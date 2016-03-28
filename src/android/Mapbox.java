@@ -44,6 +44,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
   private static final String ACTION_LIST_OFFLINE_REGIONS = "listOfflineRegions";
   private static final String ACTION_CREATE_OFFLINE_REGION = "createOfflineRegion";
+  private static final String ACTION_BIND_OFFLINE_REGION_CALLBACKS = "bindOfflineRegionCallbacks";
   private static final String ACTION_DOWNLOAD_OFFLINE_REGION = "downloadOfflineRegion";
   private static final String ACTION_PAUSE_OFFLINE_REGION = "pauseOfflineRegion";
   private static final String ACTION_OFFLINE_REGION_STATUS = "offlineRegionStatus";
@@ -233,9 +234,41 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_CREATE_OFFLINE_REGION.equals(action)) {
       final JSONObject options = args.getJSONObject(0);
+      this.createOfflineRegion(options, callbackContext);
+    }
+
+    else if (ACTION_BIND_OFFLINE_REGION_CALLBACKS.equals(action)) {
+      final long offlineRegionId = args.getLong(0);
       final CallbackContext onProgress = new CallbackContext(args.getString(1), this.webView);
       final CallbackContext onComplete = new CallbackContext(args.getString(2), this.webView);
-      this.createOfflineRegion(options, callbackContext, onProgress, onComplete);
+      final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
+
+      region.setObserver(new MapboxManager.OfflineRegionProgressCallback() {
+        @Override
+        public void onProgress(JSONObject progress) {
+          PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
+          result.setKeepCallback(true);
+          onProgress.sendPluginResult(result);
+        }
+
+        @Override
+        public void onComplete(JSONObject progress) {
+          Log.d(LOG_TAG, "OfflineRegion (" + region.getId() + ") download complete.");
+          PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
+          onComplete.sendPluginResult(result);
+        }
+
+        @Override
+        public void onError(String error) {
+          String message = "Failed to create OfflineRegion (" + region.getId() + "): " + error;
+          Log.e(LOG_TAG, message);
+          PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
+          result.setKeepCallback(true);
+          onComplete.error(message);
+        }
+      });
+
+      callbackContext.success();
     }
 
     else if (ACTION_DOWNLOAD_OFFLINE_REGION.equals(action)) {
@@ -405,34 +438,11 @@ public class Mapbox extends CordovaPlugin {
     });
   }
 
-  public void createOfflineRegion(final JSONObject options, final CallbackContext callback, final CallbackContext onProgress, final CallbackContext onComplete) throws JSONException {
+  public void createOfflineRegion(final JSONObject options, final CallbackContext callback) throws JSONException {
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        mapboxManager.createOfflineRegion(options, callback, new MapboxManager.OfflineRegionProgressCallback() {
-          @Override
-          public void onProgress(JSONObject progress) {
-            PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
-            result.setKeepCallback(true);
-            onProgress.sendPluginResult(result);
-          }
-
-          @Override
-          public void onComplete(JSONObject progress) {
-            Log.d(LOG_TAG, "complete");
-            PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
-            onComplete.sendPluginResult(result);
-          }
-
-          @Override
-          public void onError(String error) {
-            String message = "Failed to create offline region: " + error;
-            Log.e(LOG_TAG, message);
-            PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
-            result.setKeepCallback(true);
-            onComplete.error(message);
-          }
-        });
+        mapboxManager.createOfflineRegion(options, callback);
       }
     });
   }
