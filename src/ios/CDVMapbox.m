@@ -72,6 +72,14 @@
 
   [self.webView addSubview:_mapView];
 
+  // Place the map view behind and remove the Webview background. This is useful if you want to do a depth/parallax
+  // effect or decorate the map with custom DOM elements (GUI or animated markers).
+  if([args[@"clearBackground"] boolValue]) {
+    self.webView.opaque = NO;
+    [self.webView setBackgroundColor:[UIColor clearColor]];
+    [self.webView sendSubviewToBack:_mapView];
+  }
+
   // render markers async as the app will crash if we add it before the map is loaded.. and the delegate events are not sufficiently helpful
   NSArray* markers = [args objectForKey:@"markers"];
   if (markers != nil) {
