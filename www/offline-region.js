@@ -82,7 +82,7 @@ OfflineRegion.prototype.download = function (callback) {
     return this._execAfterLoad(onSuccess, "downloadOfflineRegion");
     function onSuccess(err) {
         if (err) return (callback || this._error)(err);
-        console.log("Mapbox OfflineRegion download started.");
+        console.debug("Mapbox OfflineRegion download started.");
     }
 };
 
@@ -91,7 +91,7 @@ OfflineRegion.prototype.pause = function (callback) {
     return this._execAfterLoad(onSuccess, "pauseOfflineRegion");
     function onSuccess(err) {
         if (err) return (callback || this._error)(err);
-        console.log("Mapbox OfflineRegion download paused.");
+        console.debug("Mapbox OfflineRegion download paused.");
     }
 };
 
