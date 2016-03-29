@@ -481,13 +481,6 @@ public class Mapbox extends CordovaPlugin {
     Command.execute(this, commandId);
   }
 
-  @Override
-  public void onStart() {
-    for (Map map : mapboxManager.maps()) {
-      map.getMapView().onStart();
-    }
-  }
-
   public void onResume(boolean multitasking) {
     for (Map map : mapboxManager.maps()) {
       map.getMapView().onResume();
@@ -498,13 +491,6 @@ public class Mapbox extends CordovaPlugin {
   public void onPause(boolean multitasking) {
     for (Map map : mapboxManager.maps()) {
       map.getMapView().onPause();
-    }
-  }
-
-  @Override
-  public void onStop() {
-    for (Map map : mapboxManager.maps()) {
-      map.getMapView().onStop();
     }
   }
 
