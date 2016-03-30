@@ -5,10 +5,10 @@ repositories {
     maven { url "http://oss.sonatype.org/content/repositories/snapshots/" }
 }
 
-
 dependencies {
+    compile 'com.cocoahero.android:geojson:1.0.1@jar'
     compile 'com.android.support:appcompat-v7:23.0.1'
-    compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:3.2.0@aar'){
+    compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:4.0.0-SNAPSHOT@aar'){
         transitive=true
     }
 }
