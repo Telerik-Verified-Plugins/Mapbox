@@ -4,11 +4,26 @@ var exec = require("cordova/exec"),
 
 function MapInstance(options) {
     var onLoad = this._onLoad.bind(this),
-        onError = this._error.bind(this);
+        onEvent = _onEvent.bind(this),
+        onError = _onError.bind(this);
 
     this.createStickyChannel("load");
+    this._onEventId = this._registerCallback('onEvent', onEvent, onError);
 
-    exec(onLoad, onError, "Mapbox", "createMap", [options]);
+    exec(onLoad, onError, "Mapbox", "createMap", [options, this._onEventId]);
+
+    function _onEvent(event) {
+        console.debug("Event recieved: " + event.name, event.data);
+        this.fire(event.name, event.data);
+    }
+
+    function _onError(error) {
+        try {
+            this.prototype._error.call(this, error);
+        } catch (e) {
+            this.fire("error", e);
+        }
+    }
 }
 
 MapboxPluginAPI('MapInstance', MapInstance.prototype);

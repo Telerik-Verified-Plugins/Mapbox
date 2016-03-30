@@ -1,7 +1,9 @@
 package com.telerik.plugins.mapbox;
 
+import android.location.Location;
 import android.support.annotation.Nullable;
 
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -15,6 +17,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Map {
+
+    public interface MapEventListener {
+        void onEvent(String name, JSONObject event);
+    }
+
     public static MapboxMapOptions createMapboxMapOptions(JSONObject options) throws JSONException {
         MapboxMapOptions opts = new MapboxMapOptions();
         opts.styleUrl(MapboxManager.getStyle(options.getString("style")));
@@ -57,11 +64,14 @@ public class Map {
 
     private MapboxMap mapboxMap;
 
+    private MapEventListener eventListener;
+
     private FeatureManager features;
 
-    public Map(long id, final MapView mapView) {
+    public Map(long id, MapEventListener eventListener, final MapView mapView) {
         this.id = id;
         this.mapView = mapView;
+        this.eventListener = eventListener;
     }
 
     public long getId() {
@@ -74,6 +84,92 @@ public class Map {
 
     public void setMapboxMap(MapboxMap mMap) {
         this.mapboxMap = mMap;
+
+        this.mapboxMap.setOnCameraChangeListener(new MapboxMap.OnCameraChangeListener() {
+            @Override
+            public void onCameraChange(CameraPosition position) {
+                eventListener.onEvent("camerachange", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnFlingListener(new MapboxMap.OnFlingListener() {
+            @Override
+            public void onFling() {
+                eventListener.onEvent("fling", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
+            @Override
+            public boolean onInfoWindowClick(Marker marker) {
+                eventListener.onEvent("infowindowclick", new JSONObject());
+                return true;
+            }
+        });
+
+        this.mapboxMap.setOnInfoWindowCloseListener(new MapboxMap.OnInfoWindowCloseListener() {
+            @Override
+            public void onInfoWindowClose(Marker marker) {
+                eventListener.onEvent("infowindowclose", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnInfoWindowLongClickListener(new MapboxMap.OnInfoWindowLongClickListener() {
+            @Override
+            public void onInfoWindowLongClick(Marker marker) {
+                eventListener.onEvent("infowindowlongclick", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng point) {
+                eventListener.onEvent("mapclick", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnMapLongClickListener(new MapboxMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(LatLng point) {
+                eventListener.onEvent("maplongclick", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                eventListener.onEvent("markerclick", new JSONObject());
+                return true;
+            }
+        });
+
+        this.mapboxMap.setOnMyBearingTrackingModeChangeListener(new MapboxMap.OnMyBearingTrackingModeChangeListener() {
+            @Override
+            public void onMyBearingTrackingModeChange(int myBearingTrackingMode) {
+                eventListener.onEvent("bearingtrackingmodechange", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnMyLocationChangeListener(new MapboxMap.OnMyLocationChangeListener() {
+            @Override
+            public void onMyLocationChange(@Nullable Location location) {
+                eventListener.onEvent("locationchange", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnMyLocationTrackingModeChangeListener(new MapboxMap.OnMyLocationTrackingModeChangeListener() {
+            @Override
+            public void onMyLocationTrackingModeChange(int myLocationTrackingMode) {
+                eventListener.onEvent("locationtrackingmodechange", new JSONObject());
+            }
+        });
+
+        this.mapboxMap.setOnScrollListener(new MapboxMap.OnScrollListener() {
+            @Override
+            public void onScroll() {
+                eventListener.onEvent("onscroll", new JSONObject());
+            }
+        });
     }
 
     public void setFeatureManager(FeatureManager featureManager) {

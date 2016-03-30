@@ -80,7 +80,8 @@ public class Mapbox extends CordovaPlugin {
       final JSONObject options = args.getJSONObject(0);
       boolean showUserLocation = !options.isNull("showUserLocation") && options.getBoolean("showUserLocation");
       if (!showUserLocation || requestPermission(command, COARSE_LOCATION, FINE_LOCATION)) {
-        this.createMap(options, callbackContext);
+        final CallbackContext eventCallback = new CallbackContext(args.getString(1), this.webView);
+        this.createMap(options, eventCallback, callbackContext);
       }
     }
 
@@ -373,13 +374,35 @@ public class Mapbox extends CordovaPlugin {
     return true;
   }
 
-  private void createMap(final JSONObject options, final CallbackContext callback) {
+  private void createMap(final JSONObject options, final CallbackContext eventCallback, final CallbackContext callback) {
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        mapboxManager.createMap(options, callback);
+        Map.MapEventListener eventListener = createEventListener(eventCallback);
+        mapboxManager.createMap(options, eventListener, callback);
       }
     });
+  }
+
+  private Map.MapEventListener createEventListener(final CallbackContext callback) {
+    return new Map.MapEventListener() {
+      @Override
+      public void onEvent(String name, JSONObject data) {
+        try {
+          JSONObject event = new JSONObject()
+                  .put("name", name)
+                  .put("data", data);
+          PluginResult result = new PluginResult(PluginResult.Status.OK, event);
+          result.setKeepCallback(true);
+          callback.sendPluginResult(result);
+        } catch (JSONException e) {
+          String message = "Error during map event: " + e.getMessage();
+          PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
+          result.setKeepCallback(true);
+          callback.sendPluginResult(result);
+        }
+      }
+    };
   }
 
   public void listOfflineRegions(final CallbackContext callback) {
@@ -387,16 +410,16 @@ public class Mapbox extends CordovaPlugin {
       @Override
       public void run() {
         mapboxManager.loadOfflineRegions(new MapboxManager.LoadOfflineRegionsCallback() {
-            @Override
-            public void onList(JSONArray offlineRegions) {
-                callback.success(offlineRegions);
-            }
+          @Override
+          public void onList(JSONArray offlineRegions) {
+            callback.success(offlineRegions);
+          }
 
-            @Override
-            public void onError(String error) {
-                String message = "Error loading offline regions: " + error;
-                callback.error(message);
-            }
+          @Override
+          public void onError(String error) {
+            String message = "Error loading offline regions: " + error;
+            callback.error(message);
+          }
         });
       }
     });

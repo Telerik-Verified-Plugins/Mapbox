@@ -81,13 +81,13 @@ class MapboxManager {
         this.offlineManager.setAccessToken(accessToken);
     }
 
-    public void createMap(final JSONObject options, final CallbackContext callback) {
+    public void createMap(final JSONObject options, Map.MapEventListener eventListener, final CallbackContext callback) {
         try {
             PositionInfo position = new PositionInfo(options.isNull("margins") ? null : options.getJSONObject("margins"), density);
             MapView mapView = createMapView(Map.createMapboxMapOptions(options), position);
 
             long id = ids++;
-            final Map map = new Map(id, mapView);
+            final Map map = new Map(id, eventListener, mapView);
             mapView.getMapAsync(new OnMapReadyCallback() {
                 @Override
                 public void onMapReady(MapboxMap mMap) {

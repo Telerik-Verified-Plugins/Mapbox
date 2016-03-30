@@ -48,6 +48,9 @@ module.exports = function (prefix, target) {
         },
 
         fire: function (type, e) {
+            if (!this._channel(type)) {
+                this.createChannel(type);
+            }
             this._channel(type).fire(e);
         }
     })(target);
