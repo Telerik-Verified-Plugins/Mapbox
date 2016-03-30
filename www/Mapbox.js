@@ -61,15 +61,15 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertPoint", [options]);
   },
 
-  addRegionWillChangeAnimatedCallback: function(callback){
-    cordova.exec(callback, null, "Mapbox", "addRegionWillChangeAnimatedCallback", []);
+  onRegionWillChange: function(callback){
+    cordova.exec(callback, null, "Mapbox", "onRegionWillChange", []);
   },
 
-  addRegionIsChangingCallback: function(callback){
-    cordova.exec(callback, null, "Mapbox", "addRegionIsChangingCallback", []);
+  onRegionIsChanging: function(callback){
+    cordova.exec(callback, null, "Mapbox", "onRegionIsChanging", []);
   },
 
-  addRegionDidChangeAnimatedCallback: function(callback){
-    cordova.exec(callback, null, "Mapbox", "addRegionDidChangeAnimatedCallback", []);
+  onRegionDidChange: function(callback){
+    cordova.exec(callback, null, "Mapbox", "onRegionDidChange", []);
   }
 };

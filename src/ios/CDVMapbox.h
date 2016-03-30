@@ -34,8 +34,8 @@
 - (void) convertCoordinate:(CDVInvokedUrlCommand*)command;
 - (void) convertPoint:(CDVInvokedUrlCommand*)command;
 
-- (void) addRegionWillChangeAnimatedCallback:(CDVInvokedUrlCommand*)command;
-- (void) addRegionIsChangingCallback:(CDVInvokedUrlCommand*)command;
-- (void) addRegionDidChangeAnimatedCallback:(CDVInvokedUrlCommand*)command;
+- (void) onRegionWillChange:(CDVInvokedUrlCommand*)command;
+- (void) onRegionIsChanging:(CDVInvokedUrlCommand*)command;
+- (void) onRegionDidChange:(CDVInvokedUrlCommand*)command;
 
 @end

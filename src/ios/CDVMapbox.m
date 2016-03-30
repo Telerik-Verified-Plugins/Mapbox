@@ -288,15 +288,15 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void) addRegionWillChangeAnimatedCallback:(CDVInvokedUrlCommand*)command {
+- (void) onRegionWillChange:(CDVInvokedUrlCommand*)command {
   self.regionWillChangeAnimatedCallbackId = command.callbackId;
 }
 
-- (void) addRegionIsChangingCallback:(CDVInvokedUrlCommand*)command {
+- (void) onRegionIsChanging:(CDVInvokedUrlCommand*)command {
   self.regionIsChangingCallbackId = command.callbackId;
 }
 
-- (void) addRegionDidChangeAnimatedCallback:(CDVInvokedUrlCommand*)command {
+- (void) onRegionDidChange:(CDVInvokedUrlCommand*)command {
   self.regionDidChangeAnimatedCallbackId = command.callbackId;
 }
 #pragma mark - MGLMapViewDelegate
@@ -363,13 +363,25 @@
   }
 }
 
+- (NSMutableDictionary*) getResultOnMapChange{
+
+  NSMutableDictionary* returnInfo = [NSMutableDictionary dictionary];
+  MGLMapCamera* camera = _mapView.camera;
+
+  returnInfo[@"lat"] = @(_mapView.centerCoordinate.latitude);
+  returnInfo[@"lng"] = @(_mapView.centerCoordinate.longitude);
+  returnInfo[@"camAltitude"] = @(_mapView.camera.altitude);
+  returnInfo[@"camPitch"] = @(_mapView.camera.pitch);
+  returnInfo[@"camHeading"] = @(_mapView.camera.heading);
+
+  return returnInfo;
+}
+
+
 - (void)mapView:(nonnull MGLMapView *)mapView regionWillChangeAnimated:(BOOL)animated {
   if (self.regionWillChangeAnimatedCallbackId != nil) {
 
-    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
-
-    returnInfo[@"lat"] = @(_mapView.centerCoordinate.latitude);
-    returnInfo[@"lng"] = @(_mapView.centerCoordinate.longitude);
+    NSMutableDictionary* returnInfo = [self getResultOnMapChange];
 
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];
@@ -380,10 +392,7 @@
 - (void)mapViewRegionIsChanging:(nonnull MGLMapView *)mapView{
   if (self.regionIsChangingCallbackId != nil) {
 
-    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
-
-    returnInfo[@"lat"] = @(_mapView.centerCoordinate.latitude);
-    returnInfo[@"lng"] = @(_mapView.centerCoordinate.longitude);
+    NSMutableDictionary* returnInfo = [self getResultOnMapChange];
 
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];
@@ -394,10 +403,7 @@
 - (void)mapView:(nonnull MGLMapView *)mapView regionDidChangeAnimated:(BOOL)animated{
   if (self.regionDidChangeAnimatedCallbackId != nil) {
 
-    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
-
-    returnInfo[@"lat"] = @(_mapView.centerCoordinate.latitude);
-    returnInfo[@"lng"] = @(_mapView.centerCoordinate.longitude);
+    NSMutableDictionary* returnInfo = [self getResultOnMapChange];
 
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];

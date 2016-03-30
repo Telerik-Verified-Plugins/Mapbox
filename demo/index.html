@@ -132,15 +132,15 @@
               // let's add callbacks for region changing
               //
               // - invoked when the map is about to moved (animated or not).
-              Mapbox.addRegionWillChangeAnimatedCallback(function(centerCoordinates) {
+              Mapbox.onRegionWillChange(function(centerCoordinates) {
                 console.log("Map will move from: ", centerCoordinates);
               });
               // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
-              Mapbox.addRegionIsChangingCallback(function(centerCoordinates){
+              Mapbox.onRegionIsChanging(function(centerCoordinates){
                 console.log("New map center is: ", centerCoordinates);
               });
               // - invoked after the map has moved (animated or not).
-              Mapbox.addRegionDidChangeAnimatedCallback(function(centerCoordinates) {
+              Mapbox.onRegionDidChange(function(centerCoordinates) {
                 console.log("Map as finished to move to : ", centerCoordinates);
               });
             },
