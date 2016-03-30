@@ -59,6 +59,17 @@ module.exports = {
 
   convertPoint: function(options, successCallback, errorCallback){
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertPoint", [options]);
-  }
+  },
 
+  onRegionWillChange: function(callback){
+    cordova.exec(callback, null, "Mapbox", "onRegionWillChange", []);
+  },
+
+  onRegionIsChanging: function(callback){
+    cordova.exec(callback, null, "Mapbox", "onRegionIsChanging", []);
+  },
+
+  onRegionDidChange: function(callback){
+    cordova.exec(callback, null, "Mapbox", "onRegionDidChange", []);
+  }
 };

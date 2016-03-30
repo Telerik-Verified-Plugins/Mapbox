@@ -19,41 +19,23 @@
     <br/>
     <button onclick="showMap()">Show</button>
   </div>
-    <div id="deviceready" class="blink">
-        <p class="event listening">Connecting to Device</p>
-
-        <p class="event received">Device is Ready</p>
-
-        <div style="height:80px;position:absolute;bottom:0">
-            <button onclick="showMap()">Show</button>
-            <button onclick="addMarkers()">Markers</button>
-            <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
-            <button onclick="addPolygon()">Poly</button>
-            <button onclick="getZoomLevel()">getZoom</button>
-            <button onclick="zoomIn()">+</button>
-            <button onclick="zoomOut()">-</button>
-            <button onclick="setCenter()">set center</button>
-            <button onclick="getCenter()">get center</button>
-            <button onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
-            <button onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
-            <button onclick="hideMap()">hide</button>
-        </div>
-    </div>
-</div>
-
-<div style="position:absolute; bottom:0; background-color: #eee">
-  <button onclick="animateCamera()">Camera</button>
-  <button onclick="addMarkers()">Markers</button>
-  <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
-  <button onclick="addPolygon()">Poly</button>
-  <button onclick="hideMap()">hide</button><br/><br/>
-  <button onclick="getZoomLevel()">getZoom</button>
-  <button onclick="zoomIn()">zoom +</button>
-  <button onclick="zoomOut()">zoom -</button><br/><br/>
-  <button onclick="setCenter()">set center</button>
-  <button onclick="getCenter()">get center</button>
-  <button onclick="setTilt()">set tilt</button>
-  <button onclick="getTilt()">get tilt</button><br/><br/>
+  <div style="position:absolute; bottom:0; background-color: #eee">
+    <button onclick="animateCamera()">Camera</button>
+    <button onclick="addMarkers()">Markers</button>
+    <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
+    <button onclick="addPolygon()">Poly</button>
+    <button onclick="hideMap()">hide</button><br/><br/>
+    <button onclick="getZoomLevel()">getZoom</button>
+    <button onclick="zoomIn()">zoom +</button>
+    <button onclick="zoomOut()">zoom -</button><br/><br/>
+    <button onclick="setCenter()">set center</button>
+    <button onclick="getCenter()">get center</button>
+    <button onclick="setTilt()">set tilt</button>
+    <button onclick="getTilt()">get tilt</button><br/><br/>
+    <button onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
+    <button onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
+    <button onclick="hideMap()">hide</button>
+  </div>
 </div>
 
 <script type="text/javascript" src="cordova.js"></script>
@@ -110,58 +92,72 @@
 
   function showMap() {
     Mapbox.show({
-          style: 'emerald',
-          margins: {
-            'left': 0,
-            'right': 0,
-            'top': 0,
-            'bottom': 160
-          },
-          center: {
-            lat: 52.3702160,
-            lng: 4.8951680
-          },
-          zoomLevel: zoom, // 0 (the entire world) to 20, default 10
-          showUserLocation: true, // default false
-          hideAttribution: true, // default false
-          hideLogo: true, // default false
-          hideCompass: false, // default false
-          disableRotation: false, // default false
-          disableScroll: false, // default false
-          disableTilt: false, // default false
-          disableZoom: false, // default false
-          disablePitch: false, // default false
-          markers: [
-            {
-              'lat': 52.3732160,
-              'lng': 4.8941680,
-              'title': 'Nice location',
-              'subtitle': 'Really really nice location',
-              'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
+              style: 'emerald',
+              margins: {
+                'left': 0,
+                'right': 0,
+                'top': 0,
+                'bottom': 160
+              },
+              center: {
+                lat: 52.3702160,
+                lng: 4.8951680
+              },
+              zoomLevel: zoom, // 0 (the entire world) to 20, default 10
+              showUserLocation: true, // default false
+              hideAttribution: true, // default false
+              hideLogo: true, // default false
+              hideCompass: false, // default false
+              disableRotation: false, // default false
+              disableScroll: false, // default false
+              disableTilt: false, // default false
+              disableZoom: false, // default false
+              disablePitch: false, // default false
+              markers: [
+                {
+                  'lat': 52.3732160,
+                  'lng': 4.8941680,
+                  'title': 'Nice location',
+                  'subtitle': 'Really really nice location',
+                  'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
+                }
+              ]
+            },
+            function (result) {
+              console.log(JSON.stringify(result));
+              // let's add a callback for these markers - invoked when the callout is tapped (Android) or the (i) icon in the marker callout (iOS)
+              Mapbox.addMarkerCallback(function (selectedMarker) {
+                alert("Marker selected: " + JSON.stringify(selectedMarker));
+              });
+              // let's add callbacks for region changing
+              //
+              // - invoked when the map is about to moved (animated or not).
+              Mapbox.onRegionWillChange(function(centerCoordinates) {
+                console.log("Map will move from: ", centerCoordinates);
+              });
+              // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
+              Mapbox.onRegionIsChanging(function(centerCoordinates){
+                console.log("New map center is: ", centerCoordinates);
+              });
+              // - invoked after the map has moved (animated or not).
+              Mapbox.onRegionDidChange(function(centerCoordinates) {
+                console.log("Map as finished to move to : ", centerCoordinates);
+              });
+            },
+            function (error) {
+              alert(error);
             }
-          ]
-        },
-        function (result) {
-          console.log(JSON.stringify(result));
-          // let's add a callback for these markers - invoked when the callout is tapped (Android) or the (i) icon in the marker callout (iOS)
-          Mapbox.addMarkerCallback(function (selectedMarker) {
-            alert("Marker selected: " + JSON.stringify(selectedMarker));
-          });
-        },
-        function (error) {
-          alert(error);
-        }
     )
   }
 
   function hideMap() {
     Mapbox.hide({},
-        function (result) {
-          console.log(JSON.stringify(result));
-        },
-        function (error) {
-          alert(error);
-        }
+            function (result) {
+              console.log(JSON.stringify(result));
+            },
+            function (error) {
+              alert(error);
+            }
     )
   }
 
@@ -207,51 +203,51 @@
 
   function addMarkers() {
     Mapbox.addMarkers([
-          {
-            'lat': 52.3602160,
-            'lng': 4.8891680,
-            'title': 'One-line title here', // no popup unless set
-            'subtitle': 'This text can span multiple lines on Android only. On iOS it\'s one line max.',
-            'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
-          },
-          {
-            'lat': 52.3702160,
-            'lng': 4.8911680,
-            'title': 'Nu subtitle for this one' // iOS: no popup unless set, Android: an empty popup -- so please add something
-          }
-        ],
-        function (result) {
-          console.log(JSON.stringify(result));
-        },
-        function (error) {
-          alert(error)
-        }
+              {
+                'lat': 52.3602160,
+                'lng': 4.8891680,
+                'title': 'One-line title here', // no popup unless set
+                'subtitle': 'This text can span multiple lines on Android only. On iOS it\'s one line max.',
+                'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
+              },
+              {
+                'lat': 52.3702160,
+                'lng': 4.8911680,
+                'title': 'Nu subtitle for this one' // iOS: no popup unless set, Android: an empty popup -- so please add something
+              }
+            ],
+            function (result) {
+              console.log(JSON.stringify(result));
+            },
+            function (error) {
+              alert(error)
+            }
     )
   }
 
 
-    function coords2Screen(coords) {
-        Mapbox.convertCoordinate(coords,
-                function (point) {
-                    alert("x:"+point.x+" - y:"+point.y);
-                },
-                function (error) {
-                    alert(error)
-                })
-    }
+  function coords2Screen(coords) {
+    Mapbox.convertCoordinate(coords,
+            function (point) {
+              alert("x:"+point.x+" - y:"+point.y);
+            },
+            function (error) {
+              alert(error)
+            })
+  }
 
-    function screen2Coords(point){
-        Mapbox.convertPoint({
-                    'x':point.x,
-                    'y':point.y
-                },
-                function (latlng) {
-                    alert("lat:"+latlng.lat+" - lng:"+latlng.lng);
-                },
-                function (error) {
-                    alert(error)
-                })
-    }
+  function screen2Coords(point){
+    Mapbox.convertPoint({
+              'x':point.x,
+              'y':point.y
+            },
+            function (latlng) {
+              alert("lat:"+latlng.lat+" - lng:"+latlng.lng);
+            },
+            function (error) {
+              alert(error)
+            })
+  }
 
 </script>
 </body>
