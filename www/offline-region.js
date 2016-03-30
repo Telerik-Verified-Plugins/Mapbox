@@ -4,17 +4,44 @@ var exec = require("cordova/exec"),
 
 var OFFLINE_REGIONS = {};
 
-function OfflineRegion() {
+function OfflineRegion(options) {
+    this._init();
+    this._properties = options.properties || {};
+
+    var args = [options, this._onProgressId, this._onCompleteId];
+    exec(this._onCreate, this._error, "Mapbox", "createOfflineRegion", args);
+}
+
+MapboxPluginAPI('OfflineRegion', OfflineRegion.prototype);
+EventsMixin('OfflineRegion', OfflineRegion.prototype);
+
+Object.defineProperty(OfflineRegion.prototype, "downloading", {
+    get: function () {
+        return this._downloading;
+    }
+});
+
+Object.defineProperty(OfflineRegion.prototype, "loaded", {
+    get: function () {
+        return this._loaded;
+    }
+});
+
+Object.defineProperty(OfflineRegion.prototype, "properties", {
+    get: function () {
+        return this._properties;
+    }
+});
+
+OfflineRegion.prototype._init = function () {
     var onProgress = _onProgress.bind(this),
         onComplete = _onComplete.bind(this),
         onError = _onError.bind(this);
 
     this._onProgressId = this._registerCallback('onProgress', onProgress);
     this._onCompleteId = this._registerCallback('onComplete', onComplete, onError);
-
-    this._error = this._error.bind(this);
-    this._create = this._create.bind(this);
-    this._instance = this._instance.bind(this);
+    this._error = onError;
+    this._onCreate = this._onCreate.bind(this);
 
     this._downloading = false;
 
@@ -34,47 +61,20 @@ function OfflineRegion() {
 
     function _onError(error) {
         try {
-            this._error(error);
+            this.prototype._error.call(this, error);
         } catch (e) {
             this.fire("error", e);
         }
     }
-}
-
-MapboxPluginAPI('OfflineRegion', OfflineRegion.prototype);
-EventsMixin('OfflineRegion', OfflineRegion.prototype);
-
-Object.defineProperty(OfflineRegion.prototype, "downloading", {
-    get: function () {
-        return this._downloading;
-    }
-});
-
-Object.defineProperty(OfflineRegion.prototype, "name", {
-    get: function () {
-        return this._name;
-    }
-});
-
-OfflineRegion.prototype._create = function (options) {
-    var args = [options];
-    exec(this._instance, this._error, "Mapbox", "createOfflineRegion", args);
 };
 
-OfflineRegion.prototype._instance = function (response) {
+OfflineRegion.prototype._onCreate = function onCreate(response) {
     this._id = response.id;
-    this._name = response.name;
-    return this._exec(
-        onSuccess.bind(this),
-        'bindOfflineRegionCallbacks',
-        [this._onProgressId, this._onCompleteId]
-    );
-    function onSuccess(err) {
-        if (err) return this._error(err);
-        OFFLINE_REGIONS[this._id] = this;
-        this.loaded = true;
-        this.fire("load", {offlineRegion: this});
-    }
+    this._properties = response.properties;
+    this._loaded = true;
+    this.fire("load", this);
+
+    OFFLINE_REGIONS[this._id] = this;
 };
 
 OfflineRegion.prototype.download = function (callback) {
@@ -106,19 +106,15 @@ function listOfflineRegions() {
 }
 
 function createRegionFromResponse(response) {
-    var region = OFFLINE_REGIONS[response.id];
-    if (!region) {
-        region = new OfflineRegion();
-        region._instance(response);
-    }
-    return region;
+    return new Promise(function (resolve, reject) {
+        var region = OFFLINE_REGIONS[response.id] || new OfflineRegion(response);
+        region.once('load', resolve);
+    });
 }
 
 module.exports = {
     createOfflineRegion: function (options) {
-        var region = new OfflineRegion();
-        region._create(options);
-        return region;
+        return new OfflineRegion(options);
     },
 
     listOfflineRegions: function (callback) {
@@ -129,14 +125,8 @@ module.exports = {
                 return Promise.all(responses.map(createRegionFromResponse));
             })
             .then(function (regions) {
-                return regions.reduce(function (regionsByName, region) {
-                    regionsByName[region.name] = region;
-                    return regionsByName;
-                }, {});
-            })
-            .then(function (regionsByName) {
-                callback(null, regionsByName);
-                return regionsByName;
+                callback(null, regions);
+                return regions;
             })
             .catch(function (errorMessage) {
                 var error = "Error getting offline regions: " + errorMessage;

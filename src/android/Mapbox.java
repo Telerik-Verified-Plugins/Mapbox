@@ -7,7 +7,6 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
@@ -29,9 +28,6 @@ import java.util.HashMap;
 // TODO fox Xwalk compat, see nativepagetransitions plugin
 // TODO look at demo app: https://github.com/mapbox/mapbox-gl-native/blob/master/android/java/MapboxGLAndroidSDKTestApp/src/main/java/com/mapbox/mapboxgl/testapp/MainActivity.java
 public class Mapbox extends CordovaPlugin {
-
-  private static final String LOG_TAG = "MapboxCordovaPlugin";
-
   public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
 
@@ -44,7 +40,6 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_SHOW_USER_LOCATION = "showUserLocation";
   private static final String ACTION_LIST_OFFLINE_REGIONS = "listOfflineRegions";
   private static final String ACTION_CREATE_OFFLINE_REGION = "createOfflineRegion";
-  private static final String ACTION_BIND_OFFLINE_REGION_CALLBACKS = "bindOfflineRegionCallbacks";
   private static final String ACTION_DOWNLOAD_OFFLINE_REGION = "downloadOfflineRegion";
   private static final String ACTION_PAUSE_OFFLINE_REGION = "pauseOfflineRegion";
   private static final String ACTION_OFFLINE_REGION_STATUS = "offlineRegionStatus";
@@ -234,41 +229,10 @@ public class Mapbox extends CordovaPlugin {
 
     else if (ACTION_CREATE_OFFLINE_REGION.equals(action)) {
       final JSONObject options = args.getJSONObject(0);
-      this.createOfflineRegion(options, callbackContext);
-    }
-
-    else if (ACTION_BIND_OFFLINE_REGION_CALLBACKS.equals(action)) {
-      final long offlineRegionId = args.getLong(0);
       final CallbackContext onProgress = new CallbackContext(args.getString(1), this.webView);
       final CallbackContext onComplete = new CallbackContext(args.getString(2), this.webView);
-      final OfflineRegion region = this.mapboxManager.getOfflineRegion(offlineRegionId);
 
-      region.setObserver(new MapboxManager.OfflineRegionProgressCallback() {
-        @Override
-        public void onProgress(JSONObject progress) {
-          PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
-          result.setKeepCallback(true);
-          onProgress.sendPluginResult(result);
-        }
-
-        @Override
-        public void onComplete(JSONObject progress) {
-          Log.d(LOG_TAG, "OfflineRegion (" + region.getId() + ") download complete.");
-          PluginResult result = new PluginResult(PluginResult.Status.OK, progress);
-          onComplete.sendPluginResult(result);
-        }
-
-        @Override
-        public void onError(String error) {
-          String message = "Failed to create OfflineRegion (" + region.getId() + "): " + error;
-          Log.e(LOG_TAG, message);
-          PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
-          result.setKeepCallback(true);
-          onComplete.error(message);
-        }
-      });
-
-      callbackContext.success();
+      this.createOfflineRegion(options, onProgress, onComplete, callbackContext);
     }
 
     else if (ACTION_DOWNLOAD_OFFLINE_REGION.equals(action)) {
@@ -423,26 +387,37 @@ public class Mapbox extends CordovaPlugin {
       @Override
       public void run() {
         mapboxManager.loadOfflineRegions(new MapboxManager.LoadOfflineRegionsCallback() {
-          @Override
-          public void onList(JSONArray offlineRegions) {
-            callback.success(offlineRegions);
-          }
+            @Override
+            public void onList(JSONArray offlineRegions) {
+                callback.success(offlineRegions);
+            }
 
-          @Override
-          public void onError(String error) {
-            String message = "Error loading offline regions: " + error;
-            callback.error(message);
-          }
+            @Override
+            public void onError(String error) {
+                String message = "Error loading offline regions: " + error;
+                callback.error(message);
+            }
         });
       }
     });
   }
 
-  public void createOfflineRegion(final JSONObject options, final CallbackContext callback) throws JSONException {
+  public void createOfflineRegion(final JSONObject options, final CallbackContext onProgress, final CallbackContext onComplete, final CallbackContext callback) throws JSONException {
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        mapboxManager.createOfflineRegion(options, callback);
+        mapboxManager.getOrCreateOfflineRegion(options, new MapboxManager.OfflineRegionLoadCallback() {
+          @Override
+          public void onLoad(OfflineRegion region) {
+            region.bindStatusCallbacks(onProgress, onComplete);
+            callback.success(region.getMetadata());
+          }
+
+          @Override
+          public void onError(String error) {
+            callback.error(error);
+          }
+        });
       }
     });
   }
