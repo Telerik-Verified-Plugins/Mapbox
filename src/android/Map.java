@@ -4,7 +4,6 @@ import android.location.Location;
 import android.support.annotation.Nullable;
 
 import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -18,8 +17,26 @@ import org.json.JSONObject;
 
 public class Map {
 
+    public static final String JSON_FIELD_ID = "id";
+    public static final String JSON_FIELD_PROPERTIES = "properties";
+    public static final String JSON_FIELD_LNGLAT = "lngLat";
+
+    public static final int EVENT_CAMERACHANGE = 0;
+    public static final int EVENT_FLING = 1;
+    public static final int EVENT_INFOWINDOWCLICK = 2;
+    public static final int EVENT_INFOWINDOWCLOSE = 3;
+    public static final int EVENT_INFOWINDOWLONGCLICK = 4;
+    public static final int EVENT_MAPCLICK = 5;
+    public static final int EVENT_MAPLONGCLICK = 6;
+    public static final int EVENT_MARKERCLICK = 7;
+    public static final int EVENT_BEARINGTRACKINGMODECHANGE = 8;
+    public static final int EVENT_LOCATIONCHANGE = 9;
+    public static final int EVENT_LOCATIONTRACKINGMODECHANGE = 10;
+    public static final int EVENT_ONSCROLL = 11;
+
     public interface MapEventListener {
-        void onEvent(String name, JSONObject event);
+        void onEvent(int code, JSONObject event);
+        void onError(String message);
     }
 
     public static MapboxMapOptions createMapboxMapOptions(JSONObject options) throws JSONException {
@@ -82,92 +99,146 @@ public class Map {
         return this.mapView;
     }
 
+    public JSONArray latLngToJSON(LatLng latLng) throws JSONException {
+        return new JSONArray()
+                .put(latLng.getLongitude())
+                .put(latLng.getLatitude());
+    }
+
+    public JSONObject getMarkerJSON(Marker marker) throws JSONException {
+        LatLng point = marker.getPosition();
+        JSONObject data = new JSONObject()
+                .put(JSON_FIELD_LNGLAT, latLngToJSON(point));
+
+        if (marker instanceof GeoJSONMarker) {
+            long featureId = ((GeoJSONMarker) marker).getFeatureId();
+            data.put(JSON_FIELD_ID, featureId);
+            data.put(JSON_FIELD_PROPERTIES, features.getMarker(featureId).getProperties());
+        }
+
+        return data;
+    }
+
     public void setMapboxMap(MapboxMap mMap) {
         this.mapboxMap = mMap;
 
         this.mapboxMap.setOnCameraChangeListener(new MapboxMap.OnCameraChangeListener() {
             @Override
             public void onCameraChange(CameraPosition position) {
-                eventListener.onEvent("camerachange", new JSONObject());
+                eventListener.onEvent(EVENT_CAMERACHANGE, new JSONObject());
             }
         });
 
         this.mapboxMap.setOnFlingListener(new MapboxMap.OnFlingListener() {
             @Override
             public void onFling() {
-                eventListener.onEvent("fling", new JSONObject());
+                eventListener.onEvent(EVENT_FLING, new JSONObject());
             }
         });
 
         this.mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
             @Override
             public boolean onInfoWindowClick(Marker marker) {
-                eventListener.onEvent("infowindowclick", new JSONObject());
-                return true;
+                try {
+                    JSONObject data = getMarkerJSON(marker);
+                    eventListener.onEvent(EVENT_INFOWINDOWCLICK, data);
+                    return true;
+                } catch (JSONException e) {
+                    eventListener.onError(e.getMessage());
+                    return false;
+                }
             }
         });
 
         this.mapboxMap.setOnInfoWindowCloseListener(new MapboxMap.OnInfoWindowCloseListener() {
             @Override
             public void onInfoWindowClose(Marker marker) {
-                eventListener.onEvent("infowindowclose", new JSONObject());
+                try {
+                    JSONObject data = getMarkerJSON(marker);
+                    eventListener.onEvent(EVENT_INFOWINDOWCLOSE, data);
+                } catch (JSONException e) {
+                    eventListener.onError(e.getMessage());
+                }
             }
         });
 
         this.mapboxMap.setOnInfoWindowLongClickListener(new MapboxMap.OnInfoWindowLongClickListener() {
             @Override
             public void onInfoWindowLongClick(Marker marker) {
-                eventListener.onEvent("infowindowlongclick", new JSONObject());
+                try {
+                    JSONObject data = getMarkerJSON(marker);
+                    eventListener.onEvent(EVENT_INFOWINDOWLONGCLICK, data);
+                } catch (JSONException e) {
+                    eventListener.onError(e.getMessage());
+                }
             }
         });
 
         this.mapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng point) {
-                eventListener.onEvent("mapclick", new JSONObject());
+                try {
+                    JSONObject data = new JSONObject()
+                            .put("lngLat", latLngToJSON(point));
+                    eventListener.onEvent(EVENT_MAPCLICK, data);
+                } catch (JSONException e) {
+                    eventListener.onError(e.getMessage());
+                }
             }
         });
 
         this.mapboxMap.setOnMapLongClickListener(new MapboxMap.OnMapLongClickListener() {
             @Override
             public void onMapLongClick(LatLng point) {
-                eventListener.onEvent("maplongclick", new JSONObject());
+                try {
+                    JSONObject data = new JSONObject()
+                            .put("lngLat", latLngToJSON(point));
+                    eventListener.onEvent(EVENT_MAPLONGCLICK, data);
+                } catch (JSONException e) {
+                    eventListener.onError(e.getMessage());
+                }
             }
         });
 
         this.mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                eventListener.onEvent("markerclick", new JSONObject());
-                return true;
+                try {
+                    JSONObject data = getMarkerJSON(marker);
+                    eventListener.onEvent(EVENT_MARKERCLICK, data);
+                    return true;
+                } catch (JSONException e) {
+                    eventListener.onError(e.getMessage());
+                    return false;
+                }
             }
         });
 
         this.mapboxMap.setOnMyBearingTrackingModeChangeListener(new MapboxMap.OnMyBearingTrackingModeChangeListener() {
             @Override
             public void onMyBearingTrackingModeChange(int myBearingTrackingMode) {
-                eventListener.onEvent("bearingtrackingmodechange", new JSONObject());
+                eventListener.onEvent(EVENT_BEARINGTRACKINGMODECHANGE, new JSONObject());
             }
         });
 
         this.mapboxMap.setOnMyLocationChangeListener(new MapboxMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(@Nullable Location location) {
-                eventListener.onEvent("locationchange", new JSONObject());
+                eventListener.onEvent(EVENT_LOCATIONCHANGE, new JSONObject());
             }
         });
 
         this.mapboxMap.setOnMyLocationTrackingModeChangeListener(new MapboxMap.OnMyLocationTrackingModeChangeListener() {
             @Override
             public void onMyLocationTrackingModeChange(int myLocationTrackingMode) {
-                eventListener.onEvent("locationtrackingmodechange", new JSONObject());
+                eventListener.onEvent(EVENT_LOCATIONTRACKINGMODECHANGE, new JSONObject());
             }
         });
 
         this.mapboxMap.setOnScrollListener(new MapboxMap.OnScrollListener() {
             @Override
             public void onScroll() {
-                eventListener.onEvent("onscroll", new JSONObject());
+                eventListener.onEvent(EVENT_ONSCROLL, new JSONObject());
             }
         });
     }
@@ -220,14 +291,11 @@ public class Map {
 
     public void addMarkers(JSONArray markers) throws JSONException {
         for (int i = 0; i < markers.length(); i++) {
-            final JSONObject marker = markers.getJSONObject(i);
-            final MarkerOptions mo = new MarkerOptions();
-
-            mo.title(marker.isNull("title") ? null : marker.getString("title"));
-            mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
-            mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
-
-            mapboxMap.addMarker(mo);
+            JSONObject marker = markers.getJSONObject(i);
+            LatLng latLng = new LatLng(marker.getDouble("lat"), marker.getDouble("lng"));
+            String title = marker.isNull("title") ? null : marker.getString("title");
+            String snippet = marker.isNull("subtitle") ? null : marker.getString("subtitle");
+            mapboxMap.addMarker(features.createMarker(latLng, title, snippet));
         }
     }
 

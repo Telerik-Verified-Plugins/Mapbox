@@ -387,20 +387,25 @@ public class Mapbox extends CordovaPlugin {
   private Map.MapEventListener createEventListener(final CallbackContext callback) {
     return new Map.MapEventListener() {
       @Override
-      public void onEvent(String name, JSONObject data) {
+      public void onEvent(int code, JSONObject data) {
         try {
           JSONObject event = new JSONObject()
-                  .put("name", name)
+                  .put("code", code)
                   .put("data", data);
           PluginResult result = new PluginResult(PluginResult.Status.OK, event);
           result.setKeepCallback(true);
           callback.sendPluginResult(result);
         } catch (JSONException e) {
-          String message = "Error during map event: " + e.getMessage();
-          PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
-          result.setKeepCallback(true);
-          callback.sendPluginResult(result);
+          this.onError(e.getMessage());
         }
+      }
+
+      @Override
+      public void onError(String error) {
+        String message = "Error during map event: " + error;
+        PluginResult result = new PluginResult(PluginResult.Status.ERROR, message);
+        result.setKeepCallback(true);
+        callback.sendPluginResult(result);
       }
     };
   }

@@ -1,6 +1,7 @@
 var exec = require("cordova/exec"),
     MapboxPluginAPI = require("./mapbox-plugin-api-mixin"),
-    EventsMixin = require("./events-mixin");
+    EventsMixin = require("./events-mixin"),
+    E = require("./map-events");
 
 function MapInstance(options) {
     var onLoad = this._onLoad.bind(this),
@@ -12,9 +13,20 @@ function MapInstance(options) {
 
     exec(onLoad, onError, "Mapbox", "createMap", [options, this._onEventId]);
 
-    function _onEvent(event) {
-        console.debug("Event recieved: " + event.name, event.data);
-        this.fire(event.name, event.data);
+    function _onEvent(e) {
+        var event = E.events[e.code];
+        switch (e.code) {
+            case E.codes.INFOWINDOWCLICK:
+            case E.codes.INFOWINDOWCLOSE:
+            case E.codes.INFOWINDOWLONGCLICK:
+            case E.codes.MARKERCLICK:
+                var marker = new Marker(e.data.id);
+                console.debug("Event recieved: " + event.name, marker);
+                return this.fire(event.name, marker);
+            default:
+                console.debug("Event recieved: " + event.name, e.data);
+                return this.fire(event.name, e.data);
+        }
     }
 
     function _onError(error) {
@@ -83,5 +95,12 @@ MapInstance.prototype._onLoad = function (resp) {
 
     this.fire("load", {map: this});
 };
+
+function Marker(id) {
+    this._id = id;
+}
+
+MapboxPluginAPI('Marker', Marker.prototype);
+EventsMixin('Marker', Marker.prototype);
 
 module.exports = MapInstance;

@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -21,6 +24,7 @@ import com.cocoahero.android.geojson.Point;
 import com.cocoahero.android.geojson.Polygon;
 import com.cocoahero.android.geojson.Position;
 import com.cocoahero.android.geojson.Ring;
+import com.mapbox.mapboxsdk.annotations.BaseMarkerOptions;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
@@ -50,6 +54,8 @@ interface DataSource {
 class FeatureManager {
     private String TAG = "FeatureManager";
 
+    protected long ids = 0;
+
     protected Context ctx;
 
     protected IconFactory iconFactory;
@@ -58,7 +64,7 @@ class FeatureManager {
 
     protected HashMap<String, DataSource> sources = new HashMap<String, DataSource>();
 
-    protected HashMap<Long, Feature> markerIndex = new HashMap<Long, Feature>();
+    protected HashMap<Long, GeoJSONMarker> markerIndex = new HashMap<Long, GeoJSONMarker>();
 
     public FeatureManager(Context ctx, MapboxMap mapboxMap) {
         this.ctx = ctx;
@@ -70,20 +76,16 @@ class FeatureManager {
         return this.sources.containsKey(name);
     }
 
-    public boolean hasMarkerFeature(Long id) {
+    public boolean hasMarker(Long id) {
         return this.markerIndex.containsKey(id);
     }
 
-    public Feature getMarkerFeature(Long id) {
-        if (this.hasMarkerFeature(id)) {
+    public GeoJSONMarker getMarker(Long id) {
+        if (this.hasMarker(id)) {
             return this.markerIndex.get(id);
         } else {
             return null;
         }
-    }
-
-    public Feature getMarkerFeature(Marker marker) {
-        return this.getMarkerFeature(marker.getId());
     }
 
     public void addGeoJSONSource(String name, String json) throws JSONException {
@@ -132,39 +134,60 @@ class FeatureManager {
         List<Feature> features = this.sources.get(source).getSymbols();
 
         for (Feature feature : features) {
-            MarkerOptions options = this.createMarker(feature, layer);
-            Marker marker = this.mapboxMap.addMarker(options);
-            this.markerIndex.put(marker.getId(), feature);
+            GeoJSONMarkerOptions options = this.createMarker(feature, layer);
+            GeoJSONMarker marker = (GeoJSONMarker) this.mapboxMap.addMarker(options);
+            this.markerIndex.put(marker.getFeatureId(), marker);
         }
     }
 
-    protected MarkerOptions createMarker(Feature feature, JSONObject style) {
-        final JSONObject properties = feature.getProperties();
-        final Position p = ((Point) feature.getGeometry()).getPosition();
-        final MarkerOptions marker = new MarkerOptions()
-            .position(new LatLng(p.getLatitude(), p.getLongitude()));
+    public GeoJSONMarkerOptions createMarker(LatLng latLng, String title, String snippet, @Nullable Icon icon, @Nullable JSONObject properties) {
+        GeoJSONMarkerOptions marker = new GeoJSONMarkerOptions()
+                .title(title)
+                .snippet(snippet)
+                .position(latLng)
+                .featureId(this.ids++);
+
+        if (icon != null) {
+            marker.icon(icon);
+        }
+
+        if (properties != null) {
+            marker.properties(properties);
+        }
+
+        return marker;
+    }
+
+    public GeoJSONMarkerOptions createMarker(LatLng latLng, String title, String snippet) {
+        return createMarker(latLng, title, snippet, null, null);
+    }
+
+    protected GeoJSONMarkerOptions createMarker(Feature feature, JSONObject style) {
+        JSONObject properties = feature.getProperties();
+        Position p = ((Point) feature.getGeometry()).getPosition();
+        LatLng latLng = new LatLng(p.getLatitude(), p.getLongitude());
+        String title = "";
+        String snippet = "";
+        Icon icon = null;
 
         try {
-            final String textField = style.getJSONObject("layout").getString("text-field");
-            marker.title(textField.replace("{title}", properties.getString("title")));
+            String textField = style.getJSONObject("layout").getString("text-field");
+            title = textField.replace("{title}", properties.getString("title"));
         } catch (JSONException e) {
             Log.w(TAG, "Error parsing Style JSON properties: " + e.getMessage());
         }
 
         try {
-            marker.snippet(properties.getString("description"));
+            snippet = properties.getString("description");
         } catch (JSONException e) {
             Log.w(TAG, "Error parsing Style JSON properties: " + e.getMessage());
         }
 
         try {
-            final String iconImage = style.getJSONObject("layout").getString("icon-image");
-            final String markerSymbol = properties.getString("marker-symbol");
-            final URI uri = new URI(iconImage.replace("{marker-symbol}", markerSymbol));
-            final Icon icon = this.loadIcon(uri);
-            if (icon != null) {
-                marker.icon(icon);
-            }
+            String iconImage = style.getJSONObject("layout").getString("icon-image");
+            String markerSymbol = properties.getString("marker-symbol");
+            URI uri = new URI(iconImage.replace("{marker-symbol}", markerSymbol));
+            icon = this.loadIcon(uri);
         } catch (JSONException e) {
             Log.w(TAG, "Error parsing Style JSON properties: " + e.getMessage());
         } catch (URISyntaxException e) {
@@ -173,7 +196,7 @@ class FeatureManager {
             Log.w(TAG, "Error loading file: " + e.getMessage());
         }
 
-        return marker;
+        return this.createMarker(latLng, title, snippet, icon, feature.getProperties());
     }
 
     protected Icon loadIcon(URI uri) throws IOException {

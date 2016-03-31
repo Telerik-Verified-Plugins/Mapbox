@@ -27,6 +27,7 @@
   <js-module src="www/mixin.js" name="mixin" />
   <js-module src="www/mapbox-plugin-api-mixin.js" name="mapbox-plugin-api-mixin" />
   <js-module src="www/events-mixin.js" name="events-mixin" />
+  <js-module src="www/map-events.js" name="map-events" />
   <js-module src="www/map-instance.js" name="map-instance" />
   <js-module src="www/offline-region.js" name="offline-region" />
 
@@ -63,6 +64,8 @@
     <source-file src="src/android/OfflineRegion.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/Map.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/FeatureManager.java" target-dir="src/com/telerik/plugins/mapbox"/>
+    <source-file src="src/android/GeoJSONMarker.java" target-dir="src/com/telerik/plugins/mapbox"/>
+    <source-file src="src/android/GeoJSONMarkerOptions.java" target-dir="src/com/telerik/plugins/mapbox"/>
 
     <!-- This leads to trouble in AppBuilder when compiling for Cordova-Android 4 -->
     <!--source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
