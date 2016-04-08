@@ -1,19 +1,19 @@
-#import <Cordova/CDVPlugin.h>
-#import "Mapbox.h"
-#import "Map.h"
-#import "PluginLayer.h"
-#import "PluginScrollView.h"
-#import "MapsManager.h"
-#import "MGLAccountManager.h"
+#import "MapController.h"
 
-@interface CDVMapbox : CDVPlugin<UIScrollViewDelegate>;
+@class CDVMapbox;
 
-@property (nonatomic) PluginLayer *pluginLayer;
-@property (nonatomic) PluginScrollView *pluginScrollView;
+@interface Map: NSObject;
 
-- (void) onPause:(Boolean *)multitasking;
-- (void) onResume:(Boolean *)multitasking;
-- (void) onDestroy;
+@property (atomic) int *id;
+@property (retain) MGLPointAnnotation *selectedAnnotation;
+@property (nonatomic) NSMutableDictionary *margins;
+
+- (id)initWithArgs:(NSDictionary *)args withCDVMapboxPlugin:(CDVMapbox*)cdvMapbox;
+
+- (void) show:(CDVInvokedUrlCommand *)command;
+- (void) hide:(CDVInvokedUrlCommand *)command;
+
+- (void) resizeMap:(CDVInvokedUrlCommand *)command;
 
 - (void) getCenterCoordinates:(CDVInvokedUrlCommand *)command;
 - (void) setCenterCoordinates:(CDVInvokedUrlCommand*)command;
@@ -37,5 +37,7 @@
 
 - (void) convertCoordinate:(CDVInvokedUrlCommand *)command;
 - (void) convertPoint:(CDVInvokedUrlCommand *)command;
+
+- (void) destroy;
 
 @end

@@ -1,363 +1,256 @@
 #import "CDVMapbox.h"
 
+@interface CDVMapbox(){
+@private
+  MapsManager *_mapsManager;
+}
+@end
+
 @implementation CDVMapbox
 
-- (void) show:(CDVInvokedUrlCommand*)command {
-  NSDictionary *args = [command.arguments objectAtIndex:0];
+- (void)pluginInitialize {
 
-  NSURL* mapStyle = [self getMapStyle:[args objectForKey:@"style"]];
+#if CORDOVA_VERSION_MIN_REQUIRED >= __CORDOVA_4_0_0
+  self.webView.backgroundColor = [UIColor clearColor];
+  self.webView.opaque = NO;
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pageDidLoad) name:CDVPageDidLoadNotification object:nil];
+#endif
 
-  // where shall we show the map overlay?
-  NSDictionary *margins = [args objectForKey:@"margins"];
-  // note that these will correctly fall back to 0 if not passed in
-  int left = [[margins objectForKey:@"left"] intValue];
-  int right = [[margins objectForKey:@"right"] intValue];
-  int top = [[margins objectForKey:@"top"] intValue];
-  int bottom = [[margins objectForKey:@"bottom"] intValue];
+  /* Init the plugin layer responsible to capture touch events.
+   * It permits to have Dom Elements on top of the map.
+   * If a touch event occurs in one of the embed rectangles and outside of a inner html element,
+   * the plugin layer considers that is a map action (drag, pan, etc.).
+   * If not, the user surely want to access the UIWebView.
+  */
+  self.pluginLayer = [[PluginLayer alloc] initWithFrame:self.webView.frame];
+  self.pluginLayer.webView = self.webView;
+  self.pluginLayer.backgroundColor = [UIColor whiteColor];
+  self.pluginLayer.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
-  CGRect webviewFrame = self.webView.frame;
+  /* Init a scroll view which on are attached the maps. This enables the map views to track the UIWebView.
+   * This scroll view is synchronised with the web view UIScrollView thanks to the UIScrollViewDelegate functions
+   */
+  self.pluginScrollView = [[PluginScrollView alloc] initWithFrame:self.webView.frame];
+  self.webView.scrollView.delegate = self;
+  self.pluginScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  [self.pluginScrollView setContentSize:CGSizeMake(320, 960)];
 
-  CGRect mapFrame = CGRectMake(left, top, webviewFrame.size.width - left - right, webviewFrame.size.height - top - bottom);
-  
-  _mapView = [[MGLMapView alloc] initWithFrame:mapFrame
-                                      styleURL:mapStyle];
+  [self.pluginLayer addSubview:self.pluginScrollView];
 
-  _mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
-  NSNumber *zoomLevel = [args valueForKey:@"zoomLevel"];
-  if (zoomLevel == nil) {
-    // we need a default
-    zoomLevel = [NSNumber numberWithDouble:10.0];
-  }
-  NSDictionary *center = [args objectForKey:@"center"];
-  if (center != nil) {
-    NSNumber *clat = [center valueForKey:@"lat"];
-    NSNumber *clng = [center valueForKey:@"lng"];
-    [_mapView setCenterCoordinate:CLLocationCoordinate2DMake(clat.doubleValue, clng.doubleValue)
-                        zoomLevel:zoomLevel.doubleValue
-                         animated:NO];
-  } else {
-    [_mapView setZoomLevel:zoomLevel.doubleValue];
-  }
-  
-  
-  _mapView.delegate = self;
-
-  // default NO, note that this requires adding `NSLocationWhenInUseUsageDescription` or `NSLocationAlwaysUsageDescription` to the plist
-  _mapView.showsUserLocation = [[args objectForKey:@"showUserLocation"] boolValue];
-  
-  // default NO
-  _mapView.attributionButton.hidden = [[args objectForKey:@"hideAttribution"] boolValue];
-
-  // default NO - required for the 'starter' plan
-  _mapView.logoView.hidden = [[args objectForKey:@"hideLogo"] boolValue];
-
-  // default NO
-  _mapView.compassView.hidden = [[args objectForKey:@"hideCompass"] boolValue];
-  
-  // default YES
-  _mapView.rotateEnabled = ![[args objectForKey:@"disableRotation"] boolValue];
-
-  // default YES
-  _mapView.pitchEnabled = ![[args objectForKey:@"disablePitch"] boolValue];
-
-  // default YES
-  _mapView.allowsTilting = ![[args objectForKey:@"disableTilt"] boolValue];
-  
-  // default YES
-  _mapView.scrollEnabled = ![[args objectForKey:@"disableScroll"] boolValue];
-  
-  // default YES
-  _mapView.zoomEnabled = ![[args objectForKey:@"disableZoom"] boolValue];
-
-  [self.webView addSubview:_mapView];
-
-  // Place the map view behind and remove the Webview background. This is useful if you want to do a depth/parallax
-  // effect or decorate the map with custom DOM elements (GUI or animated markers).
-  if([args[@"clearBackground"] boolValue]) {
-    self.webView.opaque = NO;
-    [self.webView setBackgroundColor:[UIColor clearColor]];
-    [self.webView sendSubviewToBack:_mapView];
+  /* Get all the current sub views of this view controller and pass it under the Plugin Layer.
+   * Then, all user touch will be first intercepted by the plugin layer
+   * which will decide whether or not it is a map action.
+   */
+  NSArray *subViews = self.viewController.view.subviews;
+  UIView *view;
+  for (int i = 0; i < [subViews count]; i++) {
+    view = subViews[(NSUInteger) i];
+    //NSLog(@"remove i=%d class=%@", i, view.class);
+    [view removeFromSuperview];
+    [self.pluginLayer addSubview: view];
   }
 
-  // render markers async as the app will crash if we add it before the map is loaded.. and the delegate events are not sufficiently helpful
-  NSArray* markers = [args objectForKey:@"markers"];
-  if (markers != nil) {
-    // Draw the markers after the map has initialized
-    [self performSelector:@selector(putMarkersOnTheMap:) withObject:markers afterDelay:1.0];
-  }
-  
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  // keep the callback because there are various events the developer may be interested in
-  pluginResult.keepCallback = [NSNumber numberWithBool:YES];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  [self.viewController.view addSubview:self.pluginLayer];
+
+
+
+  /* Create a MapsManager to handle multiple maps.
+   * Each map has an ID.
+   * At each creation a mapFrame is added to the PluginLayer and the PluginScrollView
+   */
+  _mapsManager = [[MapsManager alloc] initWithCDVPlugin:self withCDVMapboxPlugin:self withAccessToken:[MGLAccountManager accessToken]];
 }
 
-- (void) hide:(CDVInvokedUrlCommand*)command {
-  [_mapView removeFromSuperview];
+/**
+ * Make the web view background transparent to see the map through. Override CSS effect.
+ */
+-(void)pageDidLoad {
+  self.webView.backgroundColor = [UIColor clearColor];
+  self.webView.opaque = NO;
 }
 
-- (void) setCenter:(CDVInvokedUrlCommand*)command {
-  NSDictionary *args = [command.arguments objectAtIndex:0];
-  NSNumber *clat = [args valueForKey:@"lat"];
-  NSNumber *clng = [args valueForKey:@"lng"];
-  BOOL animated = [[args objectForKey:@"animated"] boolValue];
-  [_mapView setCenterCoordinate:CLLocationCoordinate2DMake(clat.doubleValue, clng.doubleValue) animated:animated];
-
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+/**
+ * Synchronise the pluginScrollView delegate to the main web view scroll view.
+ * So the maps follow when the user pan the web page.
+ */
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+  CGPoint offset = self.pluginScrollView.contentOffset;
+  offset.x = self.webView.scrollView.contentOffset.x;
+  offset.y = self.webView.scrollView.contentOffset.y;
+  [self.pluginScrollView setContentOffset:offset];
 }
 
-- (void) setTilt:(CDVInvokedUrlCommand*)command {
-  // TODO tilt/pitch seems not to be implemented in Mapbox iOS SDK (yet)
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+/**
+ * Resize the plugin scroll view when the webview changes. (eg. Portrait <-> landscape)
+ */
+-(void)viewDidLayoutSubviews {
+  [self.pluginScrollView setContentSize: self.webView.scrollView.contentSize];
+  [self.pluginScrollView flashScrollIndicators];
 }
 
-- (void) getTilt:(CDVInvokedUrlCommand*)command {
-  // TODO seems not to be implemented in Mapbox iOS SDK (yet)
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
 
-- (void) setZoomLevel:(CDVInvokedUrlCommand*)command {
-  NSDictionary *args = [command.arguments objectAtIndex:0];
-  NSNumber *level = [args objectForKey:@"level"];
-  BOOL animated = [[args objectForKey:@"animated"] boolValue];
-  double zoom = level.doubleValue;
-  if (zoom >= 0 && zoom <= 20) {
-    [_mapView setZoomLevel:zoom animated:animated];
-    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  } else {
-    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid zoomlevel, use any double value from 0 to 20 (like 8.3)"];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  }
-}
+// todo handle show specific map id
+- (void) show:(CDVInvokedUrlCommand *)command {
 
-- (void) getZoomLevel:(CDVInvokedUrlCommand*)command {
-  double zoom = _mapView.zoomLevel;
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:zoom];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
+    NSDictionary *args = command.arguments[0];
 
-- (void) getCenter:(CDVInvokedUrlCommand*)command {
-  CLLocationCoordinate2D ctr = _mapView.centerCoordinate;
-  NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:
-                                        [NSNumber numberWithDouble:ctr.latitude], @"lat",
-                                        [NSNumber numberWithDouble:ctr.longitude], @"lng",
-                                        nil];
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dic];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
+  // create map if id does not exist
+  if(![_mapsManager getCcount] || [_mapsManager getMap:command.arguments[0][@"ids"][0] == nil]){
 
-- (void)animateCamera:(CDVInvokedUrlCommand*)command {
-  NSDictionary *args = [command.arguments objectAtIndex:0];
+    Map *map = [self createMap:args];
 
-  MGLMapCamera * cam = [MGLMapCamera camera];
+    NSMutableDictionary *_args = [[NSMutableDictionary alloc] initWithDictionary:args];
+    NSMutableArray *ids = [NSMutableArray array];
+    [ids addObject:@((NSInteger) map.id)];
+    _args[@"ids"] = ids;
 
-  NSNumber *altitude = [args valueForKey:@"altitude"];
-  if (altitude != nil) {
-    cam.altitude = [altitude doubleValue];
-  }
+    NSMutableArray *_arguments = [[NSMutableArray alloc] initWithArray:command.arguments];
+    _arguments[0] = _args;
 
-  NSNumber *tilt = [args valueForKey:@"tilt"];
-  if (tilt != nil) {
-    cam.pitch = [tilt floatValue];
-  }
+    // recreate the command with the new map before sending to exec
+    CDVInvokedUrlCommand *newCommand = [[CDVInvokedUrlCommand alloc] initWithArguments:_arguments
+                                                                            callbackId:command.callbackId
+                                                                             className:command.className
+                                                                            methodName:command.methodName];
 
-  NSNumber *bearing = [args valueForKey:@"bearing"];
-  if (bearing != nil) {
-    cam.heading = [bearing floatValue];
-  }
-
-  NSTimeInterval durInt = 15; // default 15
-  NSNumber *duration = [args valueForKey:@"duration"];
-  if (duration != nil) {
-    durInt = [duration intValue];
-  }
-  
-  NSDictionary *target = [args objectForKey:@"target"];
-  if (target != nil) {
-    NSNumber *clat = [target valueForKey:@"lat"];
-    NSNumber *clng = [target valueForKey:@"lng"];
-    cam.centerCoordinate = CLLocationCoordinate2DMake(clat.doubleValue, clng.doubleValue);
-  }
-
-  [_mapView setCamera:cam withDuration:durInt animationTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut]];
-  
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-- (void)addPolygon:(CDVInvokedUrlCommand*)command {
-  NSDictionary *args = [command.arguments objectAtIndex:0];
-  NSArray* points = [args objectForKey:@"points"];
-  if (points != nil) {
-    [self.commandDelegate runInBackground:^{
-      CLLocationCoordinate2D *coordinates = malloc(points.count * sizeof(CLLocationCoordinate2D));
-      for (int i=0; i<points.count; i++) {
-        NSDictionary* point = points[i];
-        NSNumber *lat = [point valueForKey:@"lat"];
-        NSNumber *lng = [point valueForKey:@"lng"];
-        coordinates[i] = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
-      }
-      NSUInteger numberOfCoordinates = points.count; // sizeof(coordinates) / sizeof(CLLocationCoordinate2D);
-      MGLPolygon *shape = [MGLPolygon polygonWithCoordinates:coordinates count:numberOfCoordinates];
-      [_mapView addAnnotation:shape];
       CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+      pluginResult.keepCallback = @YES;
       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+
+      // execute the command with the new map id
+    [self exec:newCommand withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+        [aMap show:aCommand];
     }];
   } else {
-    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    // or execute the original command
+    [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+        [aMap show:aCommand];
+    }];
   }
 }
 
-- (void) addGeoJSON:(CDVInvokedUrlCommand*)command {
-//  NSString *url = [command.arguments objectAtIndex:0];
-// TODO not implemented yet, see https://www.mapbox.com/ios-sdk/examples/line-geojson/
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+- (void) hide:(CDVInvokedUrlCommand *)command{
+  NSDictionary *args = command.arguments[0];
+  [_mapsManager removeMap:[args[@"ids"] allValues]];
 }
 
-- (void) addMarkers:(CDVInvokedUrlCommand*)command {
-  NSArray *markers = [command.arguments objectAtIndex:0];
-  if (markers != nil) {
-    [self putMarkersOnTheMap:markers];
-  }
-
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+- (void) onRegionWillChange:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap onRegionWillChange:aCommand];
+  }];
 }
-
-- (void) addMarkerCallback:(CDVInvokedUrlCommand*)command {
-  self.markerCallbackId = command.callbackId;
+- (void) onRegionIsChanging:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap onRegionIsChanging:aCommand];
+  }];
 }
-
-- (void) putMarkersOnTheMap:(NSArray *)markers {
-  [self.commandDelegate runInBackground:^{
-    for (int i = 0; i < markers.count; i++) {
-      NSDictionary* marker = markers[i];
-      MGLPointAnnotation *point = [[MGLPointAnnotation alloc] init];
-      NSNumber *lat = [marker valueForKey:@"lat"];
-      NSNumber *lng = [marker valueForKey:@"lng"];
-      point.coordinate = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
-      point.title = [marker valueForKey:@"title"];
-      point.subtitle = [marker valueForKey:@"subtitle"];
-      [_mapView addAnnotation:point];
-    }
+- (void) onRegionDidChange:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap onRegionDidChange:aCommand];
+  }];
+}
+- (void) setCenterCoordinates:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap setCenterCoordinates:aCommand];
+  }];
+}
+- (void) getCenterCoordinates:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap getCenterCoordinates:aCommand];
+  }];
+}
+- (void) getZoomLevel:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap getZoomLevel:aCommand];
+  }];
+}
+- (void) setZoomLevel:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap setZoomLevel:aCommand];
+  }];
+}
+- (void) getTilt:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap getTilt:aCommand];
+  }];
+}
+- (void) setTilt:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap setTilt:aCommand];
+  }];
+}
+- (void) animateCamera:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap animateCamera:aCommand];
+  }];
+}
+- (void) addPolygon:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap addPolygon:aCommand];
+  }];
+}
+- (void) addGeoJSON:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap addGeoJSON:aCommand];
+  }];
+}
+- (void) addMarkers:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap addMarkers:aCommand];
+  }];
+}
+- (void) addMarkerCallback:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap addMarkerCallback:aCommand];
+  }];
+}
+- (void) convertCoordinate:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap convertCoordinate:aCommand];
+  }];
+}
+- (void) convertPoint:(CDVInvokedUrlCommand *)command {
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand) {
+      [aMap convertPoint:aCommand];
   }];
 }
 
-- (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
-  NSDictionary *args = command.arguments[0];
+- (void)exec:(CDVInvokedUrlCommand *)command withMethod:(void (^)(Map*, CDVInvokedUrlCommand*))execute_map_method {
 
-  double lat = [[args valueForKey:@"lat"]doubleValue];
-  double lng = [[args valueForKey:@"lng"]doubleValue];
+  NSMutableArray *ids = [command.arguments[0][@"ids"] mutableCopy];
 
-  if ((fabs(lat) > 90)||(fabs(lng) > 180)){
-    CDVPluginResult * pluginResult = [CDVPluginResult
-            resultWithStatus:CDVCommandStatus_ERROR
-             messageAsString:@"Incorrect Leaflet.LatLng value."];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  }
-
-  CGPoint screenPoint = [_mapView  convertCoordinate:CLLocationCoordinate2DMake(lat, lng)
-                                       toPointToView:_mapView];
-
-  NSDictionary *point = @{@"x" : @(screenPoint.x), @"y" : @(screenPoint.y)};
-
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:point];
-
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-- (void) convertPoint:(CDVInvokedUrlCommand *)command {
-  NSDictionary *args = command.arguments[0];
-
-  float x = [[args valueForKey:@"x"] floatValue];
-  float y = [[args valueForKey:@"y"] floatValue];
-
-  if ((x < 0 || y < 0)){
-    CDVPluginResult * pluginResult = [CDVPluginResult
-            resultWithStatus:CDVCommandStatus_ERROR
-             messageAsString:@"Incorrect Leaflet.Point point coordinates."];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  }
-
-  CLLocationCoordinate2D location = [_mapView convertPoint:CGPointMake(x, y)
-                                      toCoordinateFromView:_mapView];
-
-  NSDictionary *coordinates = @{@"lat" : @(location.latitude), @"lng" : @(location.longitude)};
-
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:coordinates];
-
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-#pragma mark - MGLMapViewDelegate
-
-// this method is invoked every time an annotation is clicked
-- (BOOL)mapView:(MGLMapView *)mapView annotationCanShowCallout:(id <MGLAnnotation>)annotation {
-  return YES;
-}
-
-//- (MGLAnnotationImage *)mapView:(MGLMapView *)mapView imageForAnnotation:(id <MGLAnnotation>)annotation {
-  // TODO should be able to use an img from www/
-//  MGLAnnotationImage *annotationImage = [mapView dequeueReusableAnnotationImageWithIdentifier:@"pisa"];
-  
-//  if (!annotationImage) {
-    // Leaning Tower of Pisa by Stefan Spieler from the Noun Project
-//    UIImage *image = [UIImage imageNamed:@"pisa"];
-//    annotationImage = [MGLAnnotationImage annotationImageWithImage:image reuseIdentifier:@"pisa"];
-//  }
-  
-//  return annotationImage;
-//}
-
-- (nullable UIView *)mapView:(MGLMapView *)mapView rightCalloutAccessoryViewForAnnotation:(id <MGLAnnotation>)annotation {
-  if (self.markerCallbackId != nil) {
-    self.selectedAnnotation = annotation;
-    UIButton *butt = [UIButton buttonWithType:UIButtonTypeDetailDisclosure];
-    [butt addTarget:self action:@selector(annotationInfoButtonTouched:) forControlEvents:UIControlEventTouchDown];
-    return butt;
-  } else {
-    return nil;
+  // load all the map of the command
+  for (NSInteger i = 0; i < [ids count]; i++) {
+    int *index = (int *) [ids[(NSUInteger) i] intValue];
+    Map *map = [_mapsManager getMap:(int) index];
+    execute_map_method(map, command);
   }
 }
 
-- (void) annotationInfoButtonTouched:(UIButton *)sender {
-  if (self.markerCallbackId != nil && self.selectedAnnotation != nil) {
-    NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:4];
-    [returnInfo setObject:self.selectedAnnotation.title forKey:@"title"];
-    if (self.selectedAnnotation.subtitle != nil) {
-      [returnInfo setObject:self.selectedAnnotation.subtitle forKey:@"subtitle"];
-    }
-    [returnInfo setObject:[NSNumber numberWithDouble:self.selectedAnnotation.coordinate.latitude] forKey:@"lat"];
-    [returnInfo setObject:[NSNumber numberWithDouble:self.selectedAnnotation.coordinate.longitude] forKey:@"lng"];
-
-    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
-    [result setKeepCallbackAsBool:YES];
-    [self.commandDelegate sendPluginResult:result callbackId:self.markerCallbackId];
-  }
+- (Map*) createMap:(NSDictionary*)args{
+//  [self.commandDelegate runInBackground:^{
+  Map* map = [_mapsManager createMap:args];
+  //CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt: (int) map.id];
+  // keep the callback because there are various events the developer may be interested in
+  //pluginResult.keepCallback = @YES;
+  return map;
+  //}];
 }
 
-- (NSURL*) getMapStyle:(NSString*) input {
-  if ([input isEqualToString:@"light"]) {
-    return [MGLStyle lightStyleURL];
-  } else if ([input isEqualToString:@"dark"]) {
-    return [MGLStyle darkStyleURL];
-  } else if ([input isEqualToString:@"emerald"]) {
-    return [MGLStyle emeraldStyleURL];
-  } else if ([input isEqualToString:@"satellite"]) {
-    return [MGLStyle satelliteStyleURL];
-  } else if ([input isEqualToString:@"hybrid"]) {
-    return [MGLStyle hybridStyleURL];
-  } else {
-    // default (TODO allow an arbitrary url (see Android))
-    return [MGLStyle streetsStyleURL];
-  }
+- (void) onPause:(Boolean *)multitasking{
+
+}
+
+- (void) onResume:(Boolean *)multitasking{
+
+}
+
+- (void) onDestroy{
+
+}
+
+- (float) getRetinaFactor{
+  return 1.0;
 }
 
 @end
