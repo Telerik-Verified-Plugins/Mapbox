@@ -13,6 +13,6 @@
 - (Map*)createMap:(NSDictionary *)args;
 - (Map*)getMap:(int)id;
 - (int*)getCcount;
-- (void)removeMap:(NSArray *)ids;
+- (void)removeMap:(int)id;
 
 @end

@@ -1,94 +1,94 @@
 var exec = require("cordova/exec");
-
+  
 module.exports = {
-  show: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "show", [options]);
+  show: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "show", [id, options]);
   },
 
-  hide: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
+  hide: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [id, options]);
   },
 
-  addMarkers: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [options]);
+  addMarkers: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [id, options]);
+  },    
+
+  addMarkerCallback: function (callback, id) {
+    id = id || 0;
+    cordova.exec(callback, null, "Mapbox", "addMarkerCallback", [id]);
   },
 
-  addMarkerCallback: function (callback) {
-    var options = {ids : [0]};
-    cordova.exec(callback, null, "Mapbox", "addMarkerCallback", [options]);
+  animateCamera: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "animateCamera", [id, options]);
   },
 
-  animateCamera: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "animateCamera", [options]);
+  addGeoJSON: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJSON", [id, options]);
   },
 
-  addGeoJSON: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "addGeoJSON", [options]);
+  setCenter: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setCenter", [id, options]);
   },
 
-  setCenter: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "setCenter", [options]);
+  getCenter: function (successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getCenter", [id]);
   },
 
-  getCenter: function (successCallback, errorCallback) {
-    var options = {ids : [0]};
-    cordova.exec(successCallback, errorCallback, "Mapbox", "getCenter", [options]);
+  setTilt: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setTilt", [id, options]);
   },
 
-  setTilt: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "setTilt", [options]);
+  getTilt: function (successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getTilt", [id]);
   },
 
-  getTilt: function (successCallback, errorCallback) {
-    var options = {ids : [0]};
-    cordova.exec(successCallback, errorCallback, "Mapbox", "getTilt", [options]);
+  getZoomLevel: function (successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getZoomLevel", [id]);
   },
 
-  getZoomLevel: function (successCallback, errorCallback) {
-    var options = {ids : [0]};
-    cordova.exec(successCallback, errorCallback, "Mapbox", "getZoomLevel", [options]);
+  setZoomLevel: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setZoomLevel", [id, options]);
   },
 
-  setZoomLevel: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "setZoomLevel", [options]);
+  addPolygon: function (options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addPolygon", [id, options]);
   },
 
-  addPolygon: function (options, successCallback, errorCallback) {
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "addPolygon", [options]);
+  convertCoordinate: function(options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "convertCoordinate", [id, options]);
   },
 
-  convertCoordinate: function(options, successCallback, errorCallback){
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "convertCoordinate", [options]);
+  convertPoint: function(options, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "convertPoint", [id, options]);
   },
 
-  convertPoint: function(options, successCallback, errorCallback){
-    options.ids = [0];
-    cordova.exec(successCallback, errorCallback, "Mapbox", "convertPoint", [options]);
+  onRegionWillChange: function(callback, id) {
+    id = id || 0;
+    cordova.exec(callback, null, "Mapbox", "onRegionWillChange", [id]);
   },
 
-  onRegionWillChange: function(callback){
-    var options = {ids : [0]};
-    cordova.exec(callback, null, "Mapbox", "onRegionWillChange", [options]);
+  onRegionIsChanging: function(callback, id) {
+    id = id || 0;
+    cordova.exec(callback, null, "Mapbox", "onRegionIsChanging", [id]);
   },
 
-  onRegionIsChanging: function(callback){
-    var options = {ids : [0]};
-    cordova.exec(callback, null, "Mapbox", "onRegionIsChanging", [options]);
-  },
-
-  onRegionDidChange: function(callback){
-    var options = {ids : [0]};
-    cordova.exec(callback, null, "Mapbox", "onRegionDidChange", [options]);
+  onRegionDidChange: function(callback, id) {
+    id = id || 0;
+    cordova.exec(callback, null, "Mapbox", "onRegionDidChange", [id]);
   }
 
 };

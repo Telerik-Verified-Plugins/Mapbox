@@ -65,7 +65,7 @@
 }
 
 - (void)resizeMap:(CDVInvokedUrlCommand *)command {
-    NSDictionary *args = command.arguments[0];
+    NSDictionary *args = command.arguments[1];
 
     if (args[@"margins"] == nil) {
         CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid mapFrame"];
@@ -110,7 +110,7 @@
 }
 
 - (void) setZoomLevel:(CDVInvokedUrlCommand*)command {
-    NSDictionary *args = command.arguments[0];
+    NSDictionary *args = command.arguments[1];
     NSNumber *level = args[@"level"];
     BOOL animated = [args[@"animated"] boolValue];
     double zoom = level.doubleValue;
@@ -148,7 +148,7 @@
 }
 
 - (void)setCenterCoordinates:(CDVInvokedUrlCommand*)command {
-    NSDictionary *args = command.arguments[0];
+    NSDictionary *args = command.arguments[1];
     NSNumber *clat = args[@"lat"];
     NSNumber *clng = args[@"lng"];
     BOOL animated = [args[@"animated"] boolValue];
@@ -184,7 +184,7 @@
 }
 
 - (void)animateCamera:(CDVInvokedUrlCommand*)command {
-    NSDictionary *args = command.arguments[0];
+    NSDictionary *args = command.arguments[1];
 
     MGLMapCamera * cam = [MGLMapCamera camera];
 
@@ -224,7 +224,7 @@
 
 
 - (void)addPolygon:(CDVInvokedUrlCommand*)command {
-    NSDictionary *args = command.arguments[0];
+    NSDictionary *args = command.arguments[1];
     NSArray* points = args[@"points"];
     if (points != nil) {
         [_cdvMapbox.commandDelegate runInBackground:^{
@@ -255,7 +255,7 @@
 }
 
 - (void) addMarkers:(CDVInvokedUrlCommand*)command {
-    NSArray *markers = command.arguments[0];
+    NSArray *markers = command.arguments[1];
     if (markers != nil) {
         [_cdvMapbox.commandDelegate runInBackground:^{
             for (NSUInteger i = 0; i < markers.count; i++) {
@@ -281,7 +281,7 @@
 
 
 - (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
-    NSDictionary *args = command.arguments[0];
+    NSDictionary *args = command.arguments[1];
 
     double lat = [[args valueForKey:@"lat"]doubleValue];
     double lng = [[args valueForKey:@"lng"]doubleValue];
@@ -303,7 +303,7 @@
 }
 
 - (void) convertPoint:(CDVInvokedUrlCommand *)command {
-    NSDictionary *args = command.arguments[0];
+    NSDictionary *args = command.arguments[1];
 
     float x = [[args valueForKey:@"x"] floatValue];
     float y = [[args valueForKey:@"y"] floatValue];

@@ -15,8 +15,8 @@
 - (void) onResume:(Boolean *)multitasking;
 - (void) onDestroy;
 
-- (void) getCenterCoordinates:(CDVInvokedUrlCommand *)command;
-- (void) setCenterCoordinates:(CDVInvokedUrlCommand*)command;
+- (void) getCenter:(CDVInvokedUrlCommand *)command;
+- (void) setCenter:(CDVInvokedUrlCommand*)command;
 
 - (void) setZoomLevel:(CDVInvokedUrlCommand *)command;
 - (void) getZoomLevel:(CDVInvokedUrlCommand *)command;

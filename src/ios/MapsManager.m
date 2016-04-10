@@ -50,16 +50,12 @@ static CDVPlugin *cdvPlugin;
     return (int *) [maps count];
 }
 
-- (void)removeMap:(NSArray*)ids{
+- (void)removeMap:(int)id{
 
-    // load all the map of the command
-    for (id id in ids)
-    {
-        //todo remove the key as well
-        Map* map = maps[[NSString stringWithFormat:@"%d",(int)id]];
-        [map destroy];
-        [maps removeObjectForKey:[NSString stringWithFormat:@"%d",(int)id]];
-    }
+    //todo remove the key as well
+    Map* map = maps[[NSString stringWithFormat:@"%d",id]];
+    [map destroy];
+    [maps removeObjectForKey:[NSString stringWithFormat:@"%d",id]];
 }
 
 @end

@@ -45,7 +45,6 @@
   UIView *view;
   for (int i = 0; i < [subViews count]; i++) {
     view = subViews[(NSUInteger) i];
-    //NSLog(@"remove i=%d class=%@", i, view.class);
     [view removeFromSuperview];
     [self.pluginLayer addSubview: view];
   }
@@ -92,46 +91,27 @@
 // todo handle show specific map id
 - (void) show:(CDVInvokedUrlCommand *)command {
 
-    NSDictionary *args = command.arguments[0];
+  int id = [command.arguments[0] intValue];
+  NSMutableDictionary *args = command.arguments[1];
 
   // create map if id does not exist
-  if(![_mapsManager getCcount] || [_mapsManager getMap:command.arguments[0][@"ids"][0] == nil]){
+  if(![_mapsManager getCcount] || [_mapsManager getMap:id == nil]){
 
     Map *map = [self createMap:args];
 
     NSMutableDictionary *_args = [[NSMutableDictionary alloc] initWithDictionary:args];
-    NSMutableArray *ids = [NSMutableArray array];
-    [ids addObject:@((NSInteger) map.id)];
-    _args[@"ids"] = ids;
 
-    NSMutableArray *_arguments = [[NSMutableArray alloc] initWithArray:command.arguments];
-    _arguments[0] = _args;
-
-    // recreate the command with the new map before sending to exec
-    CDVInvokedUrlCommand *newCommand = [[CDVInvokedUrlCommand alloc] initWithArguments:_arguments
-                                                                            callbackId:command.callbackId
-                                                                             className:command.className
-                                                                            methodName:command.methodName];
-
-      CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-      pluginResult.keepCallback = @YES;
-      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-
-      // execute the command with the new map id
-    [self exec:newCommand withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
-        [aMap show:aCommand];
-    }];
-  } else {
-    // or execute the original command
-    [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
-        [aMap show:aCommand];
-    }];
+    args[@"id"] = @((NSInteger) map.id);
   }
+  // or execute the original command
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap show:aCommand];
+  }];
 }
 
 - (void) hide:(CDVInvokedUrlCommand *)command{
-  NSDictionary *args = command.arguments[0];
-  [_mapsManager removeMap:[args[@"ids"] allValues]];
+  int id = [command.arguments[0] intValue];
+  [_mapsManager removeMap:id];
 }
 
 - (void) onRegionWillChange:(CDVInvokedUrlCommand *)command{
@@ -149,12 +129,12 @@
       [aMap onRegionDidChange:aCommand];
   }];
 }
-- (void) setCenterCoordinates:(CDVInvokedUrlCommand *)command{
+- (void) setCenter:(CDVInvokedUrlCommand *)command{
   [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
       [aMap setCenterCoordinates:aCommand];
   }];
 }
-- (void) getCenterCoordinates:(CDVInvokedUrlCommand *)command{
+- (void) getCenter:(CDVInvokedUrlCommand *)command{
   [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
       [aMap getCenterCoordinates:aCommand];
   }];
@@ -216,15 +196,8 @@
 }
 
 - (void)exec:(CDVInvokedUrlCommand *)command withMethod:(void (^)(Map*, CDVInvokedUrlCommand*))execute_map_method {
-
-  NSMutableArray *ids = [command.arguments[0][@"ids"] mutableCopy];
-
-  // load all the map of the command
-  for (NSInteger i = 0; i < [ids count]; i++) {
-    int *index = (int *) [ids[(NSUInteger) i] intValue];
-    Map *map = [_mapsManager getMap:(int) index];
-    execute_map_method(map, command);
-  }
+  Map *map = [_mapsManager getMap:[command.arguments[0] intValue]];
+  execute_map_method(map, command);
 }
 
 - (Map*) createMap:(NSDictionary*)args{
