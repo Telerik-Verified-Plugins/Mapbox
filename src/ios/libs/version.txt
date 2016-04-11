@@ -1,1 +1,0 @@
-https://github.com/mapbox/mapbox-gl-native/releases/tag/ios-v3.0.1
