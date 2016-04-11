@@ -87,7 +87,6 @@
   [self.pluginScrollView flashScrollIndicators];
 }
 
-
 // todo handle show specific map id
 - (void) show:(CDVInvokedUrlCommand *)command {
 
@@ -97,7 +96,7 @@
   // create map if id does not exist
   if(![_mapsManager getCcount] || [_mapsManager getMap:id == nil]){
 
-    Map *map = [self createMap:args];
+    Map *map = [self createMap:args withId:id];
 
     NSMutableDictionary *_args = [[NSMutableDictionary alloc] initWithDictionary:args];
 
@@ -200,9 +199,11 @@
   execute_map_method(map, command);
 }
 
-- (Map*) createMap:(NSDictionary*)args{
+- (Map*) createMap:(NSDictionary*)args withId:(int)anId{
 //  [self.commandDelegate runInBackground:^{
-  Map* map = [_mapsManager createMap:args];
+
+  Map* map = [_mapsManager createMap:args withId:anId||nil];
+
   //CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt: (int) map.id];
   // keep the callback because there are various events the developer may be interested in
   //pluginResult.keepCallback = @YES;

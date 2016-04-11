@@ -24,19 +24,23 @@ static CDVPlugin *cdvPlugin;
     return self;
 }
 
-- (Map*) createMap:(NSDictionary*)args {
+- (Map*) createMap:(NSDictionary*)args withId:(int)anId {
     // Get an instance of Map Class
     Map *map = [[Map alloc] initWithArgs:args withCDVMapboxPlugin:cdvMapbox];
 
     // Store it
     maps[[NSString stringWithFormat:@"%d",mapId]] = map;
 
-    // Assign property
-    map.id = (int*)mapId;
-//    map.options:(NSDictionary *)options
+    if(anId >= 0){
+        map.id = (int*)anId;
+    } else {
+        // Assign property
+        map.id = (int *) mapId;
+        //map.options:(NSDictionary *)options
 
-    //todo add a embedrect in the pluginLayer for multi maps purpose
-    mapId++;
+        //todo add a embedrect in the pluginLayer for multi maps purpose
+        mapId++;
+    }
 
     return map;
 }
@@ -51,8 +55,6 @@ static CDVPlugin *cdvPlugin;
 }
 
 - (void)removeMap:(int)id{
-
-    //todo remove the key as well
     Map* map = maps[[NSString stringWithFormat:@"%d",id]];
     [map destroy];
     [maps removeObjectForKey:[NSString stringWithFormat:@"%d",id]];

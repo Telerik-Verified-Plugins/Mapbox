@@ -14,7 +14,7 @@
 
 @interface MapController : UIViewController<MGLMapViewDelegate>
 
-@property (retain) MGLMapView *mapView;
+@property (nonatomic) MGLMapView *mapView;
 @property (nonatomic, strong) UIView* webView;
 @property (nonatomic) PluginLayer *pluginLayer;
 @property (nonatomic, strong) NSMutableDictionary* overlayManager;

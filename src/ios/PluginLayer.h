@@ -9,6 +9,7 @@
 @property (nonatomic) MapController *mapCtrl;
 @property (nonatomic, strong) UIView* webView;
 @property (nonatomic) CGRect mapFrame;
+@property (nonatomic) NSMutableDictionary *mapsFrames;
 @property (nonatomic) BOOL debuggable;
 @property (nonatomic) BOOL clickable;
 @property (nonatomic) NSMutableDictionary *HTMLNodes;

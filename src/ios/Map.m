@@ -37,12 +37,7 @@
                                withCDVMapboxPlugin:_cdvMapbox];
 
     _cdvMapbox.pluginLayer.mapCtrl = _mapCtrl;
-
     [self updatePluginLayerLayout:args[@"HTMLs"]];
-
-    // Arrange the views
-    //[_mapCtrl.view removeFromSuperview]; //todo keep this line?
-
     [_cdvMapbox.pluginScrollView attachView:_mapCtrl.view];
 
     return self;
@@ -132,7 +127,7 @@
 
 - (void)show:(CDVInvokedUrlCommand *)command {
     CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    pluginResult.keepCallback = @YES;
+   // pluginResult.keepCallback = @YES;
     [_cdvMapbox.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -323,10 +318,13 @@
 
     [_cdvMapbox.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
+//todo there is a memory leaks
 - (void)destroy {
-    [_mapCtrl.pluginLayer removeFromSuperview];
     [_mapCtrl.overlayManager removeAllObjects];
-    [_mapCtrl.mapView removeFromSuperview];
+    [_cdvMapbox.pluginScrollView dettachView];
+    [_mapCtrl.view removeFromSuperview];
+    _cdvMapbox.pluginLayer.mapFrame = CGRectMake(0.0,0.0,0.0,0.0);
+    _cdvMapbox.pluginLayer.mapCtrl = nil;
     _mapCtrl = nil;
 }
 
