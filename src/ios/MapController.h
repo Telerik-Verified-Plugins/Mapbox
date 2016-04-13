@@ -27,5 +27,8 @@
 - (id) initWithArgs:(NSDictionary *)options withMapFrame:(CGRect)mapFrame withCDVMapboxPlugin:(CDVMapbox *)plugin;
 - (CGPoint) convertCoordinate:(CLLocationCoordinate2D)coordinates;
 - (CLLocationCoordinate2D) convertPoint:(CGPoint)coordinates;
-- (void) setFrame:(CGRect) mapFrame;
+
+- (void)putMarkersOnTheMap:(NSArray *)markers;
+
+- (void)setFrame:(CGRect) mapFrame;
 @end

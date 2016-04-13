@@ -90,6 +90,8 @@
     // default YES
     self.mapView.zoomEnabled = ![_initArgs[@"disableZoom"] boolValue];
 
+    if (_initArgs[@"markers"]) [self putMarkersOnTheMap:_initArgs[@"markers"]];
+
     _initArgs = nil; //will not be used again
 
     [self.view addSubview: self.mapView];

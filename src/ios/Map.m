@@ -251,20 +251,7 @@
 
 - (void) addMarkers:(CDVInvokedUrlCommand*)command {
     NSArray *markers = command.arguments[1];
-    if (markers != nil) {
-        [_cdvMapbox.commandDelegate runInBackground:^{
-            for (NSUInteger i = 0; i < markers.count; i++) {
-                NSDictionary* marker = markers[i];
-                MGLPointAnnotation *point = [[MGLPointAnnotation alloc] init];
-                NSNumber *lat = [marker valueForKey:@"lat"];
-                NSNumber *lng = [marker valueForKey:@"lng"];
-                point.coordinate = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
-                point.title = [marker valueForKey:@"title"];
-                point.subtitle = [marker valueForKey:@"subtitle"];
-                [_mapCtrl.mapView addAnnotation:point];
-            }
-        }];
-    }
+    if (markers != nil) [_mapCtrl putMarkersOnTheMap:markers];
     CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"zefzefz"];
     [_cdvMapbox.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
