@@ -24,9 +24,11 @@
 - (void) setTilt:(CDVInvokedUrlCommand *)command;
 - (void) getTilt:(CDVInvokedUrlCommand *)command;
 
-- (void)setClickable:(CDVInvokedUrlCommand *)command;
+- (void) refreshMap:(CDVInvokedUrlCommand *)command;
 
-- (void)onRegionWillChange:(CDVInvokedUrlCommand *)command;
+- (void) setClickable:(CDVInvokedUrlCommand *)command;
+
+- (void) onRegionWillChange:(CDVInvokedUrlCommand *)command;
 - (void) onRegionIsChanging:(CDVInvokedUrlCommand *)command;
 - (void) onRegionDidChange:(CDVInvokedUrlCommand *)command;
 

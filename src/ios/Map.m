@@ -54,12 +54,12 @@
         for (elem in nodes) {
             size = elem[@"size"];
             id = elem[@"id"];
-            [_cdvMapbox.pluginLayer putHTMLElement:id size:size];
+            [_cdvMapbox.pluginLayer setHTMLElement:id size:size];
         }
     }
 }
 
-- (void)resizeMap:(CDVInvokedUrlCommand *)command {
+- (void)refreshMap:(CDVInvokedUrlCommand *)command {
     NSDictionary *args = command.arguments[1];
 
     if (args[@"margins"] == nil) {
@@ -318,7 +318,7 @@
 
     [_cdvMapbox.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
-//todo there is a memory leaks
+
 - (void)destroy {
     [_mapCtrl.overlayManager removeAllObjects];
     [_cdvMapbox.pluginScrollView dettachView];

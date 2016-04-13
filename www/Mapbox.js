@@ -20,22 +20,30 @@ function getDomElementsOverlay(mapDiv){
   var children = getAllChildren(mapDiv);
 
   var elements = [];
-  var element, elemId;
+  var element;
 
   for (var i = 0; i < children.length; i++) {
-    element = children[i];
-    elemId = element.getAttribute("__pluginDomId");
-    if (!elemId) {
-      elemId = "pmb" + Math.floor(Math.random() * Date.now()) + i;
-      element.setAttribute("__pluginDomId", elemId);
-    }
-    elements.push({
-      id: elemId,
-      size: getDivRect(element)
-    });
-    i++;
+    element = getDomElementOverlay(children[i]);
+
+    elements.push(element);
   }
   return elements;
+}
+
+function getDomElementOverlay(elem){
+  var elemId = elem.getAttribute("__pluginDomId");
+  if (!elemId) {
+    elemId = setRandomId();
+    elem.setAttribute("__pluginDomId", elemId);
+  }
+  return {
+    id: elemId,
+    size: getDivRect(elem)
+  }
+}
+
+function setRandomId(){
+  return "pmb" + Math.floor(Math.random() * Date.now());
 }
 
 function getAllChildren(root) {
@@ -63,9 +71,7 @@ function getAllChildren(root) {
       node = node.nextSibling;
     }
   };
-  for (var i = 0; i < root.childNodes.length; i++) {
-    search(root.childNodes[i]);
-  }
+  search(root.firstChild);
   return list;
 }
 
@@ -116,14 +122,21 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "show", [id, options]);
   },
 
+  setClickable: function (options, successCallback, errorCallback, id){
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setClickable", [id, options])
+  },
+
   hide: function (options, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [id, options]);
   },
 
-  setClickable: function (options, successCallback, errorCallback, id){
+  refreshMap: function (options, successCallback, errorCallback, id){
     id = id || 0;
-    cordova.exec(successCallback, errorCallback, "Mapbox", "setClickable", [id, options])
+    options.HTMLs = getDomElementsOverlay(options.div);
+    options.margins = getAbsoluteMargins(options.div);
+    cordova.exec(successCallback, errorCallback, "Mapbox", "refreshMap", [id, options])
   },
 
   addMarkers: function (options, successCallback, errorCallback, id) {

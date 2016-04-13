@@ -16,14 +16,16 @@
     self.debuggable = NO;
     return self;
 }
-- (void)putHTMLElement:(NSString *)domId size:(NSDictionary *)size {
+- (void)setHTMLElement:(NSString *)domId size:(NSMutableDictionary *)size {
     self.HTMLNodes[domId] = size;
     [self setNeedsDisplay];
 }
-- (void)removeHTMLElement:(NSString *)domId {
+
+- (void)deleteHTMLElement:(NSString *)domId {
     [self.HTMLNodes removeObjectForKey:domId];
     [self setNeedsDisplay];
 }
+
 - (void)clearHTMLElement {
     [self.HTMLNodes removeAllObjects];
     [self setNeedsDisplay];

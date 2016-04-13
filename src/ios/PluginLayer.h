@@ -15,8 +15,8 @@
 @property (nonatomic) NSMutableDictionary *HTMLNodes;
 
 - (id)initWithFrame:(CGRect)aRect;
-- (void)putHTMLElement:(NSString *)domId size:(NSDictionary *)size;
-- (void)removeHTMLElement:(NSString *)domId;
+- (void)setHTMLElement:(NSString *)domId size:(NSMutableDictionary *)size;
+- (void)deleteHTMLElement:(NSString *)domId;
 - (void)clearHTMLElement;
 
 @end

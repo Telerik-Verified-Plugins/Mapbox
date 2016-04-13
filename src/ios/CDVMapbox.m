@@ -111,6 +111,13 @@
   [_mapsManager removeMap:id];
 }
 
+- (void) refreshMap:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap refreshMap:aCommand];
+  }];
+}
+
+//todo refactor when implement multi maps
 - (void) setClickable:(CDVInvokedUrlCommand *)command{
   self.pluginLayer.clickable = [command.arguments[1][@"clickable"] boolValue];
 }

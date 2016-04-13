@@ -13,7 +13,7 @@
 - (void) show:(CDVInvokedUrlCommand *)command;
 - (void) hide:(CDVInvokedUrlCommand *)command;
 
-- (void) resizeMap:(CDVInvokedUrlCommand *)command;
+- (void) refreshMap:(CDVInvokedUrlCommand *)command;
 
 - (void) getCenterCoordinates:(CDVInvokedUrlCommand *)command;
 - (void) setCenterCoordinates:(CDVInvokedUrlCommand*)command;
