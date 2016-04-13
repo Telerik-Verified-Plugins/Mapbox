@@ -98,8 +98,6 @@
 
     Map *map = [self createMap:args withId:id];
 
-    NSMutableDictionary *_args = [[NSMutableDictionary alloc] initWithDictionary:args];
-
     args[@"id"] = @((NSInteger) map.id);
   }
   // or execute the original command
@@ -111,6 +109,10 @@
 - (void) hide:(CDVInvokedUrlCommand *)command{
   int id = [command.arguments[0] intValue];
   [_mapsManager removeMap:id];
+}
+
+- (void) setClickable:(CDVInvokedUrlCommand *)command{
+  self.pluginLayer.clickable = [command.arguments[1][@"clickable"] boolValue];
 }
 
 - (void) onRegionWillChange:(CDVInvokedUrlCommand *)command{

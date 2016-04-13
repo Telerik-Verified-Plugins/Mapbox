@@ -121,6 +121,11 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [id, options]);
   },
 
+  setClickable: function (options, successCallback, errorCallback, id){
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setClickable", [id, options])
+  },
+
   addMarkers: function (options, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [id, options]);
