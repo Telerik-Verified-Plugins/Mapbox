@@ -160,12 +160,12 @@
     NSMutableDictionary *returnInfo = [NSMutableDictionary dictionaryWithCapacity:2];
 
     returnInfo[@"sw"] = [[NSMutableArray alloc] initWithCapacity:2];
-    returnInfo[@"sw"][0] = @(bounds.sw.latitude);
-    returnInfo[@"sw"][1] = @(bounds.sw.longitude);
-
+    returnInfo[@"sw"][0] = @(bounds.sw.longitude);
+    returnInfo[@"sw"][1] = @(bounds.sw.latitude);
+    
     returnInfo[@"ne"] = [[NSMutableArray alloc] initWithCapacity:2];
-    returnInfo[@"ne"][0] = @(bounds.ne.latitude);
-    returnInfo[@"ne"][1] = @(bounds.ne.longitude);
+    returnInfo[@"ne"][0] = @(bounds.ne.longitude);
+    returnInfo[@"ne"][1] = @(bounds.ne.latitude);
 
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [pluginResult setKeepCallbackAsBool:YES];
