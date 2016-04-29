@@ -32,6 +32,8 @@
 - (void) onRegionIsChanging:(CDVInvokedUrlCommand *)command;
 - (void) onRegionDidChange:(CDVInvokedUrlCommand *)command;
 
+- (void) getBoundsCoordinates:(CDVInvokedUrlCommand *)command;
+
 - (void) animateCamera:(CDVInvokedUrlCommand *)command;
 
 - (void) addPolygon:(CDVInvokedUrlCommand *)command;

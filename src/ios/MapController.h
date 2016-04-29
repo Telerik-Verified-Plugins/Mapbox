@@ -31,4 +31,6 @@
 - (void)putMarkersOnTheMap:(NSArray *)markers;
 
 - (void)setFrame:(CGRect) mapFrame;
+
+- (CGRect)getFrame;
 @end

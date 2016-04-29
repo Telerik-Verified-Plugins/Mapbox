@@ -21,7 +21,9 @@
 - (void) setZoomLevel:(CDVInvokedUrlCommand *)command;
 - (void) getZoomLevel:(CDVInvokedUrlCommand *)command;
 
-- (void) setTilt:(CDVInvokedUrlCommand *)command;
+- (void)getBoundsCoordinates:(CDVInvokedUrlCommand *)command;
+
+- (void)setTilt:(CDVInvokedUrlCommand *)command;
 - (void) getTilt:(CDVInvokedUrlCommand *)command;
 
 - (void) onRegionWillChange:(CDVInvokedUrlCommand *)command;

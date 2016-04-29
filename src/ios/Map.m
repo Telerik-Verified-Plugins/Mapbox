@@ -154,6 +154,24 @@
     [_cdvMapbox.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) getBoundsCoordinates:(CDVInvokedUrlCommand *)command {
+    MGLCoordinateBounds bounds = [_mapCtrl.mapView  convertRect:[_mapCtrl getFrame] toCoordinateBoundsFromView:_mapCtrl.mapView];
+
+    NSMutableDictionary *returnInfo = [NSMutableDictionary dictionaryWithCapacity:2];
+
+    returnInfo[@"sw"] = [[NSMutableArray alloc] initWithCapacity:2];
+    returnInfo[@"sw"][0] = @(bounds.sw.latitude);
+    returnInfo[@"sw"][1] = @(bounds.sw.longitude);
+
+    returnInfo[@"ne"] = [[NSMutableArray alloc] initWithCapacity:2];
+    returnInfo[@"ne"][0] = @(bounds.ne.latitude);
+    returnInfo[@"ne"][1] = @(bounds.ne.longitude);
+
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [_cdvMapbox.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) setTilt:(CDVInvokedUrlCommand*)command {
     // TODO tilt/pitch seems not to be implemented in Mapbox iOS SDK (yet)
     CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];

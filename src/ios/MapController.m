@@ -34,6 +34,10 @@
     self.mapView.frame = _mapFrame = mapFrame;
 }
 
+- (CGRect)getFrame{
+    return _mapFrame;
+}
+
 - (void)viewDidLoad{
 
     // Create an instance of Map Class

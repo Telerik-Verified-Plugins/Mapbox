@@ -152,6 +152,11 @@
       [aMap getZoomLevel:aCommand];
   }];
 }
+- (void) getBoundsCoordinates:(CDVInvokedUrlCommand *)command{
+  [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
+      [aMap getBoundsCoordinates:aCommand];
+  }];
+}
 - (void) setZoomLevel:(CDVInvokedUrlCommand *)command{
   [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
       [aMap setZoomLevel:aCommand];

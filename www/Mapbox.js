@@ -194,6 +194,11 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addPolygon", [id, options]);
   },
 
+  getBoundsCoordinates: function(successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getBoundsCoordinates", [id]);
+  },
+  
   convertCoordinate: function(options, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertCoordinate", [id, options]);
