@@ -2,10 +2,10 @@
 // Created by vikti on 29/03/2016.
 //
 
-#import "PluginLayer.h"
+#import "PluginOverlay.h"
 #import "MapController.h"
 
-@implementation PluginLayer
+@implementation PluginOverlay
 
 -  (id)initWithFrame:(CGRect)aRect
 {

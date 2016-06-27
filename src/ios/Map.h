@@ -37,7 +37,7 @@
 - (void) addMarkers:(CDVInvokedUrlCommand *)command;
 - (void) addMarkerCallback:(CDVInvokedUrlCommand *)command;
 
-- (void) convertCoordinate:(CDVInvokedUrlCommand *)command;
+- (void)convertCoordinates:(CDVInvokedUrlCommand *)command;
 - (void) convertPoint:(CDVInvokedUrlCommand *)command;
 
 - (void) destroy;

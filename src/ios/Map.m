@@ -46,6 +46,7 @@
 - (void) updatePluginLayerLayout:(NSArray*)nodes{
 
     _cdvMapbox.pluginLayer.mapFrame = _mapFrame;
+    _cdvMapbox.pluginScrollView.debugView.mapFrame = _mapFrame;
 
     if ([nodes count]) {
         [_cdvMapbox.pluginLayer clearHTMLElement];
@@ -57,6 +58,9 @@
             [_cdvMapbox.pluginLayer setHTMLElement:id size:size];
         }
     }
+
+    [_cdvMapbox.pluginScrollView.debugView setNeedsDisplay];
+
 }
 
 - (void)refreshMap:(CDVInvokedUrlCommand *)command {
@@ -162,7 +166,7 @@
     returnInfo[@"sw"] = [[NSMutableArray alloc] initWithCapacity:2];
     returnInfo[@"sw"][0] = @(bounds.sw.longitude);
     returnInfo[@"sw"][1] = @(bounds.sw.latitude);
-    
+
     returnInfo[@"ne"] = [[NSMutableArray alloc] initWithCapacity:2];
     returnInfo[@"ne"][0] = @(bounds.ne.longitude);
     returnInfo[@"ne"][1] = @(bounds.ne.latitude);
@@ -280,7 +284,7 @@
 }
 
 
-- (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
+- (void)convertCoordinates:(CDVInvokedUrlCommand *)command {
     NSDictionary *args = command.arguments[1];
 
     double lat = [[args valueForKey:@"lat"]doubleValue];

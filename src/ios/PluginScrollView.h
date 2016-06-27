@@ -3,9 +3,12 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PluginDebugLayer.h"
+
 @class MapController;
 
 @interface PluginScrollView : UIScrollView
+@property (nonatomic) PluginDebugLayer *debugView;
 - (void)attachView:(UIView *)view;
 - (void)dettachView;
 @end

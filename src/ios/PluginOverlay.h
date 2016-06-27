@@ -5,7 +5,7 @@
 #import <UIKit/UIKit.h>
 @class MapController;
 
-@interface PluginLayer : UIView
+@interface PluginOverlay : UIView
 @property (nonatomic) MapController *mapCtrl;
 @property (nonatomic, strong) UIView* webView;
 @property (nonatomic) CGRect mapFrame;

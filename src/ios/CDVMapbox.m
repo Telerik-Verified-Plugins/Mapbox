@@ -22,7 +22,7 @@
    * the plugin layer considers that is a map action (drag, pan, etc.).
    * If not, the user surely want to access the UIWebView.
   */
-  self.pluginLayer = [[PluginLayer alloc] initWithFrame:self.webView.frame];
+  self.pluginLayer = [[PluginOverlay alloc] initWithFrame:self.webView.frame];
   self.pluginLayer.webView = self.webView;
   self.pluginLayer.backgroundColor = [UIColor whiteColor];
   self.pluginLayer.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -31,8 +31,11 @@
    * This scroll view is synchronised with the web view UIScrollView thanks to the UIScrollViewDelegate functions
    */
   self.pluginScrollView = [[PluginScrollView alloc] initWithFrame:self.webView.frame];
+  self.pluginScrollView.debugView.pluginLayer = self.pluginLayer; //todo make a global var to active debug mode
+  self.pluginScrollView.debugView.webView = (UIWebView *) self.webView;
   self.webView.scrollView.delegate = self;
   self.pluginScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+
   [self.pluginScrollView setContentSize:CGSizeMake(320, 960)];
 
   [self.pluginLayer addSubview:self.pluginScrollView];
@@ -55,7 +58,7 @@
 
   /* Create a MapsManager to handle multiple maps.
    * Each map has an ID.
-   * At each creation a mapFrame is added to the PluginLayer and the PluginScrollView
+   * At each creation a mapFrame is added to the PluginOverlay and the PluginScrollView
    */
   _mapsManager = [[MapsManager alloc] initWithCDVPlugin:self withCDVMapboxPlugin:self withAccessToken:[MGLAccountManager accessToken]];
 }
@@ -77,6 +80,7 @@
   offset.x = self.webView.scrollView.contentOffset.x;
   offset.y = self.webView.scrollView.contentOffset.y;
   [self.pluginScrollView setContentOffset:offset];
+  [self.pluginScrollView.debugView setNeedsDisplay];
 }
 
 /**
@@ -100,6 +104,7 @@
 
     args[@"id"] = @((NSInteger) map.id);
   }
+  //todo remvove as create remove do the job
   // or execute the original command
   [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
       [aMap show:aCommand];
@@ -197,9 +202,9 @@
       [aMap addMarkerCallback:aCommand];
   }];
 }
-- (void) convertCoordinate:(CDVInvokedUrlCommand *)command{
+- (void) convertCoordinates:(CDVInvokedUrlCommand *)command{
   [self exec:command withMethod:^(Map *aMap, CDVInvokedUrlCommand *aCommand){
-      [aMap convertCoordinate:aCommand];
+      [aMap convertCoordinates:aCommand];
   }];
 }
 - (void) convertPoint:(CDVInvokedUrlCommand *)command {
