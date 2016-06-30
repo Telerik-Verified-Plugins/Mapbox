@@ -22,7 +22,7 @@
    * the plugin layer considers that is a map action (drag, pan, etc.).
    * If not, the user surely want to access the UIWebView.
   */
-  self.pluginLayer = [[PluginOverlay alloc] initWithFrame:self.webView.frame];
+  self.pluginLayer = [[MapLayer alloc] initWithFrame:self.webView.frame];
   self.pluginLayer.webView = self.webView;
   self.pluginLayer.backgroundColor = [UIColor whiteColor];
   self.pluginLayer.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -30,7 +30,7 @@
   /* Init a scroll view which on are attached the maps. This enables the map views to track the UIWebView.
    * This scroll view is synchronised with the web view UIScrollView thanks to the UIScrollViewDelegate functions
    */
-  self.pluginScrollView = [[PluginScrollView alloc] initWithFrame:self.webView.frame];
+  self.pluginScrollView = [[MapScrollLayer alloc] initWithFrame:self.webView.frame];
   self.pluginScrollView.debugView.pluginLayer = self.pluginLayer; //todo make a global var to active debug mode
   self.pluginScrollView.debugView.webView = (UIWebView *) self.webView;
   self.webView.scrollView.delegate = self;
@@ -58,7 +58,7 @@
 
   /* Create a MapsManager to handle multiple maps.
    * Each map has an ID.
-   * At each creation a mapFrame is added to the PluginOverlay and the PluginScrollView
+   * At each creation a mapFrame is added to the MapLayer and the MapScrollLayer
    */
   _mapsManager = [[MapsManager alloc] initWithCDVPlugin:self withCDVMapboxPlugin:self withAccessToken:[MGLAccountManager accessToken]];
 }

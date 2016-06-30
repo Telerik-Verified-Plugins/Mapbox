@@ -2,17 +2,17 @@
 // Created by vikti on 30/03/2016.
 //
 
-#import "PluginScrollView.h"
+#import "MapScrollLayer.h"
 #import "MapController.h"
-#import "PluginDebugLayer.h"
+#import "MapDebugLayer.h"
 
-@implementation PluginScrollView
+@implementation MapScrollLayer
 
 UIView *myView = nil;
 
 -  (id)initWithFrame:(CGRect)aRect {
     self = [super initWithFrame:aRect];
-    self.debugView = [[PluginDebugLayer alloc] initWithFrame:aRect];
+    self.debugView = [[MapDebugLayer alloc] initWithFrame:aRect];
     return self;
 }
 

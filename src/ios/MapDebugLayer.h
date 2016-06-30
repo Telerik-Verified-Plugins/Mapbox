@@ -4,10 +4,10 @@
 
 #import <UIKit/UIKit.h>
 
-#import "PluginOverlay.h"
+#import "MapLayer.h"
 
-@interface PluginDebugLayer : UIView
-@property (nonatomic) PluginOverlay *pluginLayer;
+@interface MapDebugLayer : UIView
+@property (nonatomic) MapLayer *pluginLayer;
 @property (nonatomic) CGRect mapFrame;
 @property (nonatomic) UIWebView *webView;
 @property (nonatomic) float offsetX;

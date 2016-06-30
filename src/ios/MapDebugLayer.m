@@ -1,7 +1,7 @@
-#import "PluginDebugLayer.h"
-#import "PluginOverlay.h"
+#import "MapDebugLayer.h"
+#import "MapLayer.h"
 
-@implementation PluginDebugLayer
+@implementation MapDebugLayer
 
 
 -  (id)initWithFrame:(CGRect)aRect
