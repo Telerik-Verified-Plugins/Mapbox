@@ -36,7 +36,7 @@
                                       withMapFrame:_mapFrame
                                withCDVMapboxPlugin:_cdvMapbox];
 
-    _cdvMapbox.pluginLayer.mapCtrl = _mapCtrl;
+    _cdvMapbox.mapOverlayLayer.mapCtrl = _mapCtrl;
     [self updatePluginLayerLayout:args[@"HTMLs"]];
     [_cdvMapbox.pluginScrollView attachView:_mapCtrl.view];
 
@@ -45,17 +45,17 @@
 
 - (void) updatePluginLayerLayout:(NSArray*)nodes{
 
-    _cdvMapbox.pluginLayer.mapFrame = _mapFrame;
+    _cdvMapbox.mapOverlayLayer.mapFrame = _mapFrame;
     _cdvMapbox.pluginScrollView.debugView.mapFrame = _mapFrame;
 
     if ([nodes count]) {
-        [_cdvMapbox.pluginLayer clearHTMLElement];
+        [_cdvMapbox.mapOverlayLayer clearHTMLElement];
         NSMutableString *id;
         NSMutableDictionary *size, *elem;
         for (elem in nodes) {
             size = elem[@"size"];
             id = elem[@"id"];
-            [_cdvMapbox.pluginLayer setHTMLElement:id size:size];
+            [_cdvMapbox.mapOverlayLayer setHTMLElement:id size:size];
         }
     }
 
@@ -332,8 +332,8 @@
     [_mapCtrl.overlayManager removeAllObjects];
     [_cdvMapbox.pluginScrollView dettachView];
     [_mapCtrl.view removeFromSuperview];
-    _cdvMapbox.pluginLayer.mapFrame = CGRectMake(0.0,0.0,0.0,0.0);
-    _cdvMapbox.pluginLayer.mapCtrl = nil;
+    _cdvMapbox.mapOverlayLayer.mapFrame = CGRectMake(0.0,0.0,0.0,0.0);
+    _cdvMapbox.mapOverlayLayer.mapCtrl = nil;
     _mapCtrl = nil;
 }
 

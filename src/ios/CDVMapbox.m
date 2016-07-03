@@ -22,23 +22,23 @@
    * the plugin layer considers that is a map action (drag, pan, etc.).
    * If not, the user surely want to access the UIWebView.
   */
-  self.pluginLayer = [[MapLayer alloc] initWithFrame:self.webView.frame];
-  self.pluginLayer.webView = self.webView;
-  self.pluginLayer.backgroundColor = [UIColor whiteColor];
-  self.pluginLayer.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  self.mapOverlayLayer = [[MapOverlayLayer alloc] initWithFrame:self.webView.frame];
+  self.mapOverlayLayer.webView = self.webView;
+  self.mapOverlayLayer.backgroundColor = [UIColor whiteColor];
+  self.mapOverlayLayer.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   /* Init a scroll view which on are attached the maps. This enables the map views to track the UIWebView.
    * This scroll view is synchronised with the web view UIScrollView thanks to the UIScrollViewDelegate functions
    */
-  self.pluginScrollView = [[MapScrollLayer alloc] initWithFrame:self.webView.frame];
-  self.pluginScrollView.debugView.pluginLayer = self.pluginLayer; //todo make a global var to active debug mode
+  self.pluginScrollView = [[PluginScrollLayout alloc] initWithFrame:self.webView.frame];
+  self.pluginScrollView.debugView.pluginLayer = self.mapOverlayLayer; //todo make a global var to active debug mode
   self.pluginScrollView.debugView.webView = (UIWebView *) self.webView;
   self.webView.scrollView.delegate = self;
   self.pluginScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [self.pluginScrollView setContentSize:CGSizeMake(320, 960)];
 
-  [self.pluginLayer addSubview:self.pluginScrollView];
+  [self.mapOverlayLayer addSubview:self.pluginScrollView];
 
   /* Get all the current sub views of this view controller and pass it under the Plugin Layer.
    * Then, all user touch will be first intercepted by the plugin layer
@@ -49,16 +49,16 @@
   for (int i = 0; i < [subViews count]; i++) {
     view = subViews[(NSUInteger) i];
     [view removeFromSuperview];
-    [self.pluginLayer addSubview: view];
+    [self.mapOverlayLayer addSubview:view];
   }
 
-  [self.viewController.view addSubview:self.pluginLayer];
+  [self.viewController.view addSubview:self.mapOverlayLayer];
 
 
 
   /* Create a MapsManager to handle multiple maps.
    * Each map has an ID.
-   * At each creation a mapFrame is added to the MapLayer and the MapScrollLayer
+   * At each creation a mapFrame is added to the MapOverlayLayer and the PluginScrollLayout
    */
   _mapsManager = [[MapsManager alloc] initWithCDVPlugin:self withCDVMapboxPlugin:self withAccessToken:[MGLAccountManager accessToken]];
 }
@@ -124,7 +124,7 @@
 
 //todo refactor when implement multi maps
 - (void) setClickable:(CDVInvokedUrlCommand *)command{
-  self.pluginLayer.clickable = [command.arguments[1][@"clickable"] boolValue];
+  self.mapOverlayLayer.clickable = [command.arguments[1][@"clickable"] boolValue];
 }
 
 - (void) onRegionWillChange:(CDVInvokedUrlCommand *)command{

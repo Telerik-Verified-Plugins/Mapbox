@@ -38,7 +38,7 @@ static CDVPlugin *cdvPlugin;
         map.id = (int *) mapId;
         //map.options:(NSDictionary *)options
 
-        //todo add a embedrect in the pluginLayer for multi maps purpose
+        //todo add a embedrect in the mapOverlayLayer for multi maps purpose
         mapId++;
     }
 

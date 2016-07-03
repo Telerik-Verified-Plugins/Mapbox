@@ -1,15 +1,15 @@
 #import <Cordova/CDVPlugin.h>
 #import "Mapbox.h"
 #import "Map.h"
-#import "MapLayer.h"
-#import "MapScrollLayer.h"
+#import "PluginLayout.h"
+#import "PluginScrollLayout.h"
 #import "MapsManager.h"
 #import "MGLAccountManager.h"
 
 @interface CDVMapbox : CDVPlugin<UIScrollViewDelegate>;
 
-@property (nonatomic) MapLayer *pluginLayer;
-@property (nonatomic) MapScrollLayer *pluginScrollView;
+@property (nonatomic) MapOverlayLayer *mapOverlayLayer;
+@property (nonatomic) PluginScrollLayout *pluginScrollView;
 
 - (void) onPause:(Boolean *)multitasking;
 - (void) onResume:(Boolean *)multitasking;

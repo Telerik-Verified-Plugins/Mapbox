@@ -118,6 +118,7 @@ module.exports = {
     if(options.div){
       options.HTMLs = getDomElementsOverlay(options.div);
       options.margins = getAbsoluteMargins(options.div);
+      delete options.div; //Prevent circular reference error
     }
     cordova.exec(successCallback, errorCallback, "Mapbox", "show", [id, options]);
   },
@@ -142,7 +143,7 @@ module.exports = {
   addMarkers: function (options, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [id, options]);
-  },    
+  },
 
   addMarkerCallback: function (callback, id) {
     id = id || 0;
@@ -198,7 +199,7 @@ module.exports = {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "getBoundsCoordinates", [id]);
   },
-  
+
   convertCoordinate: function(options, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertCoordinate", [id, options]);

@@ -76,7 +76,7 @@
 
     // default NO
     self.mapView.compassView.hidden = [_initArgs[@"hideCompass"] boolValue];
-    // sibling the plugin layer and the webview. Each times an event occurs, [pluginLayer hitTest] is called.
+    // sibling the plugin layer and the webview. Each times an event occurs, [mapOverlayLayer hitTest] is called.
     // It the touch occurs in the map area (and don't touch an overlay DOM element) the event is passed to the map.
 
     // default YES

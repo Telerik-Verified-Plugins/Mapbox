@@ -5,8 +5,8 @@
 #import <Cordova/CDV.h>
 #import <UIKit/UIKit.h>
 #import "MGLMapView.h"
-#import "MapLayer.h"
-#import "MapScrollLayer.h"
+#import "PluginLayout.h"
+#import "PluginScrollLayout.h"
 #import "MGLPointAnnotation.h"
 #import "Mapbox.h"
 
@@ -16,7 +16,7 @@
 
 @property (nonatomic) MGLMapView *mapView;
 @property (nonatomic, strong) UIView* webView;
-@property (nonatomic) MapLayer *pluginLayer;
+@property (nonatomic) MapOverlayLayer *pluginLayer;
 @property (nonatomic, strong) NSMutableDictionary* overlayManager;
 @property (retain) MGLPointAnnotation *selectedAnnotation;
 @property (retain) NSString *markerCallbackId;
