@@ -22,22 +22,19 @@ public class MapsManager {
     private static SparseArray<Map> _maps = new SparseArray<>();
     private static CDVMapbox _plugRef;
     private static Activity _activity;
-    private static CordovaWebView _temp;
 
     public static MapsManager getInstance() {
         return _ourInstance;
     }
 
-    public static void init(final CDVMapbox plugin, Activity activity, CordovaWebView cdvWebView) {
+    public static void init(final CDVMapbox plugin, Activity activity) {
         _plugRef = plugin;
         _activity = activity;
-        _cdvWebView = cdvWebView;
-        _temp = _plugRef.webView;
     }
 
     public static Map createMap(CordovaArgs args, int id, CallbackContext callbackContext){
-        Map map = new Map(args, _plugRef, _activity, callbackContext);
-        _maps.setValueAt(id, map);
+        Map map = new Map(id, args, _plugRef, _activity, callbackContext);
+        _maps.put(id, map);
         return map;
     }
 

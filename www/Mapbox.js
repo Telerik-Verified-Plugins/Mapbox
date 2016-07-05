@@ -117,7 +117,7 @@ module.exports = {
     id = id || 0;
     if(options.div){
       options.HTMLs = getDomElementsOverlay(options.div);
-      options.margins = getAbsoluteMargins(options.div);
+      options.rect = getDivRect(options.div);
       delete options.div; //Prevent circular reference error
     }
     cordova.exec(successCallback, errorCallback, "Mapbox", "show", [id, options]);
@@ -136,7 +136,7 @@ module.exports = {
   refreshMap: function (options, successCallback, errorCallback, id){
     id = id || 0;
     options.HTMLs = getDomElementsOverlay(options.div);
-    options.margins = getAbsoluteMargins(options.div);
+    options.rect = getDivRect(options.div);
     cordova.exec(successCallback, errorCallback, "Mapbox", "refreshMap", [id, options])
   },
 

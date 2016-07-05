@@ -3,6 +3,9 @@ package com.telerik.plugins.mapbox;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.RectF;
+import android.os.Handler;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.camera.CameraPosition;
@@ -12,6 +15,7 @@ import com.mapbox.mapboxsdk.maps.UiSettings;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,45 +25,42 @@ import org.json.JSONObject;
  */
 public class Map {
 
+    private int _id;
     private static Activity _activity;
     private CDVMapbox _plugRef;
     private MapboxMap _mapboxMap;
     private FrameLayout _layersGroup;
     private UiSettings _uiSettings;
-    private FrameLayout.LayoutParams _mapFrame;
+    private JSONObject _mapDivLayoutJSON;
+    //private RectF _mapRect;
     private MapboxController _mapCtrl;
 
+    private JSONObject mapDivLayoutJSON = null;
     private static CordovaWebView _cdvWebView;
     private static float _density;
 
+    public ViewGroup getViewGroup(){
+        return _layersGroup;
+    }
+    public int getId(){return _id;}
+
     public CameraPosition cameraPosition;
 
-    public Map(final CordovaArgs args, CDVMapbox plugRef, Activity activity, CallbackContext callbackContext) {
+    /**
+     * Create a map without any layout set
+     * @param args
+     * @param plugRef
+     * @param activity
+     * @param callbackContext
+     */
+    public Map(int id, final CordovaArgs args, CDVMapbox plugRef, Activity activity, CallbackContext callbackContext) {
 
+        _id = id;
         _plugRef = plugRef;
         _cdvWebView = _plugRef.webView;
         _activity = activity;
         Context _context = _cdvWebView.getView().getContext();
         _density = Resources.getSystem().getDisplayMetrics().density;
-
-        try {
-            JSONObject options = args.getJSONObject(1);
-            JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-            _mapFrame = _getFrameWithDictionary(margins);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        /* The view container
-         */
-        _layersGroup = new FrameLayout(_context);
-        _layersGroup.setLayoutParams(
-            new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            )
-        );
 
         /**
          * Create a controller (which instantiate the MGLMapbox view)
@@ -68,11 +69,22 @@ public class Map {
         final JSONArray HTMLs;
         try {
             options = args.getJSONObject(1);
-            HTMLs = options.isNull("HTMLs") ? new JSONArray() : options.getJSONArray("HTMLs");
-            JSONObject margins = options.isNull("margins") ? null : options.getJSONObject("margins");
 
-            _mapFrame = _getFrameWithDictionary(margins);
-            _mapCtrl = new MapboxController(MapboxController.createMapboxMapOptions(options), _cdvWebView, _mapFrame, _plugRef, callbackContext);
+            // Set map overlay
+            HTMLs = options.isNull("HTMLs") ? new JSONArray() : options.getJSONArray("HTMLs");
+            _updateMapOverlay(HTMLs);
+
+            // Create map
+            if(options.isNull("rect")){
+                callbackContext.error("Need a rect");
+            }
+/*            _mapDivLayoutJSON = options.getJSONObject("rect");
+            _mapRect = _toRect(_mapDivLayoutJSON);*/
+            _mapCtrl = new MapboxController(MapboxController.createMapboxMapOptions(options), _cdvWebView, _plugRef, callbackContext);
+
+            // The view container. Contains maps and addons views.
+            _layersGroup = new FrameLayout(_context);
+            //_layersGroup.setLayoutParams(_toLayoutParams(_mapRect));
             _layersGroup.addView(_mapCtrl.getMapView());
 
         } catch (JSONException e) {
@@ -81,14 +93,10 @@ public class Map {
         }
 
         // Update the Map Overlay Layer
-        _updatePluginLayerLayout(HTMLs);
     }
 
-    private void _updatePluginLayerLayout(JSONArray HTMLs){
-
-        _plugRef.pluginLayout.mapView = _mapCtrl.getMapView();
-        _plugRef.pluginLayout.mapFrame = _mapFrame;
-        //_cdvMapbox.pluginScrollView.debugView.mapFrame = _mapFrame;
+    //change to updateLauyoutWhenScroll
+    private void _updateMapOverlay(JSONArray HTMLs){
 
         JSONObject elemInfo, elemSize;
         String elemId;
@@ -111,42 +119,70 @@ public class Map {
         }
     }
 
-    private float _contentToView(long d) {
-        return d * _density;
+    public void scrollTo(int x, int y){
+        _plugRef.pluginLayout.setMapDrawingRect(
+                _id,
+                _toRect(_mapDivLayoutJSON, x, y)
+        );
     }
 
-    public void show(final CordovaArgs args, final CallbackContext callbackContext) {
-        _plugRef.mapsLayout.addView(_layersGroup);
-        callbackContext.success();
+    private void updateMapViewLayout() {
+        if (_plugRef.pluginLayout == null) {
+            return;
+        }
+
+        _plugRef.pluginLayout.setMapDrawingRect(
+                _id,
+                _toRect(_mapDivLayoutJSON, _cdvWebView.getView().getScrollX(), _cdvWebView.getView().getScrollY())
+        );
+
+        _plugRef.pluginLayout.updateViewPosition();
+
+        _layersGroup.requestLayout(); //todo watch this line if nothing is resized
+
+    }
+//todo use setdiv in CDVMapbox
+    /**
+     * Resize the map to fit the dimensions of a div.
+     * This function takes also care of update the overlay DOM elements touch boxes.
+     * @param args Cordova Args. Contain a div JSONObject
+     * @param callbackContext
+     * @throws JSONException
+     */
+    public void setDiv(CordovaArgs args, CallbackContext callbackContext){
+
+        try {
+            JSONObject options = args.getJSONObject(1);
+
+            if(options.isNull("rect")){
+                callbackContext.error("Map.setDiv(... Need a rect");
+            }
+
+            // update the map size
+            _mapDivLayoutJSON = options.getJSONObject("rect");
+            //_mapRect = _toRect(_mapDivLayoutJSON);
+
+            // update the map overlay DOM elements touch boxes
+            JSONArray HTMLs = options.isNull("HTMLs") ? new JSONArray() : options.getJSONArray("HTMLs");
+            _plugRef.pluginLayout.clearHTMLElement();
+            _updateMapOverlay(HTMLs);
+
+            // Finally, update the map view layout to take account of the new map dimension.
+            updateMapViewLayout();
+
+            this.sendNoResult(callbackContext);
+        } catch (JSONException e){
+            e.printStackTrace();
+        }
+    }
+
+    private float _contentToView(long d) {
+        return d * _density;
     }
 
     public void hide(final CordovaArgs args, final CallbackContext callbackContext) {
     }
 
-    public void refreshMap(final CordovaArgs args, final CallbackContext callbackContext) {
-        JSONObject options;
-        JSONObject margins;
-        JSONArray HTMLs;
-        try {
-            options = args.getJSONObject(1);
-            HTMLs = options.isNull("HTMLs") ? new JSONArray() : options.getJSONArray("HTMLs");
-            margins = options.isNull("margins") ? null : options.getJSONObject("margins");
-            _mapFrame = _getFrameWithDictionary(margins);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        _mapFrame = _getFrameWithDictionary(margins);
-
-        // update the touchable zone in the plugin layer
-        _updatePluginLayerLayout(HTMLs);
-
-        // resize the map view
-        _mapCtrl.mapFrame = _mapFrame;
-
-        callbackContext.success();
-    }
     public void getCenterCoordinates(final CordovaArgs args, final CallbackContext callbackContext) {
     }
 
@@ -198,29 +234,55 @@ public class Map {
     public void convertPoint(final CordovaArgs args, final CallbackContext callbackContext) {
     }
 
-    /**
-     * Set the touchable frame of the plugin layer and the controller map view from the input margins
-     */
-    private static FrameLayout.LayoutParams _getFrameWithDictionary(JSONObject margins) {
+    private float contentToView(long d) {
+        return d * _density;
+    }
+
+
+    private RectF _toRect(JSONObject rect, float... scroll) {
+        float scrollX = scroll.length > 0 ? scroll[0] : 0;
+        float scrollY = scroll.length > 1 ? scroll[1] : 0;
+
         try{
-            int left = margins.getInt("left");
-            int right = margins.getInt("right");
-            int top = margins.getInt("top");
-            int bottom = margins.getInt("bottom");
+            float left = _contentToView(rect.getLong("left"));
+            float width = _contentToView(rect.getLong("width"));
+            float top = _contentToView(rect.getLong("top"));
+            float height = _contentToView(rect.getLong("height"));
 
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                _cdvWebView.getView().getWidth()- left - right,
-                _cdvWebView.getView().getHeight()- top - bottom
-            );
+            return new RectF(
+                left + scrollX,
+                top - scrollY,
+                left + width + scrollX,
+                top + height - scrollY);
 
-            params.setMargins(left, top, right, bottom);
-
-            return params;
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
         }
     }
+
+    //todo take in account all type of layer
+    private FrameLayout.LayoutParams _toLayoutParams(RectF rect) {
+        int screenW = Math.round(_cdvWebView.getView().getWidth());
+        int screenH = Math.round(_cdvWebView.getView().getHeight());
+        int left = Math.round(rect.left);
+        int right = Math.round(rect.right);
+        int top = Math.round(rect.top);
+        int bottom = Math.round(rect.bottom);
+        int width = Math.round(screenW - left - (screenW - right));
+        int height = Math.round(screenH - top - (screenH - bottom));
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
+
+        params.setMargins(left, top, width - right, height - bottom);
+        //params.setMargins(left, top, 21, 0);
+
+        return params;
+    }
+
+    protected void sendNoResult(CallbackContext callbackContext) {
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
+        pluginResult.setKeepCallback(true);
+        callbackContext.sendPluginResult(pluginResult);
+    }
 }
-
-

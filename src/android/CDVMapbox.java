@@ -3,8 +3,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.os.Build;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.view.View;
@@ -32,7 +32,7 @@ import org.json.JSONObject;
 public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrollChangedListener {
   private static final String TAG = CDVMapbox.class.getSimpleName();
 
-  public FrameLayout mapsLayout;
+  public FrameLayout mapsGroup;
 
   public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -42,7 +42,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
   private static final String ACTION_SHOW = "show";
   private static final String ACTION_HIDE = "hide";
-  private static final String ACTION_REFRESH_MAP = "refreshMap";
+  private static final String ACTION_RESIZE = "resize";
   private static final String ACTION_SET_CLICKABLE = "setClickable";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
@@ -87,11 +87,12 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     _root = (ViewGroup) _webView.getView().getParent();
     _activity = _cordova.getActivity();
     _density = Resources.getSystem().getDisplayMetrics().density;
+    _webView.getView().getViewTreeObserver().addOnScrollChangedListener(CDVMapbox.this);
 
     /**
      * Init MapsManager. It handles multiple maps.
      */
-    MapsManager.init(this, _activity, _webView);
+    MapsManager.init(this, _activity);
 
      /*
       * Init the plugin layer responsible to capture touch events.
@@ -100,33 +101,14 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
       * the plugin layer considers that is a map action (drag, pan, etc.).
       * If not, the user surely want to access the UIWebView.
       */
-    pluginLayout = new PluginLayout(_activity, _webView);
-    pluginLayout.debugLayer.setLayoutParams(new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-    ));
-    /**
-     * Init a scroll view which on are attached the maps. This enables the map views to track the UIWebView.
-     * This scroll view is synchronised with the web view UIScrollView thanks to the UIScrollViewDelegate functions
-     */
-    _pluginScrollView = new ScrollView(webView.getContext());
-    _pluginScrollView.setLayoutParams(new FrameLayout.LayoutParams(
-      FrameLayout.LayoutParams.MATCH_PARENT,
-      FrameLayout.LayoutParams.MATCH_PARENT
-    ));
-    _pluginScrollView.setHorizontalScrollBarEnabled(false);
-    _pluginScrollView.setVerticalScrollBarEnabled(false);
-    _scrollFrameLayout = new FrameLayout(_activity);
-    _scrollFrameLayout.setLayoutParams(new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
-    ));
+    pluginLayout = new PluginLayout(_webView.getView(), _activity);
+
 
     /**
-     * Add the maps container.
+     * Create the maps container.
      */
-    mapsLayout = new FrameLayout(webView.getContext());
-    mapsLayout.setLayoutParams(
+    mapsGroup = new FrameLayout(webView.getContext());
+    mapsGroup.setLayoutParams(
             new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.WRAP_CONTENT
@@ -134,56 +116,25 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     );
 
     /**
-     * Set the webview transparent and add a background.
-     */
-    _webView.getView().setBackgroundColor(Color.TRANSPARENT);
-    _background = new View(_activity);
-    _background.setBackgroundColor(Color.BLUE);
-    _background.setLayoutParams(new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-    ));
-
-    /**
      * Arrange the layers. The final order is:
      * - root (Application View)
      *   - pluginLayout
-     *     - debugLayer
-     *     - webView
-     *     - pluginScollView
+     *     - frontLayout
+     *       - webView
+     *     - scrollView
      *       - scrollFrameLayout
-     *         - mapsLayout
+     *         - mapsGroup
      *         - background
      */
     _activity.runOnUiThread(new Runnable() {
       public void run(){
-
-        pluginLayout.addView(_pluginScrollView);
-        _pluginScrollView.addView(_scrollFrameLayout);
-        _scrollFrameLayout.addView(_background);
-        _scrollFrameLayout.addView(mapsLayout);
-
-        /* Get all the current sub views of this view controller and pass it under the Plugin Layer.
-         * Then, all user touch will be first intercepted by the plugin layer
-         * which will decide whether or not it is a map action.
-         */
-        View view;
-        for (int i = 0; i < _root.getChildCount(); i++) {
-          view = _root.getChildAt(i);
-          _root.removeView(view);
-          pluginLayout.addView(view);
-        }
-
-        pluginLayout.addView(pluginLayout.debugLayer);
-
-        _root.addView(pluginLayout);
+        pluginLayout.attachMapsGroup(mapsGroup);
       }
     });
 
     // make webview transparent to see the map through
     //_root.setBackgroundColor(Color.WHITE);
     //webView.getView().setBackgroundColor(Color.TRANSPARENT);
-
 
     try {
       int mapboxAccesstokenResourceId = cordova.getActivity().getResources().getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", cordova.getActivity().getPackageName());
@@ -196,28 +147,21 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   }
 
   @Override
+  /**
+   * Handler listening to scroll changes.
+   * Important! Both pluginLayout and maps have to be updated.
+   */
   public void onScrollChanged() {
     if (pluginLayout == null) {
       return;
     }
-    View view = webView.getView();
-    pluginLayout.scrollTo(view.getScrollX(), view.getScrollY());
+    int scrollX = _webView.getView().getScrollX();
+    int scrollY = _webView.getView().getScrollY();
 
-    if (_mapDivLayoutJSON != null) {
-      try {
-        float divW = contentToView(_mapDivLayoutJSON.getLong("width"));
-        float divH = contentToView(_mapDivLayoutJSON.getLong("height"));
-        float divLeft = contentToView(_mapDivLayoutJSON.getLong("left"));
-        float divTop = contentToView(_mapDivLayoutJSON.getLong("top"));
+    pluginLayout.scrollTo(scrollX, scrollY);
 
-        pluginLayout.setDrawingRect(
-                divLeft,
-                divTop - view.getScrollY(),
-                divLeft + divW,
-                divTop + divH - view.getScrollY());
-      } catch (JSONException e) {
-        e.printStackTrace();
-      }
+    for(int i = 0; i < MapsManager.getCount(); i++){
+      MapsManager.getMap(i).scrollTo(scrollX, scrollY);
     }
   }
 
@@ -234,25 +178,28 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
         _activity.runOnUiThread(new Runnable() {
           public void run() {
 
-           final Map newMap = map == null ? MapsManager.createMap(args, id, callbackContext) : map;
+           final Map aMap = map == null ? MapsManager.createMap(args, id, callbackContext) : map;
 
             exec(new Runnable() {
               @Override
               public void run() {
-                newMap.show(args, callbackContext);
+                aMap.setDiv(args, callbackContext);
+                mapsGroup.addView(aMap.getViewGroup());
+                //pluginLayout.addMap(newMap);
+                callbackContext.success();
               }
             });
           }
         });
       } else if (ACTION_HIDE.equals(action)) {
         MapsManager.removeMap(id);
-      } else if (ACTION_REFRESH_MAP.equals(action)){
+      } else if (ACTION_RESIZE.equals(action)){
         exec(new Runnable() {
           Map aMap;
 
           @Override
           public void run() {
-            aMap.refreshMap(args, callbackContext);
+            aMap.setDiv(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {

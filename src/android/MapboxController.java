@@ -1,9 +1,6 @@
 package com.telerik.plugins.mapbox;
 
-import android.graphics.Color;
 import android.graphics.RectF;
-import android.telecom.Call;
-import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -18,8 +15,6 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.UiSettings;
 
 import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaArgs;
-import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaWebView;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -44,15 +39,17 @@ public class MapboxController {
         return (View) _mapView;
     }
 
-    public MapboxController(final MapboxMapOptions options, CordovaWebView cdvWebView, final FrameLayout.LayoutParams mapFrame, CDVMapbox plugRef, final CallbackContext callbackContext){
+    public MapboxController(final MapboxMapOptions options, CordovaWebView cdvWebView, CDVMapbox plugRef, final CallbackContext callbackContext){
 
         _initOptions = options;
-        this.mapFrame = mapFrame;
         _cdvWebView = cdvWebView;
 
         _mapView = new MapView(_cdvWebView.getContext(), options);
-        _mapView.setLayoutParams(mapFrame);
-
+        _mapView.setLayoutParams(
+            new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+            ));
 
         // need to do this to register a receiver which onPause later needs
         _mapView.onResume();
@@ -135,6 +132,7 @@ public class MapboxController {
 
     }
 
+
     public void setZoom(float zoom){
         CameraPosition position = new CameraPosition.Builder()
                 .zoom(zoom) // Sets the zoom
@@ -191,5 +189,4 @@ public class MapboxController {
             return requested;
         }
     }
-
 }
