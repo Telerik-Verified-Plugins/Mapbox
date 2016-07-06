@@ -11,6 +11,13 @@
 <body>
 <div class="app">
   <h1>Mapbox test</h1>
+  <h1>Mapbox test</h1>
+  <h1>Mapbox test</h1>
+  <h1>Mapbox test</h1>
+  <h1>Mapbox test</h1>
+  <h1>Mapbox test</h1>
+  <h1>Mapbox test</h1>
+  <h1>Mapbox test</h1>
 
   <div id="deviceready" class="blink">
     <p class="event listening">Connecting to Device</p>
@@ -20,22 +27,22 @@
     <button onclick="showMap()">Display map with absolute position</button>
     <button onclick="showMap(document.getElementById('mapId'))">Display map in a div</button>
   </div>
-  <div id="mapId" style="position:absolute; bottom:0; top:50%; background-color: transparent">
-    <button onclick="animateCamera()">Camera</button>
+  <div id="mapId" style="bottom:0; top:50%;">
+    <button onclick="flyTo()">Camera</button>
     <button onclick="addMarkers()">Markers</button>
     <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
     <button onclick="addPolygon()">Poly</button>
     <button onclick="hideMap()">hide</button><br/><br/>
-    <button onclick="getZoomLevel()">getZoom</button>
+    <button onclick="getZoom()">getZoom</button>
     <button onclick="zoomIn()">zoom +</button>
     <button onclick="zoomOut()">zoom -</button><br/><br/>
     <button onclick="setCenter()">set center</button>
     <button onclick="getCenter()">get center</button>
-    <button onclick="setTilt()">set tilt</button>
-    <button onclick="getTilt()">get tilt</button><br/><br/>
+    <button onclick="setPitch()">set pitch</button>
+    <button onclick="getPitch()">get pitch</button><br/><br/>
     <button onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
     <button onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
-    <button onclick="hideMap()">hide</button>
+    <button onclick="getBounds()">get bounds</button>
     <button onclick="toggleClickable()">Set map clickable</button>
     <button onclick="addOverlayDiv()">Add new DOM overlay element</button>
     <button onclick="deleteOverlayDiv()">Remove a DOM overlay element</button>
@@ -54,6 +61,12 @@
     Mapbox.setClickable({
       clickable: clickable
     })
+  }
+
+  function getBounds(){
+    Meteor.getBounds(function (r) {
+      alert(r);
+    });
   }
 
   function addOverlayDiv(){
@@ -80,50 +93,37 @@
   }
 
   function setCenter() {
-    Mapbox.setCenter({
-      'lat': 50.2222,
-      'lng': 5.2344,
-      'animated': true // default false
-    });
+    Mapbox.setCenter([5.2344, 50.2222]); //[long, lat]
   }
 
   function getCenter() {
     Mapbox.getCenter(function (c) {
-      alert(JSON.stringify(c))
+      alert(c)
     });
   }
 
-  function setTilt() {
-    Mapbox.setTilt({
-      pitch: 45,
-      duration: 4500
+  function setPitch() {
+    Mapbox.setPitch(45);
+  }
+
+  function getPitch() {
+    Mapbox.getPitch(function (p) {
+      alert(p)
     });
   }
 
-  function getTilt() {
-    Mapbox.getTilt(function (t) {
-      alert(t)
-    });
-  }
-
-  function getZoomLevel() {
-    Mapbox.getZoomLevel(function (zl) {
-      alert(zl)
+  function getZoom() {
+    Mapbox.getZoom(function (z) {
+      alert(z)
     });
   }
 
   function zoomIn() {
-    Mapbox.setZoomLevel({
-      'level': ++zoom,
-      'animated': true // default false
-    });
+    Mapbox.zoomTo(++zoom);
   }
 
   function zoomOut() {
-    Mapbox.setZoomLevel({
-      'level': --zoom,
-      'animated': true // default false
-    });
+    Mapbox.setZoom(--zoom);
   }
 
   function showMap(div) {
@@ -150,22 +150,8 @@
               disableTilt: false, // default false
               disableZoom: false, // default false
               disablePitch: false, // default false
-              markers: [
-                {
-                  'lat': 52.3732160,
-                  'lng': 4.8941680,
-                  'title': 'Nice location',
-                  'subtitle': 'Really really nice location',
-                  'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
-                }
-              ]
             },
             function (result) {
-              console.log(JSON.stringify(result));
-              // let's add a callback for these markers - invoked when the callout is tapped (Android) or the (i) icon in the marker callout (iOS)
-              Mapbox.addMarkerCallback(function (selectedMarker) {
-                alert("Marker selected: " + JSON.stringify(selectedMarker));
-              });
               // let's add callbacks for region changing
               //
               // - invoked when the map is about to moved (animated or not).
@@ -190,7 +176,7 @@
   function hideMap() {
     Mapbox.hide({},
             function (result) {
-              console.log(JSON.stringify(result));
+              console.log(JSON.parse(result));
             },
             function (error) {
               alert(error);
@@ -198,73 +184,64 @@
     )
   }
 
-  function addGeoJSON() {
-    Mapbox.addGeoJSON({
-      'url': 'https://gist.githubusercontent.com/tmcw/10307131/raw/21c0a20312a2833afeee3b46028c3ed0e9756d4c/map.geojson'
-    });
-  }
-
-  function addPolygon() {
-    Mapbox.addPolygon({
-      points: [
-        {
-          'lat': 52.3832160,
-          'lng': 4.8991680
+  function flyTo() {
+    Mapbox.flyTo({
+      cameraPosition:{
+        // Sets the center of the map to Maracanã
+        target: {
+          lat: 52.3632160,
+          lng: 4.9011680
         },
-        {
-          'lat': 52.3632160,
-          'lng': 4.9011680
-        },
-        {
-          'lat': 52.3932160,
-          'lng': 4.8911680
-        }
-      ]
-    });
-  }
-
-  function animateCamera() {
-    Mapbox.animateCamera({
-      // Sets the center of the map to Maracanã
-      target: {
-        lat: 52.3632160,
-        lng: 4.9011680
-      },
-      zoom: 17, // Android, zoomLevel
-      altitude: 1000, // iOS, meters from the ground
-      bearing: 270, // Sets the orientation of the camera to look west
-      tilt: 40, // // Sets the tilt of the camera to 30 degrees
-      duration: 10 // in seconds
+        zoom: 17, // Android, zoomLevel
+        altitude: 1000, // iOS, meters from the ground
+        bearing: 270, // Sets the orientation of the camera to look west
+        tilt: 40, // // Sets the tilt of the camera to 30 degrees
+        duration: 10 // in seconds
+      }
     });
   }
 
   function addMarkers() {
-    Mapbox.addMarkers([
-              {
-                'lat': 52.3602160,
-                'lng': 4.8891680,
-                'title': 'One-line title here', // no popup unless set
-                'subtitle': 'This text can span multiple lines on Android only. On iOS it\'s one line max.',
-                'image': 'www/img/markers/hi.jpg' // TODO support this on a rainy day
-              },
-              {
-                'lat': 52.3702160,
-                'lng': 4.8911680,
-                'title': 'Nu subtitle for this one' // iOS: no popup unless set, Android: an empty popup -- so please add something
-              }
-            ],
-            function (result) {
-              console.log(JSON.stringify(result));
-            },
-            function (error) {
-              alert(error)
-            }
+    Mapbox.addSource("markers", {
+        "type": "geojson",
+        "data": {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [4.8891680, 52.3602160]
+                },
+                "properties": {
+                    "noIcon": true,
+                    "title": "Mapbox DC",
+                    "marker-symbol": "monument"
+                }
+            }, {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [4.8911680, 52.3702160]
+                },
+                "properties": {
+                    "title": "Mapbox SF",
+                    "marker-symbol": "harbor"
+                }
+            }]
+          }
+        },
+      function (result) {
+        console.log(JSON.parse(result));
+      },
+      function (error) {
+        alert(error)
+      }
     )
   }
 
 
   function coords2Screen(coords) {
-    Mapbox.convertCoordinate(coords,
+    Mapbox.convertCoordinates(coords,
             function (point) {
               alert("x:"+point.x+" - y:"+point.y);
             },

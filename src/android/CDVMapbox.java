@@ -3,21 +3,18 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.RectF;
 import android.os.Build;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
-import android.widget.ScrollView;
 
 import com.mapbox.mapboxsdk.MapboxAccountManager;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 
 import org.apache.cordova.CallbackContext;
@@ -29,6 +26,9 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Iterator;
+import java.util.Set;
 
 public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrollChangedListener {
   private static final String TAG = CDVMapbox.class.getSimpleName();
@@ -49,32 +49,25 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
-  private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
-  private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
+  private static final String ACTION_GET_ZOOM = "getZoom";
+  private static final String ACTION_SET_ZOOM = "setZoom";
+  private static final String ACTION_ZOOM_TO = "zoomTo";
   private static final String ACTION_GET_CENTER = "getCenter";
   private static final String ACTION_SET_CENTER = "setCenter";
-  private static final String ACTION_GET_TILT = "getTilt";
-  private static final String ACTION_SET_TILT = "setTilt";
-  private static final String ACTION_ANIMATE_CAMERA = "animateCamera";
+  private static final String ACTION_GET_PITCH = "getPitch";
+  private static final String ACTION_SET_PITCH = "setPitch";
+  private static final String ACTION_FLY_TO = "flyTo";
   private static final String ACTION_CONVERT_COORDINATES = "convertCoordinates";
   private static final String ACTION_CONVERT_POINT = "convertPoint";
   private static final String ACTION_ON_REGION_WILL_CHANGE = "onRegionWillChange";
   private static final String ACTION_ON_REGION_IS_CHANGING = "onRegionIsChanging";
   private static final String ACTION_ON_REGION_DID_CHANGE = "onRegionDidChange";
-  private static ScrollView _pluginScrollView;
-  private static FrameLayout _scrollFrameLayout;
   private float _density;
   private String _accessToken;
   private CordovaWebView _webView;
   private Activity _activity;
   private CallbackContext _callback;
   private CallbackContext _markerCallbackContext;
-  private boolean _showUserLocation;
-  private ViewGroup _root;
-  private View _background;
-  private JSONObject _mapDivLayoutJSON;
-
-  //todo webView or _webView ?
 
   public CordovaInterface _cordova;
   public PluginLayout pluginLayout;
@@ -85,7 +78,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
     _cordova = cordova;
     _webView = webView;
-    _root = (ViewGroup) _webView.getView().getParent();
+    ViewGroup _root = (ViewGroup) _webView.getView().getParent();
     _activity = _cordova.getActivity();
     _density = Resources.getSystem().getDisplayMetrics().density;
     _webView.getView().getViewTreeObserver().addOnScrollChangedListener(CDVMapbox.this);
@@ -173,7 +166,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     try {
       final int id = args.getInt(0);
       final Map map = MapsManager.getMap(id);
-      final MapController mapCtrl = map.getMapCtrl();
 
       if (ACTION_SHOW.equals(action)) {
 
@@ -193,7 +185,18 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             });
           }
         });
-      } else if (ACTION_HIDE.equals(action)) {
+        return true;
+      }
+
+      // need a map for all following actions
+      if (map == null) {
+        callbackContext.error(action + " needs a map id");
+        return false;
+      }
+
+      final MapController mapCtrl = map.getMapCtrl();
+
+      if (ACTION_HIDE.equals(action)) {
         MapsManager.removeMap(id);
       } else if (ACTION_RESIZE.equals(action)){
         exec(new Runnable() {
@@ -203,139 +206,168 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
           public void run() {
             aMap.setDiv(args, callbackContext);
           }
+        });
 
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+      } else if (ACTION_GET_ZOOM.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            callbackContext.success("{zoom:" + mapCtrl.getZoom()+'}');
           }
         });
 
-      } else if (ACTION_GET_ZOOMLEVEL.equals(action)) {
+      } else if (ACTION_SET_ZOOM.equals(action)) {
         exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.getZoomLevel(args, callbackContext);
-          }
-
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+            try{
+              if (args.isNull(1)){
+                throw new JSONException( action + "needs a zoom level");
+              }
+              double zoom = args.getDouble(1);
+              JSONObject options = args.isNull(2) ? null : args.getJSONObject(2);
+              mapCtrl.setZoom(zoom);
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
-      } else if (ACTION_SET_ZOOMLEVEL.equals(action)) {
+      } else if (ACTION_ZOOM_TO.equals(action)) { //todo allow AnimationOptions
         exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.setZoomLevel(args, callbackContext);
-          }
-
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+            try{
+              if (args.isNull(1)){
+                throw new JSONException( action + "needs a zoom level");
+              }
+              double zoom = args.getDouble(1);
+              JSONObject options = args.isNull(2) ? null : args.getJSONObject(2);
+              mapCtrl.zoomTo(zoom);
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
       } else if (ACTION_GET_CENTER.equals(action)) {
          exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.getCenterCoordinates(args, callbackContext);
-          }
-
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+            LatLng latLng = mapCtrl.getCenter();
+            callbackContext.success('{' +
+                "center: {" +
+                "lat: " + latLng.getLatitude() + ',' +
+                "lng: " + latLng.getLongitude() +
+              '}'
+            );
           }
         });
-
 
       } else if (ACTION_SET_CENTER.equals(action)) {
          exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.setCenterCoordinates(args, callbackContext);
-          }
-
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+            try{
+              if (args.isNull(1)){
+                throw new JSONException( action + "need a [long, lat] coordinates");
+              }
+              JSONArray center = args.getJSONArray(1);
+              mapCtrl.setCenter(new LatLng(
+                  center.getDouble(0),
+                  center.getDouble(0))
+              );
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
-
-      } else if (ACTION_GET_TILT.equals(action)) {
+      } else if (ACTION_SET_PITCH.equals(action)) {
          exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.getTilt(args, callbackContext);
-          }
-
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+            try{
+              if (args.isNull(1)){
+                throw new JSONException( action + " need a pitch value" );
+              }
+              mapCtrl.setTilt(args.getDouble(1));
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
+      }  else if (ACTION_GET_PITCH.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            callbackContext.success("{pitch:" + mapCtrl.getTilt() + '}');
+          }
+        });
 
-      } else if (ACTION_ANIMATE_CAMERA.equals(action)) {
+      } else if (ACTION_FLY_TO.equals(action)) {
          exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.animateCamera(args, callbackContext);
-          }
-
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+            try{
+              JSONObject options = args.isNull(1) ? null : args.getJSONObject(1);
+              mapCtrl.flyTo(options.getJSONObject("cameraPosition"));
+              callbackContext.success("Animation started.");
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
           }
         });
-
 
       } else if (ACTION_ADD_GEOJSON.equals(action)) {
         exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.addGeoJSON(args, callbackContext);
-          }
-
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+            callbackContext.error("Not yet implemented.");
           }
         });
 
       } else if (ACTION_ADD_MARKERS.equals(action)) {
         exec(new Runnable() {
-          Map aMap;
-
           @Override
           public void run() {
-            mapCtrl.addMarkers(args, callbackContext);
-          }
+            try {
+              if(args.isNull(1)) throw new JSONException(action + " need a source ID");
+              if(args.isNull(2)) throw new JSONException(action + " no source provided");
+              String sourceId = args.getString(1);
 
-          public Runnable init(Map aMap) {
-            this.aMap = aMap;
-            return (this);
+              String dataType = args.getJSONObject(2).getJSONObject("data").getString("type");
+              if (!dataType.equals("FeatureCollection")) throw new JSONException("Only features collection are supported as markers source");
+
+              JSONArray markers = args.getJSONObject(2).getJSONObject("data").getJSONArray("features");
+              JSONObject marker;
+
+              for (int i = 0; i < markers.length(); i++) {
+                try {
+                  marker = markers.getJSONObject(i);
+                  String type = marker.getJSONObject("geometry").getString("type");
+
+                  if (!type.equals("Point")) throw new JSONException("Only type Point are supported for markers");
+
+                } catch (Exception e){
+                  e.printStackTrace();
+                }
+              }
+
+              mapCtrl.addMarkers(markers);
+              callbackContext.success();
+            }catch (JSONException e){
+              e.printStackTrace();
+            }
           }
         });
-
-      return false;
       }
+      else return false;
     } catch (Throwable t) {
       t.printStackTrace();
       callbackContext.error(t.getMessage());
@@ -347,43 +379,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     _activity.runOnUiThread(_callback);
   }
 
-
-  private void addMarkers(JSONArray markers) throws JSONException {
-    for (int i=0; i<markers.length(); i++) {
-      final JSONObject marker = markers.getJSONObject(i);
-      final MarkerOptions mo = new MarkerOptions();
-      mo.title(marker.isNull("title") ? null : marker.getString("title"));
-      mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
-      mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
-    }
-  }
-
-  private class MarkerClickListener implements MapboxMap.OnMarkerClickListener {
-
-
-    public boolean onMarkerClick(@NonNull Marker marker) {
-      // _callback
-      if (_markerCallbackContext != null) {
-        final JSONObject json = new JSONObject();
-        try {
-          json.put("title", marker.getTitle());
-          json.put("subtitle", marker.getSnippet());
-          json.put("lat", marker.getPosition().getLatitude());
-          json.put("lng", marker.getPosition().getLongitude());
-        } catch (JSONException e) {
-          PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
-              "Error in _callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
-          pluginResult.setKeepCallback(true);
-          _markerCallbackContext.sendPluginResult(pluginResult);
-        }
-        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
-        pluginResult.setKeepCallback(true);
-        _markerCallbackContext.sendPluginResult(pluginResult);
-        return true;
-      }
-      return false;
-    }
-  }
 
   private boolean permissionGranted(String... types) {
     if (Build.VERSION.SDK_INT < 23) {

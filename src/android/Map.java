@@ -77,7 +77,7 @@ public class Map {
                 callbackContext.error("Need a rect");
             }
 
-            _mapCtrl = new MapController(options, _cdvWebView, _plugRef, callbackContext);
+            _mapCtrl = new MapController(options, activity, callbackContext);
 
             // The view container. Contains maps and addons views.
             _layersGroup = new FrameLayout(_context);

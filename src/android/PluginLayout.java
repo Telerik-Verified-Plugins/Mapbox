@@ -42,7 +42,7 @@ public class PluginLayout extends FrameLayout  {
     private ViewGroup _mapsGroup = null;
     private boolean _isScrolling = false;
     private ViewGroup.LayoutParams _orgLayoutParams = null;
-    private boolean _isDebug = true;
+    private boolean _isDebug = false;
     private boolean _isClickable = true;
     private Map<String, RectF> _HTMLNodes = new HashMap<String, RectF>();
     private Activity _activity = null;

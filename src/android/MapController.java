@@ -1,9 +1,15 @@
 package com.telerik.plugins.mapbox;
 
+import android.app.Activity;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
@@ -21,13 +27,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import io.cordova.hellocordova.R;
+
 /**
  * Created by vikti on 25/06/2016.
  * This file handles the concrete action with MapBox API.
  * //todo decouple the file from MapBox to easily switch to other APIs. Need interface.
  */
 public class MapController {
-    public MapboxMap mapboxMap;
     public FrameLayout.LayoutParams mapFrame;
 
     private static float retinaFactor;
@@ -37,13 +44,13 @@ public class MapController {
     private MapboxMap _mapboxMap;
     private UiSettings _uiSettings;
     private CameraPosition _cameraPosition;
-    private CordovaWebView _cdvWebView;
+    private Activity _activity;
 
     public View getMapView(){
         return (View) _mapView;
     }
 
-    public MapController(final JSONObject options, CordovaWebView cdvWebView, CDVMapbox plugRef, final CallbackContext callbackContext){
+    public MapController(final JSONObject options, Activity activity, final CallbackContext callbackContext){
 
         try{
             _initOptions = _createMapboxMapOptions(options);
@@ -52,9 +59,9 @@ public class MapController {
             return;
         }
 
-        _cdvWebView = cdvWebView;
+        _activity = activity;
 
-        _mapView = new MapView(_cdvWebView.getContext(), _initOptions);
+        _mapView = new MapView(_activity, _initOptions);
         _mapView.setLayoutParams(
             new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
@@ -69,7 +76,8 @@ public class MapController {
 
             public void onMapReady(MapboxMap map) {
 
-   /*             _mapboxMap = map;
+                _mapboxMap = map;
+                /*
                 _uiSettings = _mapboxMap.getUiSettings();
                 _cameraPosition = _mapboxMap.getCameraPosition();
                 final JSONObject _initArgs;
@@ -142,25 +150,20 @@ public class MapController {
 
     }
 
-    public void setZoomLevel() throws JSONException{
-
-    }
-
-    public double[] getCenterCoordinates(){
-        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+    public LatLng getCenter(){
+        CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
         double lat = cameraPosition.target.getLatitude();
         double lng = cameraPosition.target.getLongitude();
-        double alt = cameraPosition.target.getAltitude();
-        return new double[]{lat, lng, alt};
+        return new LatLng(lat, lng);
     }
 
-    public void setCenterCoordinates(double... coords){
-        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+    public void setCenter(double... coords){
+        CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
         double lat = coords.length > 0 ? coords[0] : cameraPosition.target.getLatitude();
         double lng = coords.length > 1 ? coords[1] : cameraPosition.target.getLongitude();
         double alt = coords.length > 2 ? coords[2] : cameraPosition.target.getAltitude();
 
-        mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+        _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
                     .target(new LatLng(lat, lng, alt))
                     .build()
@@ -168,12 +171,19 @@ public class MapController {
     }
 
     public double getTilt(){
-        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
-        return cameraPosition.tilt;
+        return _mapboxMap.getCameraPosition().tilt;
     }
 
-    public void animateCamera(JSONObject position) throws JSONException{
-        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+    public void setTilt(double titl){
+        _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+                new CameraPosition.Builder()
+                        .tilt(titl)
+                        .build()
+        ));
+    }
+
+    public void flyTo(JSONObject position) throws JSONException{
+        CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
         LatLng latLng;
         try{
             if(position.isNull("target")){
@@ -188,7 +198,7 @@ public class MapController {
             double tilt = position.isNull("tilt") ? cameraPosition.tilt : position.getDouble("tilt");
             int duration = position.isNull("duration") ? 5000 : position.getInt("duration");
 
-            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+            _mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
                     new CameraPosition.Builder()
                             .target(latLng)
                             .zoom(zoom)
@@ -206,23 +216,74 @@ public class MapController {
 
     }
 
-    public void addMarkers() throws JSONException{
+    public void addMarkers(JSONArray markers) throws JSONException{
+        for (int i = 0; i < markers.length(); i++) {
+            JSONObject marker = markers.getJSONObject(i);
+            LatLng latLng = new LatLng(
+                    marker.getJSONObject("geometry").getJSONArray("coordinates").getDouble(1),
+                    marker.getJSONObject("geometry").getJSONArray("coordinates").getDouble(0)
+            );
 
+            String title = null;
+            String snippet = null;
+            boolean noIcon = true;
+
+            JSONObject properties = marker.isNull("properties") ? null : marker.getJSONObject("properties");
+
+            if(properties != null) {
+                title = properties.isNull("title") ? null : properties.getString("title");
+                snippet = properties.isNull("subtitle") ? null : properties.getString("subtitle");
+                noIcon = !properties.isNull("noIcon") && properties.getBoolean("noIcon");
+            }
+
+            if(noIcon){
+                _mapboxMap.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title(title)
+                        .snippet(snippet));
+            } else {
+                // Create an Icon object for the marker to use
+                IconFactory iconFactory = IconFactory.getInstance(_activity);
+                Drawable iconDrawable = ContextCompat.getDrawable(_activity, R.drawable.default_marker);
+                Icon icon = iconFactory.fromDrawable(iconDrawable);
+
+                // Add the custom icon marker to the map
+                _mapboxMap.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title(title)
+                        .snippet(snippet)
+                        .icon(icon));
+            }
+        }
     }
 
+    public double getZoom(){
+        return _mapboxMap.getCameraPosition().zoom;
+    }
 
     public void setZoom(double zoom){
         CameraPosition position = new CameraPosition.Builder()
                 .zoom(zoom)
                 .build();
 
-        mapboxMap.moveCamera(CameraUpdateFactory
+        _mapboxMap.moveCamera(CameraUpdateFactory
                 .newCameraPosition(position));
 
     }
 
+    public void zoomTo(double zoom){
+        CameraPosition position = new CameraPosition.Builder()
+                .zoom(zoom)
+                .build();
+
+        _mapboxMap.animateCamera(CameraUpdateFactory
+                .newCameraPosition(position));
+
+    }
+
+
     public void setCenter(LatLng coords) throws JSONException {
-        mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+        _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
                         .target(coords)
                         .build()
