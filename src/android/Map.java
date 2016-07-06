@@ -4,13 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.RectF;
-import android.os.Handler;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.mapbox.mapboxsdk.camera.CameraPosition;
-import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.maps.UiSettings;
+import com.mapbox.mapboxsdk.maps.MapView;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -22,29 +19,31 @@ import org.json.JSONObject;
 
 /**
  * Created by vikti on 24/06/2016.
+ *
+ * This file handle a single Map.
+ * He has a visual responsibility only: hide, show, resize...
+ * All map actions are handled by the controller and called from CDVMapbox.java to ensure
+ * a decoupling and easily switch to GoogleMap or whatever in the futur.
  */
 public class Map {
 
     private int _id;
-    private static Activity _activity;
     private CDVMapbox _plugRef;
-    private MapboxMap _mapboxMap;
     private FrameLayout _layersGroup;
-    private UiSettings _uiSettings;
     private JSONObject _mapDivLayoutJSON;
-    //private RectF _mapRect;
-    private MapboxController _mapCtrl;
+    private MapController _mapCtrl;
 
-    private JSONObject mapDivLayoutJSON = null;
     private static CordovaWebView _cdvWebView;
     private static float _density;
+
+    public MapController getMapCtrl(){
+        return _mapCtrl;
+    }
 
     public ViewGroup getViewGroup(){
         return _layersGroup;
     }
     public int getId(){return _id;}
-
-    public CameraPosition cameraPosition;
 
     /**
      * Create a map without any layout set
@@ -58,7 +57,6 @@ public class Map {
         _id = id;
         _plugRef = plugRef;
         _cdvWebView = _plugRef.webView;
-        _activity = activity;
         Context _context = _cdvWebView.getView().getContext();
         _density = Resources.getSystem().getDisplayMetrics().density;
 
@@ -78,13 +76,11 @@ public class Map {
             if(options.isNull("rect")){
                 callbackContext.error("Need a rect");
             }
-/*            _mapDivLayoutJSON = options.getJSONObject("rect");
-            _mapRect = _toRect(_mapDivLayoutJSON);*/
-            _mapCtrl = new MapboxController(MapboxController.createMapboxMapOptions(options), _cdvWebView, _plugRef, callbackContext);
+
+            _mapCtrl = new MapController(options, _cdvWebView, _plugRef, callbackContext);
 
             // The view container. Contains maps and addons views.
             _layersGroup = new FrameLayout(_context);
-            //_layersGroup.setLayoutParams(_toLayoutParams(_mapRect));
             _layersGroup.addView(_mapCtrl.getMapView());
 
         } catch (JSONException e) {
@@ -141,7 +137,7 @@ public class Map {
         _layersGroup.requestLayout(); //todo watch this line if nothing is resized
 
     }
-//todo use setdiv in CDVMapbox
+
     /**
      * Resize the map to fit the dimensions of a div.
      * This function takes also care of update the overlay DOM elements touch boxes.
@@ -160,7 +156,6 @@ public class Map {
 
             // update the map size
             _mapDivLayoutJSON = options.getJSONObject("rect");
-            //_mapRect = _toRect(_mapDivLayoutJSON);
 
             // update the map overlay DOM elements touch boxes
             JSONArray HTMLs = options.isNull("HTMLs") ? new JSONArray() : options.getJSONArray("HTMLs");
@@ -181,57 +176,6 @@ public class Map {
     }
 
     public void hide(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void getCenterCoordinates(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void setCenterCoordinates(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void setZoomLevel(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void getZoomLevel(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void getBoundsCoordinates(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void setTilt(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void getTilt(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void onRegionWillChange(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void onRegionIsChanging(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void onRegionDidChange(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void animateCamera(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void addPolygon(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void addGeoJSON(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void addMarkers(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void addMarkerCallback(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void convertCoordinates(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    public void convertPoint(final CordovaArgs args, final CallbackContext callbackContext) {
     }
 
     private float contentToView(long d) {
@@ -275,7 +219,6 @@ public class Map {
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
 
         params.setMargins(left, top, width - right, height - bottom);
-        //params.setMargins(left, top, 21, 0);
 
         return params;
     }

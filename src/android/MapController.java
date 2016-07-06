@@ -15,14 +15,18 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.UiSettings;
 
 import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaWebView;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
  * Created by vikti on 25/06/2016.
+ * This file handles the concrete action with MapBox API.
+ * //todo decouple the file from MapBox to easily switch to other APIs. Need interface.
  */
-public class MapboxController {
+public class MapController {
     public MapboxMap mapboxMap;
     public FrameLayout.LayoutParams mapFrame;
 
@@ -39,12 +43,18 @@ public class MapboxController {
         return (View) _mapView;
     }
 
-    public MapboxController(final MapboxMapOptions options, CordovaWebView cdvWebView, CDVMapbox plugRef, final CallbackContext callbackContext){
+    public MapController(final JSONObject options, CordovaWebView cdvWebView, CDVMapbox plugRef, final CallbackContext callbackContext){
 
-        _initOptions = options;
+        try{
+            _initOptions = _createMapboxMapOptions(options);
+        } catch (JSONException e){
+            e.printStackTrace();
+            return;
+        }
+
         _cdvWebView = cdvWebView;
 
-        _mapView = new MapView(_cdvWebView.getContext(), options);
+        _mapView = new MapView(_cdvWebView.getContext(), _initOptions);
         _mapView.setLayoutParams(
             new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
@@ -132,11 +142,79 @@ public class MapboxController {
 
     }
 
+    public void setZoomLevel() throws JSONException{
 
-    public void setZoom(float zoom){
+    }
+
+    public double[] getCenterCoordinates(){
+        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+        double lat = cameraPosition.target.getLatitude();
+        double lng = cameraPosition.target.getLongitude();
+        double alt = cameraPosition.target.getAltitude();
+        return new double[]{lat, lng, alt};
+    }
+
+    public void setCenterCoordinates(double... coords){
+        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+        double lat = coords.length > 0 ? coords[0] : cameraPosition.target.getLatitude();
+        double lng = coords.length > 1 ? coords[1] : cameraPosition.target.getLongitude();
+        double alt = coords.length > 2 ? coords[2] : cameraPosition.target.getAltitude();
+
+        mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+                new CameraPosition.Builder()
+                    .target(new LatLng(lat, lng, alt))
+                    .build()
+        ));
+    }
+
+    public double getTilt(){
+        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+        return cameraPosition.tilt;
+    }
+
+    public void animateCamera(JSONObject position) throws JSONException{
+        CameraPosition cameraPosition = mapboxMap.getCameraPosition();
+        LatLng latLng;
+        try{
+            if(position.isNull("target")){
+                latLng = new LatLng(cameraPosition.target.getLatitude(), cameraPosition.target.getLongitude());
+            } else {
+                JSONObject target = position.getJSONObject("target");
+                latLng = new LatLng(target.getDouble("lat"), target.getDouble("lng"));
+            }
+
+            double zoom = position.isNull("zoom") ? cameraPosition.zoom : position.getDouble("zoom");
+            double bearing = position.isNull("bearing") ? cameraPosition.bearing : position.getDouble("bearing");
+            double tilt = position.isNull("tilt") ? cameraPosition.tilt : position.getDouble("tilt");
+            int duration = position.isNull("duration") ? 5000 : position.getInt("duration");
+
+            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                    new CameraPosition.Builder()
+                            .target(latLng)
+                            .zoom(zoom)
+                            .bearing(bearing)
+                            .tilt(tilt)
+                            .build()
+            ), duration);
+
+        } catch (JSONException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void addGeoJSON() throws JSONException{
+
+    }
+
+    public void addMarkers() throws JSONException{
+
+    }
+
+
+    public void setZoom(double zoom){
         CameraPosition position = new CameraPosition.Builder()
-                .zoom(zoom) // Sets the zoom
-                .build(); // Creates a CameraPosition from the builder
+                .zoom(zoom)
+                .build();
 
         mapboxMap.moveCamera(CameraUpdateFactory
                 .newCameraPosition(position));
@@ -156,7 +234,7 @@ public class MapboxController {
     }
 
 
-    public static MapboxMapOptions createMapboxMapOptions(JSONObject options) throws JSONException {
+    private MapboxMapOptions _createMapboxMapOptions(JSONObject options) throws JSONException {
         MapboxMapOptions opts = new MapboxMapOptions();
         opts.styleUrl(_getStyle(options.getString("style")));
         opts.attributionEnabled(options.isNull("hideAttribution") || !options.getBoolean("hideAttribution"));

@@ -17,6 +17,7 @@ import com.mapbox.mapboxsdk.MapboxAccountManager;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 
 import org.apache.cordova.CallbackContext;
@@ -172,6 +173,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     try {
       final int id = args.getInt(0);
       final Map map = MapsManager.getMap(id);
+      final MapController mapCtrl = map.getMapCtrl();
 
       if (ACTION_SHOW.equals(action)) {
 
@@ -214,7 +216,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.getZoomLevel(args, callbackContext);
+            mapCtrl.getZoomLevel(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
@@ -229,7 +231,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.setZoomLevel(args, callbackContext);
+            mapCtrl.setZoomLevel(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
@@ -244,7 +246,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.getCenterCoordinates(args, callbackContext);
+            mapCtrl.getCenterCoordinates(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
@@ -260,7 +262,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.setCenterCoordinates(args, callbackContext);
+            mapCtrl.setCenterCoordinates(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
@@ -276,7 +278,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.getTilt(args, callbackContext);
+            mapCtrl.getTilt(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
@@ -292,7 +294,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.animateCamera(args, callbackContext);
+            mapCtrl.animateCamera(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
@@ -308,7 +310,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.addGeoJSON(args, callbackContext);
+            mapCtrl.addGeoJSON(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
@@ -323,7 +325,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
           @Override
           public void run() {
-            aMap.addMarkers(args, callbackContext);
+            mapCtrl.addMarkers(args, callbackContext);
           }
 
           public Runnable init(Map aMap) {
