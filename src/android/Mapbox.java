@@ -3,13 +3,19 @@ package com.telerik.plugins.mapbox;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.caverock.androidsvg.SVG;
+import com.caverock.androidsvg.SVGParseException;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
@@ -19,6 +25,8 @@ import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngZoom;
 import com.mapbox.mapboxsdk.views.MapView;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Icon;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -30,8 +38,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+
+import android.graphics.drawable.BitmapDrawable;
+
+import android.content.Context;
+import android.content.res.AssetManager;
 
 
 // TODO for screen rotation, see https://www.mapbox.com/mapbox-android-sdk/#screen-rotation
@@ -88,9 +103,7 @@ public class Mapbox extends CordovaPlugin {
 
   @Override
   public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
-
     this.callback = callbackContext;
-
     try {
       if (ACTION_SHOW.equals(action)) {
         final JSONObject options = args.getJSONObject(0);
@@ -154,8 +167,8 @@ public class Mapbox extends CordovaPlugin {
               if (options.has("markers")) {
                 addMarkers(options.getJSONArray("markers"));
               }
-            } catch (JSONException e) {
-              callbackContext.error(e.getMessage());
+            } catch (Throwable e) {
+              callbackContext.error(e.toString());
               return;
             }
 
@@ -273,8 +286,8 @@ public class Mapbox extends CordovaPlugin {
               try {
                 final JSONObject options = args.getJSONObject(0);
                 mapView.setTilt(
-                    options.optDouble("pitch", 20),      // default 20
-                    options.optLong("duration", 5000)); // default 5s
+                        options.optDouble("pitch", 20),      // default 20
+                        options.optLong("duration", 5000)); // default 5s
                 callbackContext.success();
               } catch (JSONException e) {
                 callbackContext.error(e.getMessage());
@@ -297,23 +310,23 @@ public class Mapbox extends CordovaPlugin {
                 final double lng = target.getDouble("lng");
 
                 final CameraPosition.Builder builder =
-                    new CameraPosition.Builder()
-                        .target(new LatLng(lat, lng));
+                        new CameraPosition.Builder()
+                                .target(new LatLng(lat, lng));
 
                 if (options.has("bearing")) {
-                  builder.bearing(((Double)options.getDouble("bearing")).floatValue());
+                  builder.bearing(((Double) options.getDouble("bearing")).floatValue());
                 }
                 if (options.has("tilt")) {
-                  builder.tilt(((Double)options.getDouble("tilt")).floatValue());
+                  builder.tilt(((Double) options.getDouble("tilt")).floatValue());
                 }
                 if (options.has("zoomLevel")) {
-                  builder.zoom(((Double)options.getDouble("zoomLevel")).floatValue());
+                  builder.zoom(((Double) options.getDouble("zoomLevel")).floatValue());
                 }
 
                 mapView.animateCamera(
-                    CameraUpdateFactory.newCameraPosition(builder.build()),
-                    (options.optInt("duration", 15)) * 1000, // default 15 seconds
-                    null);
+                        CameraUpdateFactory.newCameraPosition(builder.build()),
+                        (options.optInt("duration", 15)) * 1000, // default 15 seconds
+                        null);
 
                 callbackContext.success();
               } catch (JSONException e) {
@@ -362,8 +375,8 @@ public class Mapbox extends CordovaPlugin {
             try {
               addMarkers(args.getJSONArray(0));
               callbackContext.success();
-            } catch (JSONException e) {
-              callbackContext.error(e.getMessage());
+            } catch (Throwable e) {
+              callbackContext.error(e.toString());
             }
           }
         });
@@ -382,13 +395,82 @@ public class Mapbox extends CordovaPlugin {
     return true;
   }
 
-  private void addMarkers(JSONArray markers) throws JSONException {
-    for (int i=0; i<markers.length(); i++) {
+  private BitmapDrawable createSVG(SVG svg, int width, int height) throws SVGParseException {
+    if (width == 0)
+      width = applyRetinaFactor((int) Math.ceil(svg.getDocumentWidth()));
+    if (height == 0)
+      height = applyRetinaFactor((int) Math.ceil(svg.getDocumentHeight()));
+    Bitmap newBM = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    Canvas bmcanvas = new Canvas(newBM);
+    svg.renderToCanvas(bmcanvas);
+    return new BitmapDrawable(cordova.getActivity().getApplicationContext().getResources(), newBM);
+  }
+
+  private Icon createIcon(JSONObject marker) throws JSONException, IOException, SVGParseException {
+    InputStream istream = null;
+    BitmapDrawable bitmap;
+    Icon icon;
+    Context ctx = cordova.getActivity().getApplicationContext();
+    AssetManager am = ctx.getResources().getAssets();
+    IconFactory iconFactory = IconFactory.getInstance(cordova.getActivity());
+    final JSONObject imageSettings = marker.optJSONObject("image");
+    try {
+      if (imageSettings != null) {
+        if (imageSettings.has("url")) {
+          String filePath = imageSettings.getString("url");
+          istream = am.open(filePath);
+          if (filePath.endsWith(".svg")) {
+            bitmap = createSVG(SVG.getFromInputStream(istream), imageSettings.has("width") ? applyRetinaFactor(imageSettings.getInt("width")) : 0,
+                    imageSettings.has("height") ? applyRetinaFactor(imageSettings.getInt("height")) : 0);
+          } else {
+            bitmap = new BitmapDrawable(ctx.getResources(), istream);
+          }
+        } else if (imageSettings.has("data")) {
+          byte[] decodedBytes = Base64.decode(imageSettings.getString("data"), 0);
+          bitmap = new BitmapDrawable(ctx.getResources(), BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length));
+
+        } else if (imageSettings.has("svg")) {
+          bitmap = createSVG(SVG.getFromString(imageSettings.getString("svg")), imageSettings.has("width") ? applyRetinaFactor(imageSettings.getInt("width")) : 0,
+                  imageSettings.has("height") ? applyRetinaFactor(imageSettings.getInt("height")) : 0);
+        } else {
+          throw new JSONException("Not found image data");
+        }
+        if (imageSettings.has("width") && imageSettings.has("height")) {
+          icon = iconFactory.fromDrawable(bitmap, applyRetinaFactor(imageSettings.getInt("width")),
+                  applyRetinaFactor(imageSettings.getInt("height")));
+        } else {
+          icon = iconFactory.fromDrawable(bitmap);
+        }
+
+      } else {
+        String filePath = marker.getString("image");
+        istream = am.open(filePath);
+        if (filePath.endsWith(".svg"))
+          bitmap = createSVG(SVG.getFromInputStream(istream), 0, 0);
+        else
+          bitmap = new BitmapDrawable(ctx.getResources(), istream);
+        icon = iconFactory.fromDrawable(bitmap);
+      }
+    } finally {
+      if (istream != null)
+        istream.close();
+    }
+    return icon;
+  }
+
+  private void addMarkers(JSONArray markers) throws JSONException,
+          java.lang.NullPointerException,
+          java.io.IOException, SVGParseException {
+
+    for (int i = 0; i < markers.length(); i++) {
       final JSONObject marker = markers.getJSONObject(i);
       final MarkerOptions mo = new MarkerOptions();
       mo.title(marker.isNull("title") ? null : marker.getString("title"));
       mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
       mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
+      if (marker.has("image")) {
+        mo.icon(createIcon(marker));
+      }
       mapView.addMarker(mo);
     }
   }
@@ -407,7 +489,7 @@ public class Mapbox extends CordovaPlugin {
           json.put("lng", marker.getPosition().getLongitude());
         } catch (JSONException e) {
           PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR,
-              "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
+                  "Error in callback of " + ACTION_ADD_MARKER_CALLBACK + ": " + e.getMessage());
           pluginResult.setKeepCallback(true);
           markerCallbackContext.sendPluginResult(pluginResult);
         }
@@ -467,9 +549,9 @@ public class Mapbox extends CordovaPlugin {
 
   private void requestPermission(String... types) {
     ActivityCompat.requestPermissions(
-        this.cordova.getActivity(),
-        types,
-        LOCATION_REQ_CODE);
+            this.cordova.getActivity(),
+            types,
+            LOCATION_REQ_CODE);
   }
 
   // TODO
