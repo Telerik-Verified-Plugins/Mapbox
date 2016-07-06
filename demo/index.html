@@ -1,46 +1,52 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <meta name="format-detection" content="telephone=no" />
-    <meta name="msapplication-tap-highlight" content="no" />
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height" />
-    <link rel="stylesheet" type="text/css" href="css/index.css" />
-    <title>Mapbox test</title>
+  <meta charset="utf-8"/>
+  <meta name="format-detection" content="telephone=no"/>
+  <meta name="msapplication-tap-highlight" content="no"/>
+  <meta name="viewport"
+        content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"/>
+  <link rel="stylesheet" type="text/css" href="css/index.css"/>
+  <title>Mapbox test</title>
 </head>
 <body>
-    <div class="app">
-        <h1>Mapbox test</h1>
+<div class="app">
+  <h1>Mapbox test</h1>
 
-        <div id="deviceready" class="blink">
-            <p class="event listening">Connecting to Device</p>
-            <p class="event received">Device is Ready</p>
-            <br />
-            <br />
-            <button onclick="showMap()">Show</button>
-        </div>
-        <div style="position:absolute; bottom:0; background-color: #eee">
-            <button onclick="animateCamera()">Camera</button>
-            <button onclick="addMarkers()">Markers</button>
-            <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
-            <button onclick="addPolygon()">Poly</button>
-            <button onclick="hideMap()">hide</button><br /><br />
-            <button onclick="getZoomLevel()">getZoom</button>
-            <button onclick="zoomIn()">zoom +</button>
-            <button onclick="zoomOut()">zoom -</button><br /><br />
-            <button onclick="setCenter()">set center</button>
-            <button onclick="getCenter()">get center</button>
-            <button onclick="setTilt()">set tilt</button>
-            <button onclick="getTilt()">get tilt</button><br /><br />
-            <button onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
-            <button onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
-            <button onclick="hideMap()">hide</button>
-        </div>
-    </div>
+  <div id="deviceready" class="blink">
+    <p class="event listening">Connecting to Device</p>
+    <p class="event received">Device is Ready</p>
+    <br/>
+    <br/>
+    <button onclick="showMap()">Show</button>
+  </div>
+  <div style="position:absolute; bottom:0; background-color: #eee">
+    <button onclick="animateCamera()">Camera</button>
+    <button onclick="addMarkers()">Markers</button>
+    <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
+    <button onclick="addPolygon()">Poly</button>
+    <button onclick="hideMap()">hide</button>
+    <br/><br/>
+    <button onclick="getZoomLevel()">getZoom</button>
+    <button onclick="zoomIn()">zoom +</button>
+    <button onclick="zoomOut()">zoom -</button>
+    <br/><br/>
+    <button onclick="setCenter()">set center</button>
+    <button onclick="getCenter()">get center</button>
+    <button onclick="setTilt()">set tilt</button>
+    <button onclick="getTilt()">get tilt</button>
+    <br/><br/>
+    <button onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">
+      ctr2coords
+    </button>
+    <button onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
+    <button onclick="hideMap()">hide</button>
+  </div>
+</div>
 
-    <script type="text/javascript" src="cordova.js"></script>
-    <script type="text/javascript" src="js/index.js"></script>
-    <script>
+<script type="text/javascript" src="cordova.js"></script>
+<script type="text/javascript" src="js/index.js"></script>
+<script>
         var zoom = 10;
 
         function setCenter() {
@@ -126,31 +132,29 @@
                       }
                   }
                 ]
-            },
-                    function (result) {
-                        console.log(JSON.stringify(result));
-                        // let's add a callback for these markers - invoked when the callout is tapped (Android) or the (i) icon in the marker callout (iOS)
-                        Mapbox.addMarkerCallback(function (selectedMarker) {
-                            alert("Marker selected: " + JSON.stringify(selectedMarker));
-                        });
-                        // let's add callbacks for region changing
-                        //
-                        // - invoked when the map is about to moved (animated or not).
-                        Mapbox.onRegionWillChange(function (centerCoordinates) {
-                            console.log("Map will move from: ", centerCoordinates);
-                        });
-                        // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
-                        Mapbox.onRegionIsChanging(function (centerCoordinates) {
-                            console.log("New map center is: ", centerCoordinates);
-                        });
-                        // - invoked after the map has moved (animated or not).
-                        Mapbox.onRegionDidChange(function (centerCoordinates) {
-                            console.log("Map as finished to move to : ", centerCoordinates);
-                        });
-                    },
-                    function (error) {
-                        alert(error);
-                    }
+            }, function (result) {
+                console.log(JSON.stringify(result));
+                // let's add a callback for these markers - invoked when the callout is tapped (Android) or the (i) icon in the marker callout (iOS)
+                Mapbox.addMarkerCallback(function (selectedMarker) {
+                    alert("Marker selected: " + JSON.stringify(selectedMarker));
+                });
+                // let's add callbacks for region changing
+                //
+                // - invoked when the map is about to moved (animated or not).
+                Mapbox.onRegionWillChange(function (centerCoordinates) {
+                    console.log("Map will move from: ", centerCoordinates);
+                });
+                // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
+                Mapbox.onRegionIsChanging(function (centerCoordinates) {
+                    console.log("New map center is: ", centerCoordinates);
+                });
+                // - invoked after the map has moved (animated or not).
+                Mapbox.onRegionDidChange(function (centerCoordinates) {
+                    console.log("Map as finished to move to : ", centerCoordinates);
+                });
+            }, function (error) {
+                alert(error);
+            }
             )
         }
 
@@ -210,11 +214,11 @@
                       {
                           'lat': 52.3602160,
                           'lng': 4.8891680,
-                          'image':{
-                          height: 40,
-                          width: 40,
-                          url: 'www/compass.svg'
-                      },
+                          'image': {
+                              height: 40,
+                              width: 40,
+                              url: 'www/compass.svg'
+                          },
                           'title': 'One-line title here', // no popup unless set
                           'subtitle': 'This text can span multiple lines on Android only. On iOS it\'s one line max.',
                       },
@@ -223,8 +227,7 @@
                           'lng': 4.8911680,
                           'title': 'Nu subtitle for this one' // iOS: no popup unless set, Android: an empty popup -- so please add something
                       }
-            ],
-                    function (result) {
+            ],   function (result) {
                         console.log(JSON.stringify(result));
                     },
                     function (error) {
@@ -248,15 +251,15 @@
             Mapbox.convertPoint({
                 'x': point.x,
                 'y': point.y
-            },
-                    function (latlng) {
-                        alert("lat:" + latlng.lat + " - lng:" + latlng.lng);
-                    },
-                    function (error) {
-                        alert(error)
-                    })
+            }, function (latlng) {
+                alert("lat:" + latlng.lat + " - lng:" + latlng.lng);
+            }, function (error) {
+                alert(error)
+            })
         }
 
-    </script>
+
+
+</script>
 </body>
 </html>
