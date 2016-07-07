@@ -109,23 +109,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             )
     );
 
-    /**
-     * Arrange the layers. The final order is:
-     * - root (Application View)
-     *   - pluginLayout
-     *     - frontLayout
-     *       - webView
-     *     - scrollView
-     *       - scrollFrameLayout
-     *         - mapsGroup
-     *         - background
-     */
-    _activity.runOnUiThread(new Runnable() {
-      public void run(){
-        pluginLayout.attachMapsGroup(mapsGroup);
-      }
-    });
-
     // make webview transparent to see the map through
     //_root.setBackgroundColor(Color.WHITE);
     //webView.getView().setBackgroundColor(Color.TRANSPARENT);
@@ -164,6 +147,11 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     _callback = callbackContext;
 
     try {
+      if (args.isNull(0)) {
+        callbackContext.error(action + " needs a map id");
+        return false;
+      }
+
       final int id = args.getInt(0);
       final Map map = MapsManager.getMap(id);
 
@@ -177,10 +165,28 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             exec(new Runnable() {
               @Override
               public void run() {
-                aMap.setDiv(args, callbackContext);
-                mapsGroup.addView(aMap.getViewGroup());
-                //pluginLayout.addMap(newMap);
-                callbackContext.success();
+                _activity.runOnUiThread(new Runnable() {
+                  public void run(){
+                    //If it is the first map, we set the general layout.
+                    /**
+                    * Arrange the layers. The final order is:
+                    * - root (Application View)
+                    *   - pluginLayout
+                    *     - frontLayout
+                    *       - webView
+                    *     - scrollView
+                    *       - scrollFrameLayout
+                    *         - mapsGroup
+                    *         - background
+                    */
+                    if (MapsManager.getCount() == 1) {
+                      pluginLayout.attachMapsGroup(mapsGroup);
+                    }
+                    aMap.setDiv(args, callbackContext);
+                    mapsGroup.addView(aMap.getViewGroup());
+                    callbackContext.success();
+                  }
+                });
               }
             });
           }
@@ -190,14 +196,22 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
       // need a map for all following actions
       if (map == null) {
-        callbackContext.error(action + " needs a map id");
+        callbackContext.error(action + " needs a valid map");
         return false;
       }
 
       final MapController mapCtrl = map.getMapCtrl();
 
       if (ACTION_HIDE.equals(action)) {
-        MapsManager.removeMap(id);
+        _activity.runOnUiThread(new Runnable() {
+          public void run() {
+            mapsGroup.removeView(map.getViewGroup());
+            MapsManager.removeMap(id);
+            if (MapsManager.getCount() == 0) {
+              pluginLayout.detachMapsGroup();
+            }
+          }
+        });
       } else if (ACTION_RESIZE.equals(action)){
         exec(new Runnable() {
           Map aMap;

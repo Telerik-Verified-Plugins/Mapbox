@@ -173,7 +173,7 @@ public class PluginLayout extends FrameLayout  {
     private void _setDrawingZone(RectF mapRect){
         _mapRect = mapRect;
 
-        if (_isDebug == true) {
+        if (_isDebug) {
             this.inValidate();
         }
     }
@@ -198,6 +198,7 @@ public class PluginLayout extends FrameLayout  {
         _root.addView(_view);
         _mapsGroup = null;
         _activity.getWindow().getDecorView().requestFocus();
+        _view.setBackgroundColor(Color.WHITE);
     }
 
     /**

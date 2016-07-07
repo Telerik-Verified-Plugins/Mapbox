@@ -3,6 +3,7 @@ package com.telerik.plugins.mapbox;
 import android.app.Activity;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -161,7 +162,7 @@ public class MapController {
         CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
         double lat = coords.length > 0 ? coords[0] : cameraPosition.target.getLatitude();
         double lng = coords.length > 1 ? coords[1] : cameraPosition.target.getLongitude();
-        double alt = coords.length > 2 ? coords[2] : cameraPosition.target.getAltitude();
+        double alt = coords.length > 2 ? coords[2] : cameraPosition.target.getAltitude(); //todo alt or zoom ????
 
         _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
@@ -186,26 +187,9 @@ public class MapController {
         CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
         LatLng latLng;
         try{
-            if(position.isNull("target")){
-                latLng = new LatLng(cameraPosition.target.getLatitude(), cameraPosition.target.getLongitude());
-            } else {
-                JSONObject target = position.getJSONObject("target");
-                latLng = new LatLng(target.getDouble("lat"), target.getDouble("lng"));
-            }
-
-            double zoom = position.isNull("zoom") ? cameraPosition.zoom : position.getDouble("zoom");
-            double bearing = position.isNull("bearing") ? cameraPosition.bearing : position.getDouble("bearing");
-            double tilt = position.isNull("tilt") ? cameraPosition.tilt : position.getDouble("tilt");
             int duration = position.isNull("duration") ? 5000 : position.getInt("duration");
 
-            _mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
-                    new CameraPosition.Builder()
-                            .target(latLng)
-                            .zoom(zoom)
-                            .bearing(bearing)
-                            .tilt(tilt)
-                            .build()
-            ), duration);
+            _mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(MapController.getCameraPosition(position, cameraPosition)), duration);
 
         } catch (JSONException e){
             e.printStackTrace();
@@ -294,14 +278,13 @@ public class MapController {
         return (int) (i * retinaFactor);
     }
 
-
     private MapboxMapOptions _createMapboxMapOptions(JSONObject options) throws JSONException {
         MapboxMapOptions opts = new MapboxMapOptions();
         opts.styleUrl(_getStyle(options.getString("style")));
         opts.attributionEnabled(options.isNull("hideAttribution") || !options.getBoolean("hideAttribution"));
         opts.logoEnabled(options.isNull("hideLogo") || options.getBoolean("hideLogo"));
-        opts.locationEnabled(!options.isNull("showUserLocation") && options.getBoolean("showUserLocation"));
-        //opts.camera(Map.getCameraPostion(options, null));
+        //opts.locationEnabled(!options.isNull("showUserLocation") && options.getBoolean("showUserLocation")); // todo bug #5607
+        //opts.camera(MapController.getCameraPosition(options.isNull("position")?null:options.getJSONObject("position"), null)); // todo bug #5607
         opts.compassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
         opts.rotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
         opts.scrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
@@ -327,5 +310,29 @@ public class MapController {
         } else {
             return requested;
         }
+    }
+
+    public static CameraPosition getCameraPosition(JSONObject position, @Nullable CameraPosition start) throws JSONException {
+        CameraPosition.Builder builder = new CameraPosition.Builder(start);
+
+        if(position != null) {
+            if (!position.isNull("target")) {
+                JSONObject target = position.getJSONObject("target");
+                builder.target(new LatLng(target.getDouble("lat"), target.getDouble("lng")));
+            }
+
+            if (!position.isNull("zoom")) {
+                builder.zoom(position.getDouble("zoom"));
+            }
+
+            if (!position.isNull("bearing")) {
+                builder.bearing(position.getDouble("bearing"));
+            }
+
+            if (!position.isNull("tilt")) {
+                builder.tilt(position.getDouble("tilt"));
+            }
+        }
+        return builder.build();
     }
 }

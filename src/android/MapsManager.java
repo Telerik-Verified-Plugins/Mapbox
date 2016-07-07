@@ -47,7 +47,7 @@ public class MapsManager {
     }
 
     public static void removeMap(int mapId){
-
+        _maps.delete(mapId);
     }
 
     public static void onPause() {
