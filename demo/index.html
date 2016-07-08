@@ -154,16 +154,16 @@
               // let's add callbacks for region changing
               //
               // - invoked when the map is about to moved (animated or not).
-              Mapbox.onRegionWillChange(function(centerCoordinates) {
-                console.log("Map will move from: ", centerCoordinates);
+              Mapbox.addOnMapChangeListener("REGION_WILL_CHANGE", function(cameraPosition) {
+                console.log("Camera will move from: ", cameraPosition);
               });
               // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
-              Mapbox.onRegionIsChanging(function(centerCoordinates){
-                console.log("New map center is: ", centerCoordinates);
+              Mapbox.addOnMapChangeListener("REGION_IS_CHANGING", function(cameraPosition){
+                console.log("Camera map center is: ", cameraPosition);
               });
               // - invoked after the map has moved (animated or not).
-              Mapbox.onRegionDidChange(function(centerCoordinates) {
-                console.log("Map as finished to move to : ", centerCoordinates);
+              Mapbox.addOnMapChangeListener("REGION_DID_CHANGE", function(cameraPosition) {
+                console.log("Camera as finished to move to : ", cameraPosition);
               });
             },
             function (error) {
@@ -173,7 +173,7 @@
   }
 
   function hideMap() {
-    Mapbox.hide({},
+    Mapbox.hide(0,
             function (result) {
               console.log(JSON.parse(result));
             },

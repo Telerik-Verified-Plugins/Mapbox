@@ -128,9 +128,9 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "setClickable", [id, clickable])
   },
 
-  hide: function (options, successCallback, errorCallback) {
+  hide: function (id, successCallback, errorCallback) {
     id = id || 0;
-    cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [id, options]);
+    cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [id]);
   },
 
   refreshMap: function (options, successCallback, errorCallback, id){
@@ -200,19 +200,8 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertPoint", [id, point]);
   },
 
-  onRegionWillChange: function(callback, id) {
+  addOnMapChangeListener: function(listener, callback, id) {
     id = id || 0;
-    cordova.exec(callback, null, "Mapbox", "onRegionWillChange", [id]);
+    cordova.exec(callback, null, "Mapbox", "addOnMapChangeListener", [id, listener, callback]);
   },
-
-  onRegionIsChanging: function(callback, id) {
-    id = id || 0;
-    cordova.exec(callback, null, "Mapbox", "onRegionIsChanging", [id]);
-  },
-
-  onRegionDidChange: function(callback, id) {
-    id = id || 0;
-    cordova.exec(callback, null, "Mapbox", "onRegionDidChange", [id]);
-  }
-
 };

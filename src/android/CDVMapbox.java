@@ -60,7 +60,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private static final String ACTION_FLY_TO = "flyTo";
   private static final String ACTION_CONVERT_COORDINATES = "convertCoordinates";
   private static final String ACTION_CONVERT_POINT = "convertPoint";
-  private static final String ACTION_ON_REGION_WILL_CHANGE = "onRegionWillChange";
+  private static final String ACTION_ADD_ON_MAP_CHANGE_LISTENER = "addOnMapChangeListener";
   private static final String ACTION_ON_REGION_IS_CHANGING = "onRegionIsChanging";
   private static final String ACTION_ON_REGION_DID_CHANGE = "onRegionDidChange";
   private float _density;
@@ -417,24 +417,53 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             }
           }
         });
-      } else if(ACTION_CONVERT_POINT.equals(action)){
-      exec(new Runnable() {
-        @Override
-        public void run() {
-          try{
-            JSONObject point = args.getJSONObject(1);
-            LatLng latLng = mapCtrl.convertPoint(new PointF(
-                    (float)point.getDouble("x"),
-                    (float)point.getDouble("y")
-            ));
-            callbackContext.success("{\"lat\": "+latLng.getLatitude()+", \"lng\": "+latLng.getLongitude()+"}");
-          } catch (JSONException e){
-            e.printStackTrace();
-            callbackContext.error(e.getMessage());
+      } else if(ACTION_CONVERT_POINT.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              JSONObject point = args.getJSONObject(1);
+              LatLng latLng = mapCtrl.convertPoint(new PointF(
+                      (float) point.getDouble("x"),
+                      (float) point.getDouble("y")
+              ));
+              callbackContext.success("{\"lat\": " + latLng.getLatitude() + ", \"lng\": " + latLng.getLongitude() + "}");
+            } catch (JSONException e) {
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
           }
-        }
-      });
-    } else return false;
+        });
+      } else if (ACTION_ADD_ON_MAP_CHANGE_LISTENER.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              String listener = args.getString(1);
+
+              if("REGION_IS_CHANGING".equals(listener)
+              || "REGION_WILL_CHANGE".equals(listener)
+              || "REGION_DID_CHANGE".equals(listener)) {
+                mapCtrl.addOnMapChangedListener(listener, new Runnable() {
+                  @Override
+                  public void run() {
+                    try {
+                      PluginResult result = new PluginResult(PluginResult.Status.OK, mapCtrl.getJSONCameraPosition());
+                      result.setKeepCallback(true);
+                      callbackContext.sendPluginResult(result);
+                    } catch (JSONException e) {
+                      e.printStackTrace();
+                    }
+                  }
+                });
+              } else throw new JSONException(listener + "not implemented yet.");
+            } catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+      } else return false;
     } catch (Throwable t) {
       t.printStackTrace();
       callbackContext.error(t.getMessage());
@@ -445,7 +474,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private void exec(Runnable _callback){
     _activity.runOnUiThread(_callback);
   }
-
 
   private boolean permissionGranted(String... types) {
     if (Build.VERSION.SDK_INT < 23) {
@@ -462,7 +490,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   protected void _showUserLocation() {
 
   }
-
 
   private void requestPermission(String... types) {
     ActivityCompat.requestPermissions(
