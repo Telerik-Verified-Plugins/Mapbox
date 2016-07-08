@@ -1,6 +1,8 @@
 package com.telerik.plugins.mapbox;
 
 import android.app.Activity;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
@@ -272,6 +274,14 @@ public class MapController {
                         .target(coords)
                         .build()
         ));
+    }
+
+    public PointF convertCoordinates(LatLng coords){
+        return _mapboxMap.getProjection().toScreenLocation(coords);
+    }
+
+    public LatLng convertPoint(PointF point){
+        return _mapboxMap.getProjection().fromScreenLocation(point);
     }
 
     private static int applyRetinaFactor(int i) {

@@ -3,6 +3,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -226,7 +227,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
         exec(new Runnable() {
           @Override
           public void run() {
-            callbackContext.success("{zoom:" + mapCtrl.getZoom()+'}');
+            callbackContext.success("{\"zoom\":" + mapCtrl.getZoom()+'}');
           }
         });
 
@@ -274,9 +275,9 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
           public void run() {
             LatLng latLng = mapCtrl.getCenter();
             callbackContext.success('{' +
-                "center: {" +
-                "lat: " + latLng.getLatitude() + ',' +
-                "lng: " + latLng.getLongitude() +
+                "\"center\": {" +
+                "\"lat\": " + latLng.getLatitude() + ',' +
+                "\"lng\": " + latLng.getLongitude() +
               '}'
             );
           }
@@ -324,7 +325,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
         exec(new Runnable() {
           @Override
           public void run() {
-            callbackContext.success("{pitch:" + mapCtrl.getTilt() + '}');
+            callbackContext.success("{\"pitch\":" + mapCtrl.getTilt() + '}');
           }
         });
 
@@ -399,7 +400,41 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             }
           }
         });
-      } else return false;
+      } else if(ACTION_CONVERT_COORDINATES.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              JSONObject coords = args.getJSONObject(1);
+              PointF point = mapCtrl.convertCoordinates(new LatLng(
+                      coords.getDouble("lat"),
+                      coords.getDouble("lng")
+              ));
+              callbackContext.success("{\"x\": "+point.x+", \"y\": "+point.y+"}");
+            } catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+      } else if(ACTION_CONVERT_POINT.equals(action)){
+      exec(new Runnable() {
+        @Override
+        public void run() {
+          try{
+            JSONObject point = args.getJSONObject(1);
+            LatLng latLng = mapCtrl.convertPoint(new PointF(
+                    (float)point.getDouble("x"),
+                    (float)point.getDouble("y")
+            ));
+            callbackContext.success("{\"lat\": "+latLng.getLatitude()+", \"lng\": "+latLng.getLongitude()+"}");
+          } catch (JSONException e){
+            e.printStackTrace();
+            callbackContext.error(e.getMessage());
+          }
+        }
+      });
+    } else return false;
     } catch (Throwable t) {
       t.printStackTrace();
       callbackContext.error(t.getMessage());
