@@ -1,5 +1,6 @@
 #import <Cordova/CDVPlugin.h>
 #import "Mapbox.h"
+#import "SVGgh.h"
 
 @interface CDVMapbox : CDVPlugin<MGLMapViewDelegate>
 
@@ -39,3 +40,15 @@
 - (void) onRegionDidChange:(CDVInvokedUrlCommand*)command;
 
 @end
+
+@protocol MapboxAnnotationWithImage <MGLAnnotation>
+
+@required
+@property (nonatomic) NSDictionary* imageData;
+
+@end
+
+@interface MapboxPointAnnotationWithImage: MGLPointAnnotation <MapboxAnnotationWithImage>
+
+@end
+
