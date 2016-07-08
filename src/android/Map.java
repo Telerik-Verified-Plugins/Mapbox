@@ -7,8 +7,6 @@ import android.graphics.RectF;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.mapbox.mapboxsdk.maps.MapView;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaWebView;
@@ -34,7 +32,7 @@ public class Map {
     private MapController _mapCtrl;
 
     private static CordovaWebView _cdvWebView;
-    private static float _density;
+    private static float _retinaFactor;
 
     public MapController getMapCtrl(){
         return _mapCtrl;
@@ -58,7 +56,7 @@ public class Map {
         _plugRef = plugRef;
         _cdvWebView = _plugRef.webView;
         Context _context = _cdvWebView.getView().getContext();
-        _density = Resources.getSystem().getDisplayMetrics().density;
+        _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
 
         /**
          * Create a controller (which instantiate the MGLMapbox view)
@@ -104,10 +102,10 @@ public class Map {
                 elemId = elemInfo.getString("id");
                 elemSize = elemInfo.getJSONObject("size");
 
-                divW = _contentToView(elemSize.getLong("width"));
-                divH = _contentToView(elemSize.getLong("height"));
-                divLeft = _contentToView(elemSize.getLong("left"));
-                divTop = _contentToView(elemSize.getLong("top"));
+                divW = _applyRetinaFactor(elemSize.getLong("width"));
+                divH = _applyRetinaFactor(elemSize.getLong("height"));
+                divLeft = _applyRetinaFactor(elemSize.getLong("left"));
+                divTop = _applyRetinaFactor(elemSize.getLong("top"));
                 _plugRef.pluginLayout.setHTMLElement(elemId, divLeft, divTop, divLeft + divW, divTop + divH);
             } catch (Exception e){
                 e.printStackTrace();
@@ -171,15 +169,8 @@ public class Map {
         }
     }
 
-    private float _contentToView(long d) {
-        return d * _density;
-    }
-
-    public void hide(final CordovaArgs args, final CallbackContext callbackContext) {
-    }
-
-    private float contentToView(long d) {
-        return d * _density;
+    private float _applyRetinaFactor(long d) {
+        return d * _retinaFactor;
     }
 
 
@@ -188,15 +179,15 @@ public class Map {
         float scrollY = scroll.length > 1 ? scroll[1] : 0;
 
         try{
-            float left = _contentToView(rect.getLong("left"));
-            float width = _contentToView(rect.getLong("width"));
-            float top = _contentToView(rect.getLong("top"));
-            float height = _contentToView(rect.getLong("height"));
+            float left = _applyRetinaFactor(rect.getLong("left"));
+            float width = _applyRetinaFactor(rect.getLong("width"));
+            float top = _applyRetinaFactor(rect.getLong("top"));
+            float height = _applyRetinaFactor(rect.getLong("height"));
 
             return new RectF(
-                left + scrollX,
+                left - scrollX,
                 top - scrollY,
-                left + width + scrollX,
+                left + width - scrollX,
                 top + height - scrollY);
 
         } catch (JSONException e) {

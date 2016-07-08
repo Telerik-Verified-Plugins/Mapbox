@@ -61,8 +61,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private static final String ACTION_CONVERT_COORDINATES = "convertCoordinates";
   private static final String ACTION_CONVERT_POINT = "convertPoint";
   private static final String ACTION_ADD_ON_MAP_CHANGE_LISTENER = "addOnMapChangeListener";
-  private static final String ACTION_ON_REGION_IS_CHANGING = "onRegionIsChanging";
-  private static final String ACTION_ON_REGION_DID_CHANGE = "onRegionDidChange";
+  private static final String ACTION_SET_DIV = "setDiv";
   private float _density;
   private String _accessToken;
   private CordovaWebView _webView;
@@ -461,6 +460,13 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               e.printStackTrace();
               callbackContext.error(e.getMessage());
             }
+          }
+        });
+      } else if (ACTION_SET_DIV.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            map.setDiv(args, callbackContext);
           }
         });
       } else return false;

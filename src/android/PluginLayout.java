@@ -42,7 +42,7 @@ public class PluginLayout extends FrameLayout  {
     private ViewGroup _mapsGroup = null;
     private boolean _isScrolling = false;
     private ViewGroup.LayoutParams _orgLayoutParams = null;
-    private boolean _isDebug = false;
+    private boolean _isDebug = true;
     private boolean _isClickable = true;
     private Map<String, RectF> _HTMLNodes = new HashMap<String, RectF>();
     private Activity _activity = null;
@@ -122,12 +122,13 @@ public class PluginLayout extends FrameLayout  {
         }
         ViewGroup.LayoutParams lParams = _mapsGroup.getLayoutParams();
         int scrollY = _view.getScrollY();
+        int scrollX = _view.getScrollX();
 
         if (lParams instanceof AbsoluteLayout.LayoutParams) {
             AbsoluteLayout.LayoutParams params = (AbsoluteLayout.LayoutParams) lParams;
             params.width = (int) _mapRect.width();
             params.height = (int) _mapRect.height();
-            params.x = (int) _mapRect.left;
+            params.x = (int) _mapRect.left - scrollX;
             params.y = (int) _mapRect.top + scrollY;
             _mapsGroup.setLayoutParams(params);
         } else if (lParams instanceof LinearLayout.LayoutParams) {
@@ -135,14 +136,14 @@ public class PluginLayout extends FrameLayout  {
             params.width = (int) _mapRect.width();
             params.height = (int) _mapRect.height();
             params.topMargin = (int) _mapRect.top + scrollY;
-            params.leftMargin = (int) _mapRect.left;
+            params.leftMargin = (int) _mapRect.left - scrollX;;
             _mapsGroup.setLayoutParams(params);
         } else if (lParams instanceof FrameLayout.LayoutParams) {
             FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) lParams;
             params.width = (int) _mapRect.width();
             params.height = (int) _mapRect.height();
             params.topMargin = (int) _mapRect.top + scrollY;
-            params.leftMargin = (int) _mapRect.left;
+            params.leftMargin = (int) _mapRect.left - scrollX;;
             params.gravity = Gravity.TOP;
             _mapsGroup.setLayoutParams(params);
         }
@@ -299,6 +300,7 @@ public class PluginLayout extends FrameLayout  {
             }
             int x = (int)event.getX();
             int y = (int)event.getY();
+            int scrollX = _view.getScrollX();
             int scrollY = _view.getScrollY();
             boolean contains = _mapRect.contains(x, y);
             int action = event.getAction();
@@ -315,11 +317,15 @@ public class PluginLayout extends FrameLayout  {
                 while(iterator.hasNext() && contains) {
                     entry = iterator.next();
                     rect = entry.getValue();
+                    rect.left -= scrollX;
+                    rect.right -= scrollX;
                     rect.top -= scrollY;
                     rect.bottom -= scrollY;
                     if (entry.getValue().contains(x, y)) {
                         contains = false;
                     }
+                    rect.left += scrollX;
+                    rect.right += scrollX;
                     rect.top += scrollY;
                     rect.bottom += scrollY;
                 }
@@ -336,6 +342,7 @@ public class PluginLayout extends FrameLayout  {
             }
             int width = canvas.getWidth();
             int height = canvas.getHeight();
+            int scrollX = _view.getScrollX();
             int scrollY = _view.getScrollY();
 
             Paint paint = new Paint();
@@ -358,9 +365,13 @@ public class PluginLayout extends FrameLayout  {
                 rect = entry.getValue();
                 //inflate the rectangle to see it behind dom element
                 rect = new RectF(rect.left-5, rect.top-5, rect.right+5, rect.bottom+5);
+                rect.left -= scrollX;
+                rect.right -= scrollX;
                 rect.top -= scrollY;
                 rect.bottom -= scrollY;
                 canvas.drawRect(rect, paint);
+                rect.left += scrollX;
+                rect.right += scrollX;
                 rect.top += scrollY;
                 rect.bottom += scrollY;
             }
