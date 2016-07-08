@@ -243,6 +243,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               mapCtrl.setZoom(zoom);
               callbackContext.success();
             } catch (JSONException e) {
+              e.printStackTrace();
               callbackContext.error(e.getMessage());
             }
           }
@@ -261,6 +262,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               mapCtrl.zoomTo(zoom);
               callbackContext.success();
             } catch (JSONException e) {
+              e.printStackTrace();
               callbackContext.error(e.getMessage());
             }
           }
@@ -295,6 +297,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               );
               callbackContext.success();
             } catch (JSONException e) {
+              e.printStackTrace();
               callbackContext.error(e.getMessage());
             }
           }
@@ -311,6 +314,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               mapCtrl.setTilt(args.getDouble(1));
               callbackContext.success();
             } catch (JSONException e) {
+              e.printStackTrace();
               callbackContext.error(e.getMessage());
             }
           }
@@ -333,6 +337,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               mapCtrl.flyTo(options.getJSONObject("cameraPosition"));
               callbackContext.success("Animation started.");
             } catch (JSONException e) {
+              e.printStackTrace();
               callbackContext.error(e.getMessage());
             }
           }
@@ -377,11 +382,24 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               callbackContext.success();
             }catch (JSONException e){
               e.printStackTrace();
+              callbackContext.error(e.getMessage());
             }
           }
         });
       }
-      else return false;
+      else if(ACTION_SET_CLICKABLE.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              pluginLayout.setClickable(args.getInt(1) != 0);
+            } catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+      } else return false;
     } catch (Throwable t) {
       t.printStackTrace();
       callbackContext.error(t.getMessage());
