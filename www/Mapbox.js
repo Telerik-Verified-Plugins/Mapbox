@@ -123,6 +123,11 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "show", [id, options]);
   },
 
+  setDebug: function (debug, successCallback, errorCallback, id){
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setDebug", [id, debug])
+  },
+
   setClickable: function (clickable, successCallback, errorCallback, id){
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "setClickable", [id, clickable])
@@ -133,11 +138,27 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [id]);
   },
 
-  refreshMap: function (options, successCallback, errorCallback, id){
+  setDiv: function (domElement, successCallback, errorCallback, id){
     id = id || 0;
-    options.HTMLs = getDomElementsOverlay(options.div);
-    options.rect = getDivRect(options.div);
-    cordova.exec(successCallback, errorCallback, "Mapbox", "refreshMap", [id, options])
+    domElement.HTMLs = getDomElementsOverlay(domElement.div);
+    domElement.rect = getDivRect(domElement.div);
+    delete domElement.div; //Prevent circular reference error
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setDiv", [id, domElement])
+  },
+
+  downloadCurrentMap: function(id, statusCallback, errorCallback){
+    id = id || 0;
+    cordova.exec(statusCallback, errorCallback, "Mapbox", "downloadCurrentMap", [id]);
+  },
+
+  getOfflineRegionsList: function(id, successCallback, errorCallback){
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getOfflineRegionsList", [id]);
+  },
+
+  pauseDownload: function(id, successCallback, errorCallback){
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "pauseDownload", [id]);
   },
 
   addSource: function (sourceId, source, successCallback, errorCallback, id) {
@@ -190,6 +211,11 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "getBounds", [id]);
   },
 
+  getCameraPosition: function(successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getCameraPosition", [id]);
+  },
+
   convertCoordinates: function(coords, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertCoordinates", [id, coords]);
@@ -202,6 +228,6 @@ module.exports = {
 
   addOnMapChangeListener: function(listener, callback, id) {
     id = id || 0;
-    cordova.exec(callback, null, "Mapbox", "addOnMapChangeListener", [id, listener, callback]);
+    cordova.exec(callback, null, "Mapbox", "addOnMapChangeListener", [id, listener]);
   },
 };

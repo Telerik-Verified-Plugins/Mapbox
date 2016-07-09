@@ -14,6 +14,7 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -26,11 +27,17 @@ import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.UiSettings;
+import com.mapbox.mapboxsdk.offline.OfflineManager;
+import com.mapbox.mapboxsdk.offline.OfflineRegion;
+import com.mapbox.mapboxsdk.offline.OfflineRegionError;
+import com.mapbox.mapboxsdk.offline.OfflineRegionStatus;
+import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
 
 import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
@@ -39,18 +46,24 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
+import io.cordova.hellocordova.MainActivity;
 import io.cordova.hellocordova.R;
 
 /**
  * Created by vikti on 25/06/2016.
  * This file handles the concrete action with MapBox API.
  * //todo decouple the file from MapBox to easily switch to other APIs. Need interface.
+ * Kudos to:
+ * - Mapbox https://www.mapbox.com/android-sdk/examples/offline-manager/ for the offline part
+ * - Anothar (@anothar) for the custom icon createIcon method
  */
 public class MapController {
     public FrameLayout.LayoutParams mapFrame;
 
     private static float _retinaFactor;
+    private final static String TAG = "MainActivity";
 
     private MapView _mapView;
     private MapboxMapOptions _initOptions;
@@ -58,12 +71,28 @@ public class MapController {
     private UiSettings _uiSettings;
     private CameraPosition _cameraPosition;
     private Activity _activity;
+    private OfflineManager _offlineManager;
+    private OfflineRegion _offlineRegion;
+    private boolean _downloading;
+    private int _downloadingProgress;
+    private ArrayList<String> _offlineRegionsNames = new ArrayList<>();
+    public final static String JSON_CHARSET = "UTF-8";
+    public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
 
     public View getMapView(){
         return (View) _mapView;
     }
+    public int getDownloadingProgress(){
+        return _downloadingProgress;
+    }
+    public boolean isDownloading() {
+        return _downloading;
+    }
+    public ArrayList<String> getOfflineRegionsNames(){
+        return _offlineRegionsNames;
+    }
 
-    public MapController(final JSONObject options, Activity activity, final CallbackContext callbackContext){
+    public MapController(final JSONObject options, Activity activity, Context context){
 
         try{
             _initOptions = _createMapboxMapOptions(options);
@@ -72,6 +101,7 @@ public class MapController {
             return;
         }
         _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
+        _offlineManager = OfflineManager.getInstance(context);
 
         _activity = activity;
 
@@ -209,8 +239,145 @@ public class MapController {
         }
     }
 
-    public void addGeoJSON() throws JSONException{
+    /**
+     * Download the actual region for offline use.
+     *
+     * @param regionName the region name
+     * @param onStart a callback fired when download start
+     * @param onProgress a callback fired along the download progression
+     * @param onFinish a callback fired at the end of the download
+     */
+    public void downloadRegion(final String regionName, final Runnable onStart, final Runnable onProgress, final Runnable onFinish) {
 
+        // Set the style, bounds zone and the min/max zoom whidh will be available once offline.
+        String styleURL = _initOptions.getStyle();
+        LatLngBounds bounds = _mapboxMap.getProjection().getVisibleRegion().latLngBounds;
+        double minZoom = _mapboxMap.getCameraPosition().zoom;
+        double maxZoom = _mapboxMap.getMaxZoom();
+        OfflineTilePyramidRegionDefinition definition = new OfflineTilePyramidRegionDefinition(
+                styleURL, bounds, minZoom, maxZoom, _retinaFactor);
+
+        // Build a JSONObject using the user-defined offline region title,
+        // convert it into string, and use it to create a metadata variable.
+        // The metadata variable will later be passed to createOfflineRegion()
+        byte[] metadata;
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put(JSON_FIELD_REGION_NAME, regionName);
+            String json = jsonObject.toString();
+            metadata = json.getBytes(JSON_CHARSET);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to encode metadata: " + e.getMessage());
+            metadata = null;
+        }
+
+        // Create the offline region and launch the download
+        _offlineManager.createOfflineRegion(definition, metadata, new OfflineManager.CreateOfflineRegionCallback() {
+            @Override
+            public void onCreate(OfflineRegion offlineRegion) {
+                Log.d(TAG, "Offline region created: " + regionName);
+                _offlineRegion = offlineRegion;
+                launchDownload(onStart, onProgress, onFinish);
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error: " + error);
+            }
+        });
+    }
+
+    private void launchDownload(final Runnable onStart, final Runnable onProgress, final Runnable onFinish) {
+        // Set up an observer to handle download progress and
+        // notify the user when the region is finished downloading
+        // Start the progression
+        _downloading = true;
+        onStart.run();
+
+        _offlineRegion.setObserver(new OfflineRegion.OfflineRegionObserver() {
+            @Override
+            public void onStatusChanged(OfflineRegionStatus status) {
+                // Compute a percentage
+                double percentage = status.getRequiredResourceCount() >= 0 ?
+                        (100.0 * status.getCompletedResourceCount() / status.getRequiredResourceCount()) :
+                        0.0;
+
+                if (status.isComplete()) {
+                    // Download complete
+                    _downloading = false;
+                    onFinish.run();
+                    return;
+                } else if (status.isRequiredResourceCountPrecise()) {
+                    // Switch to determinate state
+                    onProgress.run();
+                    _downloadingProgress = ((int) Math.round(percentage));
+                }
+
+                // Log what is being currently downloaded
+                Log.d(TAG, String.format("%s/%s resources; %s bytes downloaded.",
+                        String.valueOf(status.getCompletedResourceCount()),
+                        String.valueOf(status.getRequiredResourceCount()),
+                        String.valueOf(status.getCompletedResourceSize())));
+            }
+
+            @Override
+            public void onError(OfflineRegionError error) {
+                Log.e(TAG, "onError reason: " + error.getReason());
+                Log.e(TAG, "onError message: " + error.getMessage());
+            }
+
+            @Override
+            public void mapboxTileCountLimitExceeded(long limit) {
+                Log.e(TAG, "Mapbox tile count limit exceeded: " + limit);
+            }
+        });
+
+        // Change the region state
+        _offlineRegion.setDownloadState(OfflineRegion.STATE_ACTIVE);
+    }
+
+    public void pauseDownload(){
+        _offlineRegion.setDownloadState(OfflineRegion.STATE_INACTIVE);
+    }
+
+    public void getOfflineRegions(final Runnable callback){
+        _offlineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
+            @Override
+            public void onList(final OfflineRegion[] offlineRegions) {
+                // Check result. If no regions have been
+                // downloaded yet, notify user and return
+                if (offlineRegions == null || offlineRegions.length == 0) {
+                    return;
+                }
+
+                // Add all of the region names to a list
+                for (OfflineRegion offlineRegion : offlineRegions) {
+                    _offlineRegionsNames.add(getRegionName(offlineRegion));
+                }
+                callback.run();
+            }
+
+            @Override
+            public void onError(String error) {
+
+            }
+        });
+    }
+
+    private String getRegionName(OfflineRegion offlineRegion) {
+        // Get the retion name from the offline region metadata
+        String regionName;
+
+        try {
+            byte[] metadata = offlineRegion.getMetadata();
+            String json = new String(metadata, JSON_CHARSET);
+            JSONObject jsonObject = new JSONObject(json);
+            regionName = jsonObject.getString(JSON_FIELD_REGION_NAME);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to decode metadata: " + e.getMessage());
+            regionName = "Region " + offlineRegion.getID();
+        }
+        return regionName;
     }
 
     public void addMarkers(JSONArray markers) throws JSONException{
@@ -289,6 +456,10 @@ public class MapController {
         ));
     }
 
+    public LatLngBounds getBounds(){
+        return _mapboxMap.getProjection().getVisibleRegion().latLngBounds;
+    }
+
     public PointF convertCoordinates(LatLng coords){
         return _mapboxMap.getProjection().toScreenLocation(coords);
     }
@@ -296,7 +467,6 @@ public class MapController {
     public LatLng convertPoint(PointF point){
         return _mapboxMap.getProjection().fromScreenLocation(point);
     }
-
 
 
     public void addOnMapChangedListener(String listenerType, Runnable callback) throws JSONException{
@@ -402,7 +572,15 @@ public class MapController {
         return new BitmapDrawable(_activity.getApplicationContext().getResources(), newBM);
     }
 
-    // Thanks @anothar !!
+    /**
+     * Creates image for marker
+     * @param properties The properties.image part of a JSON marker
+     * @return an icon with a custom image
+     * @throws JSONException if
+     * @throws IOException
+     * @throws SVGParseException
+     */
+    // Thanks Anothar :)
     private Icon createIcon(JSONObject properties) throws JSONException, IOException, SVGParseException {
         InputStream istream = null;
         BitmapDrawable bitmap;

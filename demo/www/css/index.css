@@ -1,0 +1,18 @@
+body{
+	background:none !important;
+}
+
+.fill{
+	min-height: 100%;
+	height: 100%;
+}
+
+.mapContainer{
+	position:relative;
+}
+
+#mapId{
+	position: absolute;
+	top:0;
+	height: 100%;
+}

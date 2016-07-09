@@ -4,8 +4,16 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.RectF;
+import android.util.Log;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
+
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
+import com.mapbox.mapboxsdk.offline.OfflineManager;
+import com.mapbox.mapboxsdk.offline.OfflineRegion;
+import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -14,6 +22,8 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import io.cordova.hellocordova.MainActivity;
 
 /**
  * Created by vikti on 24/06/2016.
@@ -45,10 +55,10 @@ public class Map {
 
     /**
      * Create a map without any layout set
-     * @param args
-     * @param plugRef
-     * @param activity
-     * @param callbackContext
+     * @param args original cordova arguments of the the show command
+     * @param plugRef a reference to CDVMapbox instance
+     * @param activity the main parent activity
+     * @param callbackContext command callback context
      */
     public Map(int id, final CordovaArgs args, CDVMapbox plugRef, Activity activity, CallbackContext callbackContext) {
 
@@ -58,35 +68,27 @@ public class Map {
         Context _context = _cdvWebView.getView().getContext();
         _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
 
-        /**
-         * Create a controller (which instantiate the MGLMapbox view)
-         */
         final JSONObject options;
         final JSONArray HTMLs;
         try {
             options = args.getJSONObject(1);
-
-            // Set map overlay
             HTMLs = options.isNull("HTMLs") ? new JSONArray() : options.getJSONArray("HTMLs");
-            _updateMapOverlay(HTMLs);
-
-            // Create map
-            if(options.isNull("rect")){
-                callbackContext.error("Need a rect");
-            }
-
-            _mapCtrl = new MapController(options, activity, callbackContext);
-
-            // The view container. Contains maps and addons views.
-            _layersGroup = new FrameLayout(_context);
-            _layersGroup.addView(_mapCtrl.getMapView());
-
+            if(options.isNull("rect")) throw new JSONException("Map constructor need a rect in the JSONObject options argument.");
         } catch (JSONException e) {
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
             return;
         }
 
-        // Update the Map Overlay Layer
+        // Draw the blocking touch zones to allow click on overlay DOM elements
+        _updateMapOverlay(HTMLs);
+
+        // Create a controller (which instantiate the MGLMapbox view)
+        _mapCtrl = new MapController(options, activity, _context);
+
+        // The view container. Contains maps and addons views.
+        _layersGroup = new FrameLayout(_context);
+        _layersGroup.addView(_mapCtrl.getMapView());
     }
 
     //change to updateLauyoutWhenScroll

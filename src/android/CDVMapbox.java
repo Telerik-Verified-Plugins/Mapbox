@@ -4,19 +4,15 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.PointF;
-import android.graphics.RectF;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.MapboxAccountManager;
-import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
-import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -28,8 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Iterator;
-import java.util.Set;
+import java.util.ArrayList;
 
 public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrollChangedListener {
   private static final String TAG = CDVMapbox.class.getSimpleName();
@@ -46,13 +41,17 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private static final String ACTION_HIDE = "hide";
   private static final String ACTION_RESIZE = "resize";
   private static final String ACTION_SET_CLICKABLE = "setClickable";
+  private static final String ACTION_SET_DEBUG = "setDebug";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
-  private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
-  private static final String ACTION_ADD_POLYGON = "addPolygon";
+  private static final String ACTION_DOWNLOAD_CURRENT_MAP = "downloadCurrentMap";
+  private static final String ACTION_PAUSE_DOWNLOAD = "pauseDownload";
+  private static final String ACTION_GET_OFFLINE_REGIONS_LIST = "getOfflineRegionsList";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
   private static final String ACTION_GET_ZOOM = "getZoom";
   private static final String ACTION_SET_ZOOM = "setZoom";
   private static final String ACTION_ZOOM_TO = "zoomTo";
+  private static final String ACTION_GET_BOUNDS = "getBounds";
+  private static final String ACTION_GET_CAMERA_POSITION = "getCameraPosition";
   private static final String ACTION_GET_CENTER = "getCenter";
   private static final String ACTION_SET_CENTER = "setCenter";
   private static final String ACTION_GET_PITCH = "getPitch";
@@ -167,6 +166,10 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               public void run() {
                 _activity.runOnUiThread(new Runnable() {
                   public void run(){
+                    if(aMap == map) {
+                      callbackContext.error("Map is already displayed");
+                      return;
+                    }
                     //If it is the first map, we set the general layout.
                     /**
                     * Arrange the layers. The final order is:
@@ -205,6 +208,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
       if (ACTION_HIDE.equals(action)) {
         _activity.runOnUiThread(new Runnable() {
           public void run() {
+            if(mapCtrl.isDownloading()) mapCtrl.pauseDownload();
             mapsGroup.removeView(map.getViewGroup());
             MapsManager.removeMap(id);
             if (MapsManager.getCount() == 0) {
@@ -324,7 +328,12 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
         exec(new Runnable() {
           @Override
           public void run() {
-            callbackContext.success("{\"pitch\":" + mapCtrl.getTilt() + '}');
+            try {
+              callbackContext.success(new JSONObject("{\"pitch\":" + mapCtrl.getTilt() + '}'));
+            } catch (JSONException e) {
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
           }
         });
 
@@ -399,6 +408,18 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             }
           }
         });
+      } else if(ACTION_SET_DEBUG.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              pluginLayout.setDebug(args.getInt(1) != 0);
+            } catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
       } else if(ACTION_CONVERT_COORDINATES.equals(action)){
         exec(new Runnable() {
           @Override
@@ -409,7 +430,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                       coords.getDouble("lat"),
                       coords.getDouble("lng")
               ));
-              callbackContext.success("{\"x\": "+point.x+", \"y\": "+point.y+"}");
+              callbackContext.success(new JSONObject("{\"x\": "+point.x+", \"y\": "+point.y+"}"));
             } catch (JSONException e){
               e.printStackTrace();
               callbackContext.error(e.getMessage());
@@ -426,7 +447,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                       (float) point.getDouble("x"),
                       (float) point.getDouble("y")
               ));
-              callbackContext.success("{\"lat\": " + latLng.getLatitude() + ", \"lng\": " + latLng.getLongitude() + "}");
+              callbackContext.success(new JSONObject("{\"lat\": " + latLng.getLatitude() + ", \"lng\": " + latLng.getLongitude() + "}"));
             } catch (JSONException e) {
               e.printStackTrace();
               callbackContext.error(e.getMessage());
@@ -467,6 +488,129 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
           @Override
           public void run() {
             map.setDiv(args, callbackContext);
+          }
+        });
+      } else if(ACTION_DOWNLOAD_CURRENT_MAP.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            Runnable startedCallback = new Runnable() {
+              @Override
+              public void run() {
+                try{
+                  JSONObject startedMsg = new JSONObject("{" +
+                          "\"mapDownloadStatus\":{" +
+                            "\"name\": \"" + id + "\"," +
+                            "\"started\": true"+
+                          '}' +
+                        '}');
+                  PluginResult result = new PluginResult(PluginResult.Status.OK, startedMsg);
+                  result.setKeepCallback(true);
+                  callbackContext.sendPluginResult(result);
+                } catch (JSONException e){
+                  e.printStackTrace();
+                  callbackContext.error(e.getMessage());
+                }
+              }
+            };
+
+            Runnable progressCallback = new Runnable() {
+              @Override
+              public void run() {
+                try{
+                  JSONObject progressMsg = new JSONObject("{" +
+                          "\"mapDownloadStatus\":{" +
+                            "\"name\": \"" + id + "\"," +
+                            "\"downloading\":" + mapCtrl.isDownloading() + ',' +
+                            "\"progress\":" + mapCtrl.getDownloadingProgress() +
+                          '}' +
+                        '}');
+                  PluginResult result = new PluginResult(PluginResult.Status.OK, progressMsg);
+                  result.setKeepCallback(true);
+                  callbackContext.sendPluginResult(result);
+                } catch (JSONException e){
+                  e.printStackTrace();
+                  callbackContext.error(e.getMessage());
+                }
+              }
+            };
+
+            Runnable finishedCallback = new Runnable() {
+              @Override
+              public void run() {
+                try{
+                  JSONObject finishedMsg = new JSONObject("{" +
+                          "\"mapDownloadStatus\":{" +
+                            "\"name\": \"" + id + "\"," +
+                            "\"finished\": true"+
+                            '}' +
+                          '}');
+                  PluginResult result = new PluginResult(PluginResult.Status.OK, finishedMsg);
+                  result.setKeepCallback(true);
+                  callbackContext.sendPluginResult(result);
+                } catch (JSONException e){
+                  e.printStackTrace();
+                  callbackContext.error(e.getMessage());
+                }
+              }
+            };
+            mapCtrl.downloadRegion("" + id, startedCallback, progressCallback, finishedCallback);
+          }
+        });
+      } else if (ACTION_PAUSE_DOWNLOAD.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            mapCtrl.pauseDownload();
+            callbackContext.success();
+          }
+        });
+      } else if (ACTION_GET_OFFLINE_REGIONS_LIST.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            mapCtrl.getOfflineRegions(new Runnable() {
+              @Override
+              public void run() {
+                ArrayList<String> regionsList = mapCtrl.getOfflineRegionsNames();
+                callbackContext.success(new JSONArray(regionsList));
+              }
+            });
+          }
+        });
+      } else if (ACTION_GET_BOUNDS.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              LatLngBounds latLngBounds = mapCtrl.getBounds();
+              callbackContext.success(new JSONObject("{" +
+                      "\"sw\": {" +
+                        "\"lat\":" + latLngBounds.getLatSouth() + ',' +
+                        "\"lng\":" + latLngBounds.getLonWest() +
+                      "}," +
+                      "\"ne\": {" +
+                        "\"lat\":" + latLngBounds.getLatNorth() + ',' +
+                        "\"lng\":" + latLngBounds.getLonEast() +
+                      "}" +
+                    "}"
+              ));
+            } catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+      } else if (ACTION_GET_CAMERA_POSITION.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              callbackContext.success(mapCtrl.getJSONCameraPosition());
+            } catch (JSONException e){
+              callbackContext.error(e.getMessage());
+              e.printStackTrace();
+            }
           }
         });
       } else return false;
