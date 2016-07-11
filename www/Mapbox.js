@@ -156,14 +156,36 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "getOfflineRegionsList", [id]);
   },
 
+  deleteOfflineRegion: function(id, zoneId, successCallback, errorCallback){
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "deleteOfflineRegion", [id, zoneId]);
+  },
+
   pauseDownload: function(id, successCallback, errorCallback){
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "pauseDownload", [id]);
   },
 
+  addMarkerCallback: function(id, callback, errorCallback){
+    id = id || 0;
+    cordova.exec(callback, errorCallback, "Mapbox", "addMarkerCallback", [id]);
+  },
+
+  //only handle marker for now
   addSource: function (sourceId, source, successCallback, errorCallback, id) {
     id = id || 0;
-    cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [id, sourceId, source]);
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addMarker", [id, sourceId, source]);
+  },
+
+  //only handle marker for now
+  updateSource: function (sourceId, source, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "updateMarker", [id, sourceId, source])
+  },
+
+  removeSource: function (sourceId, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "removeMarker", [id, sourceId])
   },
 
   flyTo: function (options, successCallback, errorCallback, id) {

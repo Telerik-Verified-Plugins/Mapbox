@@ -44,10 +44,10 @@ public class Map {
     private static CordovaWebView _cdvWebView;
     private static float _retinaFactor;
 
+    public CallbackContext markerCallbackContext;
     public MapController getMapCtrl(){
         return _mapCtrl;
     }
-
     public ViewGroup getViewGroup(){
         return _layersGroup;
     }

@@ -43,9 +43,16 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private static final String ACTION_SET_CLICKABLE = "setClickable";
   private static final String ACTION_SET_DEBUG = "setDebug";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
+  private static final String ACTION_ADD_MARKER = "addMarker";
+  private static final String ACTION_UPDATE_MARKERS = "updateMarkers";
+  private static final String ACTION_UPDATE_MARKER = "updateMarker";
+  private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
+  private static final String ACTION_REMOVE_MARKERS = "removeMarkers";
+  private static final String ACTION_REMOVE_MARKER = "removeMarker";
   private static final String ACTION_DOWNLOAD_CURRENT_MAP = "downloadCurrentMap";
   private static final String ACTION_PAUSE_DOWNLOAD = "pauseDownload";
   private static final String ACTION_GET_OFFLINE_REGIONS_LIST = "getOfflineRegionsList";
+  private static final String ACTION_DELETE_OFFLINE_REGION = "deleteOfflineRegion";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
   private static final String ACTION_GET_ZOOM = "getZoom";
   private static final String ACTION_SET_ZOOM = "setZoom";
@@ -217,12 +224,9 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
           }
         });
       } else if (ACTION_RESIZE.equals(action)){
-        exec(new Runnable() {
-          Map aMap;
-
-          @Override
+        _activity.runOnUiThread(new Runnable() {
           public void run() {
-            aMap.setDiv(args, callbackContext);
+            map.setDiv(args, callbackContext);
           }
         });
 
@@ -343,8 +347,11 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
           public void run() {
             try{
               JSONObject options = args.isNull(1) ? null : args.getJSONObject(1);
-              mapCtrl.flyTo(options.getJSONObject("cameraPosition"));
-              callbackContext.success("Animation started.");
+              if(options == null || options.isNull("cameraPosition")) callbackContext.error("Need a camera position");
+              else {
+                mapCtrl.flyTo(options.getJSONObject("cameraPosition"));
+                callbackContext.success("Animation started.");
+              }
             } catch (JSONException e) {
               e.printStackTrace();
               callbackContext.error(e.getMessage());
@@ -360,14 +367,60 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
           }
         });
 
-      } else if (ACTION_ADD_MARKERS.equals(action)) {
+      } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            map.markerCallbackContext = callbackContext;
+            mapCtrl.addMarkerCallBack(new Runnable(){
+              @Override
+              public void run (){
+                if (map.markerCallbackContext != null) {
+                  PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "{\"markerId\": \""+ mapCtrl.getSelectedMarkerId() +"\"}");
+                  pluginResult.setKeepCallback(true);
+                  map.markerCallbackContext.sendPluginResult(pluginResult);
+                }
+              }
+            });
+          }
+        });
+      } else if (ACTION_ADD_MARKER.equals(action)) {
         exec(new Runnable() {
           @Override
           public void run() {
             try {
               if(args.isNull(1)) throw new JSONException(action + " need a source ID");
               if(args.isNull(2)) throw new JSONException(action + " no source provided");
-              String sourceId = args.getString(1);
+              if(!args.getJSONObject(2).getString("type").equals("geojson")) throw new JSONException(action + " only handle GeoJSON");
+
+              String dataType = args.getJSONObject(2).getJSONObject("data").getString("type");
+              if (!dataType.equals("Feature")) throw new JSONException("Only feature are supported as markers source");
+
+              JSONObject marker = args.getJSONObject(2).getJSONObject("data");
+
+              String type = marker.getJSONObject("geometry").getString("type");
+
+              if (!type.equals("Point")) throw new JSONException("Only type Point are supported for markers");
+
+              mapCtrl.addMarker(args.getString(1), marker);
+              callbackContext.success();
+            }catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+      } else if (ACTION_ADD_MARKERS.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            //todo refactor when #5626
+            callbackContext.error("Not yet implemented.");
+            /*
+            try {
+              if(args.isNull(1)) throw new JSONException(action + " need a source ID");
+              if(args.isNull(2)) throw new JSONException(action + " no source provided");
+              if(!args.getJSONObject(2).getString("type").equals("geojson")) throw new JSONException(action + " only handle GeoJSON");
 
               String dataType = args.getJSONObject(2).getJSONObject("data").getString("type");
               if (!dataType.equals("FeatureCollection")) throw new JSONException("Only features collection are supported as markers source");
@@ -376,15 +429,10 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               JSONObject marker;
 
               for (int i = 0; i < markers.length(); i++) {
-                try {
                   marker = markers.getJSONObject(i);
                   String type = marker.getJSONObject("geometry").getString("type");
 
                   if (!type.equals("Point")) throw new JSONException("Only type Point are supported for markers");
-
-                } catch (Exception e){
-                  e.printStackTrace();
-                }
               }
 
               mapCtrl.addMarkers(markers);
@@ -392,11 +440,97 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             }catch (JSONException e){
               e.printStackTrace();
               callbackContext.error(e.getMessage());
+            }*/
+          }
+        });
+      } else if (ACTION_UPDATE_MARKER.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              if(args.isNull(1)) throw new JSONException(action + " need a source ID");
+              if(args.isNull(2)) throw new JSONException(action + " no source provided");
+              if(!args.getJSONObject(2).getString("type").equals("geojson")) throw new JSONException(action + " only handle GeoJSON");
+
+              String dataType = args.getJSONObject(2).getJSONObject("data").getString("type");
+              if (!dataType.equals("Feature")) throw new JSONException("Only feature are supported as markers source");
+
+              JSONObject marker = args.getJSONObject(2).getJSONObject("data");
+
+              String type = marker.getJSONObject("geometry").getString("type");
+
+              if (!type.equals("Point")) throw new JSONException("Only type Point are supported for markers");
+
+              mapCtrl.updateMarker(args.getString(1), marker);
+              callbackContext.success();
+            }catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
             }
           }
         });
-      }
-      else if(ACTION_SET_CLICKABLE.equals(action)) {
+      } else if (ACTION_UPDATE_MARKERS.equals(action)) {
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            //todo refactor when #5626
+            callbackContext.error("Not yet implemented.");
+/*            try {
+              if(args.isNull(1)) throw new JSONException(action + " need a source ID");
+              if(args.isNull(2)) throw new JSONException(action + " no source provided");
+              if(!args.getJSONObject(2).getString("type").equals("geojson")) throw new JSONException(action + " only handle GeoJSON");
+
+              String dataType = args.getJSONObject(2).getJSONObject("data").getString("type");
+              if (!dataType.equals("FeatureCollection")) throw new JSONException("Only features collection are supported as markers source");
+
+              JSONArray markers = args.getJSONObject(2).getJSONObject("data").getJSONArray("features");
+              JSONObject marker;
+
+              for (int i = 0; i < markers.length(); i++) {
+                marker = markers.getJSONObject(i);
+                String type = marker.getJSONObject("geometry").getString("type");
+
+                if (!type.equals("Point")) throw new JSONException("Only type Point are supported for markers");
+              }
+
+              mapCtrl.updateMarkers(markers);
+              callbackContext.success();
+            }catch (JSONException e){
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }*/
+          }
+        });
+      } else if(ACTION_REMOVE_MARKER.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              mapCtrl.removeMarker(args.getString(1));
+            } catch (JSONException e){
+              callbackContext.error("Delete need an array of ids");
+              e.printStackTrace();
+            }
+          }
+        });
+      } else if(ACTION_REMOVE_MARKERS.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              ArrayList<String> ids = new ArrayList<>();
+              JSONArray JSONIds =  args.getJSONArray(2);
+              for (int i = 0; i < JSONIds.length(); i++){
+                ids.set(i, JSONIds.getString(i));
+              }
+              mapCtrl.removeMarkers(ids);
+            } catch (JSONException e){
+              callbackContext.error("Delete need an array of ids");
+              e.printStackTrace();
+            }
+          }
+        });
+      } else if(ACTION_SET_CLICKABLE.equals(action)) {
         exec(new Runnable() {
           @Override
           public void run() {
@@ -578,6 +712,33 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             });
           }
         });
+      } else if(ACTION_DELETE_OFFLINE_REGION.equals(action)){
+        exec(new Runnable() {
+          @Override
+          public void run() {
+            try{
+              int regionId = args.getInt(1);
+              mapCtrl.removeOfflineRegion(regionId, new Runnable() {
+                @Override
+                public void run() {
+                  // send the new list of offline regions
+/*                  mapCtrl.getOfflineRegions(new Runnable() {
+                    @Override
+                    public void run() {
+                      ArrayList<String> regionsList = mapCtrl.getOfflineRegionsNames();
+                      callbackContext.success(new JSONArray(regionsList));
+                    }
+                  });*/
+                  callbackContext.success("{\"ok\":true}");
+
+                }
+              });
+            } catch (JSONException e){
+              callbackContext.error("Need an id region to delete.");
+              e.printStackTrace();
+            }
+          }
+        });
       } else if (ACTION_GET_BOUNDS.equals(action)){
         exec(new Runnable() {
           @Override
@@ -622,6 +783,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   }
 
   private void exec(Runnable _callback){
+    //_cordova.getThreadPool().execute(_callback);
     _activity.runOnUiThread(_callback);
   }
 
@@ -663,8 +825,32 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     }
   }
 
-  private float contentToView(long d) {
-    return d * _density;
+  private boolean _validateSource(){
+    return true;
+  }
+
+  private boolean _validateGeoJSON(){
+    return true;
+  }
+
+  private boolean _validateVector(){
+    return true;
+  }
+
+  private boolean _validateRaster(){
+    return true;
+  }
+
+  private boolean _validateImage(){
+    return true;
+  }
+
+  private boolean _validateVideo(){
+    return true;
+  }
+
+  private boolean _validateGeoJSONFeature(){
+    return true;
   }
 
   public void onPause(boolean multitasking) {
