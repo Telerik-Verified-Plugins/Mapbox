@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.RectF;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -84,12 +85,14 @@ public class Map {
         _updateMapOverlay(HTMLs);
 
         // Create a controller (which instantiate the MGLMapbox view)
-        _mapCtrl = new MapController(options, activity, _context);
+        // todo find an optimized way to pass the scroll view ?
+        _mapCtrl = new MapController(options, activity, _context, _plugRef.pluginLayout.getScrollView());
 
         // The view container. Contains maps and addons views.
         _layersGroup = new FrameLayout(_context);
         _layersGroup.addView(_mapCtrl.getMapView());
     }
+
 
     //change to updateLauyoutWhenScroll
     private void _updateMapOverlay(JSONArray HTMLs){
@@ -115,7 +118,7 @@ public class Map {
         }
     }
 
-    public void scrollTo(int x, int y){
+    public void onScroll(int x, int y){
         _plugRef.pluginLayout.setMapDrawingRect(
                 _id,
                 _toRect(_mapDivLayoutJSON, x, y)
@@ -145,13 +148,13 @@ public class Map {
      * @param callbackContext
      * @throws JSONException
      */
-    public void setDiv(CordovaArgs args, CallbackContext callbackContext){
+    public void setContainer(CordovaArgs args, CallbackContext callbackContext){
 
         try {
             JSONObject options = args.getJSONObject(1);
 
             if(options.isNull("rect")){
-                callbackContext.error("Map.setDiv(... Need a rect");
+                callbackContext.error("Map.setContainer(... Need a rect");
             }
 
             // update the map size

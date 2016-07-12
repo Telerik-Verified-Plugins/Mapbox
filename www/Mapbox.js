@@ -115,10 +115,10 @@ function getPageRect() {
 module.exports = {
   show: function (options, successCallback, errorCallback, id) {
     id = id || 0;
-    if(options.div){
-      options.HTMLs = getDomElementsOverlay(options.div);
-      options.rect = getDivRect(options.div);
-      delete options.div; //Prevent circular reference error
+    if(options.domElement){
+      options.HTMLs = getDomElementsOverlay(options.domElement);
+      options.rect = getDivRect(options.domElement);
+      delete options.domElement; //Prevent circular reference error
     }
     cordova.exec(successCallback, errorCallback, "Mapbox", "show", [id, options]);
   },
@@ -138,12 +138,12 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [id]);
   },
 
-  setDiv: function (domElement, successCallback, errorCallback, id){
+  setContainer: function (container, successCallback, errorCallback, id){
     id = id || 0;
-    domElement.HTMLs = getDomElementsOverlay(domElement.div);
-    domElement.rect = getDivRect(domElement.div);
-    delete domElement.div; //Prevent circular reference error
-    cordova.exec(successCallback, errorCallback, "Mapbox", "setDiv", [id, domElement])
+    container.HTMLs = getDomElementsOverlay(container.domElement);
+    container.rect = getDivRect(container.domElement);
+    delete container.domElement; //Prevent circular reference error
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setContainer", [id, container])
   },
 
   downloadCurrentMap: function(id, statusCallback, errorCallback){

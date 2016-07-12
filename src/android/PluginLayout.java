@@ -30,7 +30,7 @@ import android.widget.ScrollView;
 //todo store set of HTMLs in a Map
 
 public class PluginLayout extends FrameLayout  {
-    private View _view;
+    private View _webView;
     private ViewGroup _root;
     private RectF _mapRect = new RectF();
     private Context _context;
@@ -47,26 +47,28 @@ public class PluginLayout extends FrameLayout  {
     private Map<String, RectF> _HTMLNodes = new HashMap<String, RectF>();
     private Activity _activity = null;
 
+    public ScrollView getScrollView(){return _scrollView;}
+
     @SuppressLint("NewApi")
-    public PluginLayout(View view, Activity activity) {
-        super(view.getContext());
+    public PluginLayout(View webView, Activity activity) {
+        super(webView.getContext());
         _activity = activity;
-        _view = view;
-        _root = (ViewGroup) _view.getParent();
-        _context = _view.getContext();
-        if (VERSION.SDK_INT >= 21 || "org.xwalk.core.XWalkView".equals(_view.getClass().getName())) {
-            _view.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        _webView = webView;
+        _root = (ViewGroup) _webView.getParent();
+        _context = _webView.getContext();
+        if (VERSION.SDK_INT >= 21 || "org.xwalk.core.XWalkView".equals(_webView.getClass().getName())) {
+            _webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         }
         _frontLayer = new FrontLayerLayout(_context);
 
         _scrollView = new ScrollView(_context);
-        _scrollView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        _scrollView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
         _backgroundView = new View(_context);
         _backgroundView.setBackgroundColor(Color.WHITE);
         _backgroundView.setVerticalScrollBarEnabled(false);
         _backgroundView.setHorizontalScrollBarEnabled(false);
-        _backgroundView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, 9999));
+        _backgroundView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
         _scrollFrameLayout = new FrameLayout(_context);
         _scrollFrameLayout.addView(_backgroundView);
@@ -121,8 +123,8 @@ public class PluginLayout extends FrameLayout  {
             return;
         }
         ViewGroup.LayoutParams lParams = _mapsGroup.getLayoutParams();
-        int scrollY = _view.getScrollY();
-        int scrollX = _view.getScrollX();
+        int scrollY = _webView.getScrollY();
+        int scrollX = _webView.getScrollX();
 
         if (lParams instanceof AbsoluteLayout.LayoutParams) {
             AbsoluteLayout.LayoutParams params = (AbsoluteLayout.LayoutParams) lParams;
@@ -182,7 +184,7 @@ public class PluginLayout extends FrameLayout  {
         }
         _root.removeView(this);
         this.removeView(_frontLayer);
-        _frontLayer.removeView(_view);
+        _frontLayer.removeView(_webView);
 
         _scrollFrameLayout.removeView(_mapsGroup);
         _mapsGroup.removeView(this._touchableWrapper);
@@ -193,10 +195,10 @@ public class PluginLayout extends FrameLayout  {
             _mapsGroup.setLayoutParams(_orgLayoutParams);
         }
 
-        _root.addView(_view);
+        _root.addView(_webView);
         _mapsGroup = null;
         _activity.getWindow().getDecorView().requestFocus();
-        _view.setBackgroundColor(Color.WHITE);
+        _webView.setBackgroundColor(Color.WHITE);
     }
 
     /**
@@ -204,14 +206,14 @@ public class PluginLayout extends FrameLayout  {
      * @param mapsGroup the ViewGroup embedding the maps
      */
     public void attachMapsGroup(ViewGroup mapsGroup) {
-        _view.setBackgroundColor(Color.TRANSPARENT);
-        if("org.xwalk.core.XWalkView".equals(_view.getClass().getName())
-                || "org.crosswalk.engine.XWalkCordovaView".equals(_view.getClass().getName())) {
+        _webView.setBackgroundColor(Color.TRANSPARENT);
+        if("org.xwalk.core.XWalkView".equals(_webView.getClass().getName())
+                || "org.crosswalk.engine.XWalkCordovaView".equals(_webView.getClass().getName())) {
             try {
-                /* _view.setZOrderOnTop(true)
+                /* _webView.setZOrderOnTop(true)
                  * Called just in time as with _root.setBackground(...) the color
                  * come in front and take the whole screen */
-                _view.getClass().getMethod("setZOrderOnTop", boolean.class).invoke(_view, true);
+                _webView.getClass().getMethod("setZOrderOnTop", boolean.class).invoke(_webView, true);
             }
             catch(Exception e) {
                 e.printStackTrace();
@@ -220,7 +222,7 @@ public class PluginLayout extends FrameLayout  {
         _scrollView.setHorizontalScrollBarEnabled(false);
         _scrollView.setVerticalScrollBarEnabled(false);
 
-        _scrollView.scrollTo(_view.getScrollX(), _view.getScrollY());
+        _scrollView.scrollTo(_webView.getScrollX(), _webView.getScrollY());
         if (_mapsGroup == mapsGroup) {
             return;
         } else {
@@ -232,28 +234,19 @@ public class PluginLayout extends FrameLayout  {
          * Then, all user touch will be first intercepted by the plugin layer
          * which will decide whether or not it is a map action.
          */
-/*        View view;
-        for (int i = 0; i < _root.getChildCount(); i++) {
-          view = _root.getChildAt(i);
-          _root.removeView(view);
-          pluginLayout.addView(view);
-        }
-
-        _root.addView(pluginLayout);
-  */
         ViewGroup.LayoutParams lParams = _mapsGroup.getLayoutParams();
         _orgLayoutParams = null;
         if (lParams != null) {
             _orgLayoutParams = new ViewGroup.LayoutParams(lParams);
         }
-        _root.removeView(_view);
+        _root.removeView(_webView);
         _scrollView.addView(_scrollFrameLayout);
         this.addView(_scrollView);
 
         mapsGroup.addView(this._touchableWrapper);
         _scrollFrameLayout.addView(mapsGroup);
 
-        _frontLayer.addView(_view);
+        _frontLayer.addView(_webView);
         this.addView(_frontLayer);
         _root.addView(this);
         _activity.getWindow().getDecorView().requestFocus();
@@ -292,13 +285,13 @@ public class PluginLayout extends FrameLayout  {
         @Override
         public boolean onInterceptTouchEvent(MotionEvent event) {
             if (!_isClickable || _mapsGroup == null || _mapsGroup.getVisibility() != View.VISIBLE) {
-                _view.requestFocus(View.FOCUS_DOWN);
+                _webView.requestFocus(View.FOCUS_DOWN);
                 return false;
             }
             int x = (int)event.getX();
             int y = (int)event.getY();
-            int scrollX = _view.getScrollX();
-            int scrollY = _view.getScrollY();
+            int scrollX = _webView.getScrollX();
+            int scrollY = _webView.getScrollY();
             boolean contains = _mapRect.contains(x, y);
             int action = event.getAction();
             _isScrolling = ((!contains) && (action == MotionEvent.ACTION_DOWN)) || _isScrolling;
@@ -311,6 +304,7 @@ public class PluginLayout extends FrameLayout  {
                 Iterator<Entry<String, RectF>> iterator = elements.iterator();
                 Entry <String, RectF> entry;
                 RectF rect;
+
                 while(iterator.hasNext() && contains) {
                     entry = iterator.next();
                     rect = entry.getValue();
@@ -327,9 +321,11 @@ public class PluginLayout extends FrameLayout  {
                     rect.bottom += scrollY;
                 }
             }
+
             if (!contains) {
-                _view.requestFocus(View.FOCUS_DOWN);
+                _webView.requestFocus(View.FOCUS_DOWN);
             }
+
             return contains;
         }
         @Override
@@ -339,8 +335,8 @@ public class PluginLayout extends FrameLayout  {
             }
             int width = canvas.getWidth();
             int height = canvas.getHeight();
-            int scrollX = _view.getScrollX();
-            int scrollY = _view.getScrollY();
+            int scrollX = _webView.getScrollX();
+            int scrollY = _webView.getScrollY();
 
             Paint paint = new Paint();
             paint.setColor(Color.argb(100, 0, 255, 0));

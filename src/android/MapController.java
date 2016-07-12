@@ -6,22 +6,27 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Camera;
 import android.graphics.Canvas;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ScrollView;
 
+import com.almeros.android.multitouch.gesturedetectors.MoveGestureDetector;
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -46,9 +51,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.Map;
 
-import io.cordova.hellocordova.MainActivity;
 import io.cordova.hellocordova.R;
 
 /**
@@ -75,9 +80,14 @@ public class MapController {
     private OfflineRegion _offlineRegion;
     private boolean _downloading;
     private int _downloadingProgress;
+    private String _selectedMarkerId;
     private ArrayList<String> _offlineRegionsNames = new ArrayList<>();
+    private HashMap<String, String> _anchors = new HashMap<>();
+    private HashMap<String, Marker> _markers= new HashMap<>();
+
     public final static String JSON_CHARSET = "UTF-8";
     public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
+    private Runnable _markerCallback;
 
     public View getMapView(){
         return (View) _mapView;
@@ -91,8 +101,9 @@ public class MapController {
     public ArrayList<String> getOfflineRegionsNames(){
         return _offlineRegionsNames;
     }
+    public String getSelectedMarkerId(){ return _selectedMarkerId; }
 
-    public MapController(final JSONObject options, Activity activity, Context context){
+    public MapController(final JSONObject options, Activity activity, Context context, @Nullable final ScrollView scrollView){
 
         try{
             _initOptions = _createMapboxMapOptions(options);
@@ -102,7 +113,6 @@ public class MapController {
         }
         _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
         _offlineManager = OfflineManager.getInstance(context);
-
         _activity = activity;
 
         _mapView = new MapView(_activity, _initOptions);
@@ -116,82 +126,57 @@ public class MapController {
         _mapView.onResume();
         _mapView.onCreate(null);
 
+        // Prevent scroll to intercept the touch when pane the map
+        if(scrollView != null) {
+            _mapView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_MOVE:
+                            scrollView.requestDisallowInterceptTouchEvent(true);
+                            break;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            scrollView.requestDisallowInterceptTouchEvent(false);
+                            break;
+                    }
+                    return _mapView.onTouchEvent(event);
+                }
+            });
+        }
+
         _mapView.getMapAsync(new OnMapReadyCallback() {
 
             public void onMapReady(MapboxMap map) {
-
                 _mapboxMap = map;
-                /*
-                _uiSettings = _mapboxMap.getUiSettings();
-                _cameraPosition = _mapboxMap.getCameraPosition();
-                final JSONObject _initArgs;
-                final JSONObject margins;
-                final int left;
-                final int right;
-                final int top;
-                final int bottom;
-                final JSONObject center;
 
                 try {
-                    _initArgs = args.getJSONObject(1);
-                    margins = _initArgs.isNull("margins") ? null : _initArgs.getJSONObject("margins");
-                    center = _initArgs.isNull("center") ? null : _initArgs.getJSONObject("center");
-                    left = _applyRetinaFactor(margins == null || margins.isNull("left") ? 0 : margins.getInt("left"));
-                    right = _applyRetinaFactor(margins == null || margins.isNull("right") ? 0 : margins.getInt("right"));
-                    top = _applyRetinaFactor(margins == null || margins.isNull("top") ? 0 : margins.getInt("top"));
-                    bottom = _applyRetinaFactor(margins == null || margins.isNull("bottom") ? 0 : margins.getInt("bottom"));
+                    // drawing initial markers
+                    if(options.has("sources")){
+                        JSONArray sources = options.getJSONArray("sources");
+                        for (int i = 0; i < sources.length(); i++) {
+                            //todo refactor when #5626
+                            if(!sources.getJSONObject(i).getJSONObject("source").getString("type").equals("geojson")) throw new JSONException("Sources only handle GeoJSON at map creation");
+
+                            String sourceId = sources.getJSONObject(i).getString("sourceId");
+                            JSONObject source = sources.getJSONObject(i).getJSONObject("source");
+
+                            String dataType = source.getJSONObject("data").getString("type");
+                            if (!dataType.equals("Feature")) throw new JSONException("Only feature are supported as markers source");
+
+                            String type = source.getJSONObject("data").getJSONObject("geometry").getString("type");
+                            if (!type.equals("Point")) throw new JSONException("Only type Point are supported for markers");
+
+                            addMarker(sourceId, source.getJSONObject("data"));
+                        }
+                    }
 
                 } catch (JSONException e) {
-                    callbackContext.error(e.getMessage());
-                    return;
-                }
-                /*
-                final String style = getStyle(_initArgs.optString("style"));
-                _mapView.setStyleUrl(style);
-
-                _showUserLocation = !_initArgs.isNull("showUserLocation") && _initArgs.getBoolean("showUserLocation");
-
-
-                _uiSettings.setCompassEnabled(_initArgs.isNull("hideCompass") || !_initArgs.getBoolean("hideCompass"));
-                _uiSettings.setRotateGesturesEnabled(_initArgs.isNull("disableRotation") || !_initArgs.getBoolean("disableRotation"));
-                _uiSettings.setScrollGesturesEnabled(_initArgs.isNull("disableScroll") || !_initArgs.getBoolean("disableScroll"));
-                _uiSettings.setZoomGesturesEnabled(_initArgs.isNull("disableZoom") || !_initArgs.getBoolean("disableZoom"));
-                _uiSettings.setTiltGesturesEnabled(_initArgs.isNull("disableTilt") || !_initArgs.getBoolean("disableTilt"));
-
-                // placing these offscreen in case the user wants to hide them
-                if (!_initArgs.isNull("hideAttribution") && _initArgs.getBoolean("hideAttribution")) {
-                    _uiSettings.setAttributionMargins(-300, 0, 0, 0);
-                }
-                if (!_initArgs.isNull("hideLogo") && _initArgs.getBoolean("hideLogo")) {
-                    _uiSettings.setLogoMargins(-300, 0, 0, 0);
+                    e.printStackTrace();
                 }
 
-                if (_showUserLocation) {
-                    _showUserLocation();
-                }
-
-                double zoom = _initArgs.isNull("zoomLevel") ? 10 : _initArgs.getDouble("zoomLevel");
-                float zoomLevel = (float) zoom;
-                if (center != null) {
-                    final double lat = center.getDouble("lat");
-                    final double lng = center.getDouble("lng");
-                    setCenter(new LatLng(lat, lng));
-                } else {
-                    if (zoomLevel > 18.0) {
-                        zoomLevel = 18.0f;
-                    }
-                    setZoom(zoomLevel);
-                }
-
-                if (_initArgs.has("markers")) {
-                    addMarkers(_initArgs.getJSONArray("markers"));
-                }
-*/
-                // position the _mapView overlay
-               // _mapView.setLayoutParams(mapFrame);
             }
         });
-
     }
 
     public LatLng getCenter(){
@@ -228,7 +213,7 @@ public class MapController {
 
     public void flyTo(JSONObject position) throws JSONException{
         CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
-        LatLng latLng;
+
         try{
             int duration = position.isNull("duration") ? 5000 : position.getInt("duration");
 
@@ -344,17 +329,43 @@ public class MapController {
         _offlineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
             @Override
             public void onList(final OfflineRegion[] offlineRegions) {
+
                 // Check result. If no regions have been
                 // downloaded yet, notify user and return
                 if (offlineRegions == null || offlineRegions.length == 0) {
                     return;
                 }
 
-                // Add all of the region names to a list
+                // Clean the last ref array and add all of the region names to the list.
+                _offlineRegionsNames.clear();
                 for (OfflineRegion offlineRegion : offlineRegions) {
                     _offlineRegionsNames.add(getRegionName(offlineRegion));
                 }
                 callback.run();
+            }
+
+            @Override
+            public void onError(String error) {
+
+            }
+        });
+    }
+
+    public void removeOfflineRegion(final int regionSelected, final Runnable onDeleteCallback){
+        _offlineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
+            @Override
+            public void onList(final OfflineRegion[] offlineRegions) {
+
+                offlineRegions[regionSelected].delete(new OfflineRegion.OfflineRegionDeleteCallback() {
+                    @Override
+                    public void onDelete() {
+                        onDeleteCallback.run();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                    }
+                });
             }
 
             @Override
@@ -380,47 +391,136 @@ public class MapController {
         return regionName;
     }
 
+    /**
+     * Store empty markers from.
+     * The markers are then hydrated in updateMarkers method.
+     * @param markers a JSONArray of markers. The markers repscect the GEOJSON specs.
+     * @return the array of new markers ids. Insertion order is preserved.
+     * @throws JSONException
+     */
     public void addMarkers(JSONArray markers) throws JSONException{
         for (int i = 0; i < markers.length(); i++) {
-            MarkerOptions markerOptions = new MarkerOptions();
-            JSONObject marker = markers.getJSONObject(i);
-            JSONObject geometry = marker.isNull("geometry")?null:marker.getJSONObject("geometry");
-            JSONObject properties = marker.isNull("properties")?null:marker.getJSONObject("properties");
-
-            if(geometry != null){
-                markerOptions.position(new LatLng(
-                        geometry.getJSONArray("coordinates").getDouble(1),
-                        geometry.getJSONArray("coordinates").getDouble(0)
-                ));
-            } else throw new JSONException("No position found in marker.");
-
-            if(properties != null) {
-                if(properties.has("title")) {
-                    markerOptions.title(properties.getString("title"));
-                }
-
-                if(properties.has("snippet")) {
-                    markerOptions.snippet(properties.getString("snippet"));
-                }
-
-                boolean domAnchor = !properties.isNull("domAnchor") && properties.getBoolean("domAnchor");
-                if(!domAnchor) {
-                    if (properties.has("image")) {
-                        try{
-                            markerOptions.icon(createIcon(properties));
-                        } catch (SVGParseException | IOException e) {
-                            e.printStackTrace();
-                        }
-
-                    } else {
-                        IconFactory iconFactory = IconFactory.getInstance(_activity);
-                        Drawable iconDrawable = ContextCompat.getDrawable(_activity, R.drawable.default_marker);
-                        markerOptions.icon(iconFactory.fromDrawable(iconDrawable));
-                    }
-                }
-            }
-            _mapboxMap.addMarker(markerOptions);
+            //todo refactor when #5626
+            throw new JSONException("Add multiple marker is not implemented yet");
         }
+    }
+
+    public void addMarker(String id, JSONObject marker) throws JSONException{
+        Marker nativeMarker = _markers.get(id);
+
+        if(nativeMarker != null) {
+            removeMarker(id);
+        }
+        MarkerOptions markerOptions = new MarkerOptions();
+        JSONObject geometry = marker.isNull("geometry")?null:marker.getJSONObject("geometry");
+
+        if(geometry != null){
+            markerOptions.position(new LatLng(
+                    geometry.getJSONArray("coordinates").getDouble(1),
+                    geometry.getJSONArray("coordinates").getDouble(0)
+            ));
+        } else throw new JSONException("No position found in marker.");
+
+        nativeMarker = _mapboxMap.addMarker(markerOptions);
+
+        // Store in the map markers collection
+        _markers.put(id, nativeMarker);
+
+        // Hydrate the marker
+        hydrateMarker(id, marker);
+    }
+
+    public void updateMarkers (JSONArray markers) throws JSONException {
+        HashMap<Long, JSONObject> jsonMarkers = new HashMap<>(); // This hash will be passed to updateMarkers to hydrate them.
+        for (int i = 0; i < markers.length(); i++) {
+            //todo refactor when #5626
+            updateMarker(markers.getJSONObject(i).getString("id"), markers.getJSONObject(i));
+        }
+    }
+
+    public void updateMarker(String id, JSONObject marker) throws JSONException{
+        /**
+         * todo refactor when #5626
+         * For now we remove and replace a new marker.
+         * To ensire ID consistency we base the ID from
+         * the javascript part.
+         */
+        Marker nativeMarker = _markers.get(id);
+        if(nativeMarker != null) {
+            removeMarker(id);
+        }
+
+        addMarker(id, marker);
+        //hydrateMarker(id, marker);
+    }
+
+    public void hydrateMarker (String id, JSONObject jsonMarker) throws JSONException{
+        JSONObject geometry = jsonMarker.isNull("geometry")?null:jsonMarker.getJSONObject("geometry");
+        JSONObject properties = jsonMarker.isNull("properties")?null:jsonMarker.getJSONObject("properties");
+        boolean domAnchor = false;
+        Marker marker;
+
+        marker = _markers.get(id);
+
+        if(geometry != null){
+            marker.setPosition(new LatLng(
+                    geometry.getJSONArray("coordinates").getDouble(1),
+                    geometry.getJSONArray("coordinates").getDouble(0)
+            ));
+        } else throw new JSONException("No position found in marker.");
+
+
+        if(properties.has("title")) {
+            marker.setTitle(properties.getString("title"));
+        }
+
+        if(properties.has("snippet")) {
+            marker.setSnippet(properties.getString("snippet"));
+        }
+
+        domAnchor = properties.has("domAnchor");
+        if(domAnchor) {
+            // Store the marker as a dom element anchor
+            _anchors.put(id, properties.getString("domAnchor"));
+            // Make an invisi
+            IconFactory iconFactory = IconFactory.getInstance(_activity);
+            Drawable iconDrawable = ContextCompat.getDrawable(_activity, R.drawable.default_marker);
+            iconDrawable.setAlpha(0);
+            marker.setIcon(iconFactory.fromDrawable(iconDrawable));
+            marker.setTitle(null);
+            marker.setSnippet(null);
+        } else {
+            //if it was a dom anchor, delete it
+            if (_anchors.get(id) != null) _anchors.remove(id);
+            if (properties.has("image")) {
+                try{
+                    marker.setIcon(createIcon(properties));
+                } catch (SVGParseException | IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                IconFactory iconFactory = IconFactory.getInstance(_activity);
+                Drawable iconDrawable = ContextCompat.getDrawable(_activity, R.drawable.default_marker);
+                marker.setIcon(iconFactory.fromDrawable(iconDrawable));
+            }
+        }
+    }
+
+    public void removeMarkers(ArrayList<String> ids) {
+        for (int i = 0; i < ids.size(); i++) removeMarker(ids.get(i));
+    }
+
+    public void removeMarker(String id){
+        if(_markers.get(id) == null) return;
+        _mapboxMap.removeMarker(_markers.get(id));
+        if(_markers.get(id) != null) _markers.remove(id);
+        if(_anchors.get(id) != null) _anchors.remove(id);
+    }
+
+    public void addMarkerCallBack(Runnable callback){
+        if(_mapboxMap ==  null) return;
+        _markerCallback = callback;
+        _mapboxMap.setOnMarkerClickListener(new MarkerClickListener(callback));
     }
 
     public double getZoom(){
@@ -434,7 +534,6 @@ public class MapController {
 
         _mapboxMap.moveCamera(CameraUpdateFactory
                 .newCameraPosition(position));
-
     }
 
     public void zoomTo(double zoom){
@@ -444,9 +543,7 @@ public class MapController {
 
         _mapboxMap.animateCamera(CameraUpdateFactory
                 .newCameraPosition(position));
-
     }
-
 
     public void setCenter(LatLng coords) throws JSONException {
         _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
@@ -467,7 +564,6 @@ public class MapController {
     public LatLng convertPoint(PointF point){
         return _mapboxMap.getProjection().fromScreenLocation(point);
     }
-
 
     public void addOnMapChangedListener(String listenerType, Runnable callback) throws JSONException{
         MapChangedListener handler;
@@ -491,13 +587,15 @@ public class MapController {
         opts.styleUrl(_getStyle(options.getString("style")));
         opts.attributionEnabled(options.isNull("hideAttribution") || !options.getBoolean("hideAttribution"));
         opts.logoEnabled(options.isNull("hideLogo") || options.getBoolean("hideLogo"));
-        //opts.locationEnabled(!options.isNull("showUserLocation") && options.getBoolean("showUserLocation")); // todo bug #5607
-        //opts.camera(MapController.getCameraPosition(options.isNull("position")?null:options.getJSONObject("position"), null)); // todo bug #5607
+        opts.locationEnabled(!options.isNull("showUserLocation") && options.getBoolean("showUserLocation")); // todo bug #5607
+        opts.camera(MapController.getCameraPosition(options.isNull("cameraPosition")?null:options.getJSONObject("cameraPosition"), null));
         opts.compassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
         opts.rotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));
         opts.scrollGesturesEnabled(options.isNull("disableScroll") || !options.getBoolean("disableScroll"));
         opts.zoomGesturesEnabled(options.isNull("disableZoom") || !options.getBoolean("disableZoom"));
         opts.tiltGesturesEnabled(options.isNull("disableTilt") || !options.getBoolean("disableTilt"));
+        opts.attributionMargins((!options.isNull("hideAttribution") && options.getBoolean("hideAttribution")) ? new int[]{-300, 0, 0, 0} : null);
+        opts.logoMargins((!options.isNull("hideLogo") && options.getBoolean("hideLogo")) ? new int[]{-300, 0, 0, 0} : null);
         return opts;
     }
 
@@ -506,8 +604,6 @@ public class MapController {
             return Style.LIGHT;
         } else if ("dark".equalsIgnoreCase(requested)) {
             return Style.DARK;
-        } else if ("emerald".equalsIgnoreCase(requested)) {
-            return Style.EMERALD;
         } else if ("satellite".equalsIgnoreCase(requested)) {
             return Style.SATELLITE;
             // TODO not currently supported on Android
@@ -693,4 +789,46 @@ public class MapController {
             if(_listener == listener) _callback.run();
         }
     }
+
+    private class MarkerClickListener implements MapboxMap.OnMarkerClickListener {
+        private Runnable _callback;
+
+        public MarkerClickListener(Runnable callback){
+            _callback = callback;
+        }
+
+        @Override
+        public boolean onMarkerClick(@NonNull Marker marker) {
+            Set<Map.Entry<String, Marker>> elements = _markers.entrySet();
+            Iterator<Map.Entry<String, Marker>> iterator = elements.iterator();
+            Map.Entry<String, Marker> entry;
+            while(iterator.hasNext()) {
+                entry = iterator.next();
+                if(entry.getValue() == marker) _selectedMarkerId = entry.getKey();
+            }
+
+            _callback.run();
+            return true;
+        }
+    }
+/*
+    private class PanListener implements MoveGestureDetector.OnMoveGestureListener {
+
+        @Override
+        public boolean onMove(MoveGestureDetector detector) {
+            Log.d("motion", "paning");
+            return false;
+        }
+
+        @Override
+        public boolean onMoveBegin(MoveGestureDetector detector) {
+            Log.d("motion", "pan began");
+            return false;
+        }
+
+        @Override
+        public void onMoveEnd(MoveGestureDetector detector) {
+            Log.d("motion", "pan ended");
+        }
+    }*/
 }
