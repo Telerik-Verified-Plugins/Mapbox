@@ -6,17 +6,13 @@ import android.content.res.Resources;
 import android.graphics.PointF;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 
 import com.mapbox.mapboxsdk.MapboxAccountManager;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
-import com.mapbox.mapboxsdk.maps.MapView;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;

@@ -7,13 +7,13 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.PointF;
-import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -21,7 +21,6 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ScrollView;
 
-import com.almeros.android.multitouch.gesturedetectors.MoveGestureDetector;
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
 import com.mapbox.mapboxsdk.annotations.Icon;
@@ -44,17 +43,17 @@ import com.mapbox.mapboxsdk.offline.OfflineRegionError;
 import com.mapbox.mapboxsdk.offline.OfflineRegionStatus;
 import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
 
-import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-
-import io.cordova.hellocordova.R;
+import java.util.Set;
 
 /**
  * Created by vikti on 25/06/2016.
@@ -482,9 +481,9 @@ public class MapController {
         if(domAnchor) {
             // Store the marker as a dom element anchor
             _anchors.put(id, properties.getString("domAnchor"));
-            // Make an invisi
+            // Make an invisible marker
             IconFactory iconFactory = IconFactory.getInstance(_activity);
-            Drawable iconDrawable = ContextCompat.getDrawable(_activity, R.drawable.default_marker);
+            Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
             iconDrawable.setAlpha(0);
             marker.setIcon(iconFactory.fromDrawable(iconDrawable));
             marker.setTitle(null);
@@ -500,8 +499,7 @@ public class MapController {
                 }
             } else {
                 IconFactory iconFactory = IconFactory.getInstance(_activity);
-                Drawable iconDrawable = ContextCompat.getDrawable(_activity, R.drawable.default_marker);
-                marker.setIcon(iconFactory.fromDrawable(iconDrawable));
+                marker.setIcon(iconFactory.defaultMarker());
             }
         }
     }
