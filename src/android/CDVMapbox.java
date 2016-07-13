@@ -231,8 +231,12 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
         @Override
           public void run() {
-            callbackContext.success("{\"zoom\":" + mapCtrl.getZoom()+'}');
+          try {
+            callbackContext.success(new JSONObject("{\"zoom\":" + mapCtrl.getZoom()+'}'));
+          } catch (JSONException e) {
+            e.printStackTrace();
           }
+        }
         });
 
       } else if (ACTION_SET_ZOOM.equals(action)) {
@@ -719,15 +723,11 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
               mapCtrl.removeOfflineRegion(regionId, new Runnable() {
                 @Override
                 public void run() {
-                  // send the new list of offline regions
-/*                  mapCtrl.getOfflineRegions(new Runnable() {
-                    @Override
-                    public void run() {
-                      ArrayList<String> regionsList = mapCtrl.getOfflineRegionsNames();
-                      callbackContext.success(new JSONArray(regionsList));
-                    }
-                  });*/
-                  callbackContext.success("{\"ok\":true}");
+                  try {
+                    callbackContext.success(new JSONObject("{\"ok\":true}"));
+                  } catch (JSONException e) {
+                    e.printStackTrace();
+                  }
 
                 }
               });

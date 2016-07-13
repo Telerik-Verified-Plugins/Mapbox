@@ -31,10 +31,10 @@ function getDomElementsOverlay(mapDiv){
 }
 
 function getDomElementOverlay(elem){
-  var elemId = elem.getAttribute("__pluginDomId");
+  var elemId = elem.getAttribute("data-pluginDomId");
   if (!elemId) {
     elemId = setRandomId();
-    elem.setAttribute("__pluginDomId", elemId);
+    elem.setAttribute("data-pluginDomId", elemId);
   }
   return {
     id: elemId,

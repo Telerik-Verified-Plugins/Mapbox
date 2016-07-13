@@ -170,7 +170,7 @@
                     progressBar.first(".progress-bar").text("0%");
                     progressBar.css("display", "none");
 
-                    Mapbox.setDiv({div: document.getElementById('mapId')});
+                    Mapbox.setContainer({domElement: document.getElementById('mapId')});
 
                 }
         );
@@ -208,14 +208,14 @@
             document.getElementById('mapId').appendChild(newDummy);
         }
 
-        Mapbox.setDiv({div: document.getElementById('mapId')});
+        Mapbox.setContainer({domElement: document.getElementById('mapId')});
     }
 
     function deleteOverlayElement() {
         var elem = document.getElementsByClassName('dummy')[0];
         if (!elem) return;
         elem.parentNode.removeChild(elem);
-        Mapbox.setDiv({div: document.getElementById('mapId')});
+        Mapbox.setContainer({domElement: document.getElementById('mapId')});
     }
 
     function setCenter() {
