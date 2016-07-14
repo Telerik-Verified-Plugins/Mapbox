@@ -8,6 +8,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
+import android.view.KeyEvent;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import com.mapbox.mapboxsdk.camera.CameraPosition;
@@ -178,7 +180,23 @@ public class Mapbox extends CordovaPlugin {
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
             params.setMargins(left, top, right, bottom);
             mapView.setLayoutParams(params);
+			//@anothar we have to override back button or app will just close
+            mapView.setOnKeyListener(new View.OnKeyListener() {
+              @Override
+              public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (Integer.parseInt(android.os.Build.VERSION.SDK) > 5
+                        && keyCode == KeyEvent.KEYCODE_BACK
+                        && event.getRepeatCount() == 0) {
 
+                  if(event.getAction()!=KeyEvent.ACTION_DOWN)
+                  {
+                    webView.getEngine().loadUrl("javascript:cordova.fireDocumentEvent('backbutton');",false);
+                  }
+                  return true;
+                }
+                return false;
+              }
+            });
             layout.addView(mapView);
             callbackContext.success();
           }
