@@ -1,5 +1,4 @@
-﻿/// <reference path="../../libs/typings/tsd.d.ts" />
-declare var Mapbox: mapbox.IMap;
+﻿declare var Mapbox: mapbox.IMap;
 
 declare module mapbox {
     export interface IMarkerOptions {
