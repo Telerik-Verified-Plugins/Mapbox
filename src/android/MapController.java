@@ -86,7 +86,6 @@ public class MapController {
 
     public final static String JSON_CHARSET = "UTF-8";
     public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
-    private Runnable _markerCallback;
 
     public View getMapView(){
         return (View) _mapView;
@@ -517,7 +516,6 @@ public class MapController {
 
     public void addMarkerCallBack(Runnable callback){
         if(_mapboxMap ==  null) return;
-        _markerCallback = callback;
         _mapboxMap.setOnMarkerClickListener(new MarkerClickListener(callback));
     }
 
@@ -585,7 +583,7 @@ public class MapController {
         opts.styleUrl(_getStyle(options.getString("style")));
         opts.attributionEnabled(options.isNull("hideAttribution") || !options.getBoolean("hideAttribution"));
         opts.logoEnabled(options.isNull("hideLogo") || options.getBoolean("hideLogo"));
-        opts.locationEnabled(!options.isNull("showUserLocation") && options.getBoolean("showUserLocation")); // todo bug #5607
+//        opts.locationEnabled(!options.isNull("showUserLocation") && options.getBoolean("showUserLocation")); // todo
         opts.camera(MapController.getCameraPosition(options.isNull("cameraPosition")?null:options.getJSONObject("cameraPosition"), null));
         opts.compassEnabled(options.isNull("hideCompass") || !options.getBoolean("hideCompass"));
         opts.rotateGesturesEnabled(options.isNull("disableRotation") || !options.getBoolean("disableRotation"));

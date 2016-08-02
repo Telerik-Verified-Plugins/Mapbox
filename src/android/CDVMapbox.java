@@ -1,11 +1,7 @@
 package com.telerik.plugins.mapbox;
-import android.Manifest;
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.PointF;
-import android.os.Build;
-import android.support.v4.app.ActivityCompat;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
@@ -27,14 +23,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrollChangedListener {
-  private static final String TAG = CDVMapbox.class.getSimpleName();
 
   public FrameLayout mapsGroup;
-
-  public static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
-  public static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
-  public static final int LOCATION_REQ_CODE = 0;
-  public static final int PERMISSION_DENIED_ERROR = 20;
 
   private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
   private static final String ACTION_SHOW = "show";
@@ -68,12 +58,8 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   private static final String ACTION_CONVERT_POINT = "convertPoint";
   private static final String ACTION_ADD_ON_MAP_CHANGE_LISTENER = "addOnMapChangeListener";
   private static final String ACTION_SET_CONTAINER = "setContainer";
-  private float _density;
-  private String _accessToken;
   private CordovaWebView _webView;
   private Activity _activity;
-  private CallbackContext _callback;
-  private CallbackContext _markerCallbackContext;
 
   public CordovaInterface _cordova;
   public PluginLayout pluginLayout;
@@ -86,7 +72,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     _webView = webView;
     ViewGroup _root = (ViewGroup) _webView.getView().getParent();
     _activity = _cordova.getActivity();
-    _density = Resources.getSystem().getDisplayMetrics().density;
     _webView.getView().getViewTreeObserver().addOnScrollChangedListener(CDVMapbox.this);
 
     /**
@@ -121,7 +106,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
     try {
       int mapboxAccesstokenResourceId = cordova.getActivity().getResources().getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", cordova.getActivity().getPackageName());
-      _accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
+      String _accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
       MapboxAccountManager.start(webView.getContext(), _accessToken);
     } catch (Resources.NotFoundException e) {
       // we'll deal with this when the _accessToken property is read, but for now let's dump the error:
@@ -149,8 +134,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
   }
 
   public boolean execute(final String action, final CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
-
-    _callback = callbackContext;
 
     try {
       if (args.isNull(0)) {
@@ -774,44 +757,6 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
       callbackContext.error(t.getMessage());
     }
     return true;
-  }
-
-  private boolean permissionGranted(String... types) {
-    if (Build.VERSION.SDK_INT < 23) {
-      return true;
-    }
-    for (final String type : types) {
-      if (PackageManager.PERMISSION_GRANTED != ActivityCompat.checkSelfPermission(this.cordova.getActivity(), type)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  protected void _showUserLocation() {
-
-  }
-
-  private void requestPermission(String... types) {
-    ActivityCompat.requestPermissions(
-        this.cordova.getActivity(),
-        types,
-        LOCATION_REQ_CODE);
-  }
-
-  // TODO
-  public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
-    for (int r : grantResults) {
-      if (r == PackageManager.PERMISSION_DENIED) {
-        _callback.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, PERMISSION_DENIED_ERROR));
-        return;
-      }
-    }
-    switch (requestCode) {
-      case LOCATION_REQ_CODE:
-        _showUserLocation();
-        break;
-    }
   }
 
   private boolean _validateSource(){

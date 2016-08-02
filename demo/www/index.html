@@ -42,33 +42,28 @@
                 0%
             </div>
         </div>
-        <div class="btn-group" role="group">
-            <button class="btn btn-default" onclick="toggleDebug()">Debug</button>
-            <button class="btn btn-default" onclick="addMarker()">Add Markers</button>
-            <button class="btn btn-default" onclick="updateMarker()">Update Markers</button>
-            <button class="btn btn-default" onclick="deleteMarker()">Delete Markers</button>
-        </div>
-        <div class="btn-group" role="group">
-            <button class="btn btn-default" onclick="flyTo()">Camera</button>
-            <button class="btn btn-default" onclick="zoomIn()">zoom +</button>
-            <button class="btn btn-default" onclick="zoomOut()">zoom -</button>
-            <button class="btn btn-default" onclick="setCenter()">set center</button>
-            <button class="btn btn-default" onclick="setPitch()">set pitch</button>
-        </div>
 
-        <div class="btn-group" role="group">
-            <button class="btn btn-default" onclick="getZoom()">getZoom</button>
-            <button class="btn btn-default" onclick="getCenter()">get center</button>
-            <button class="btn btn-default" onclick="getPitch()">get pitch</button>
-            <button class="btn btn-default" onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
-            <button class="btn btn-default" onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
-            <button class="btn btn-default" onclick="getBounds()">get bounds</button>
-            <button class="btn btn-default" onclick="getCameraPosition()">get camera</button>
-        </div>
-        <div class="btn-group" role="group">
-            <button class="btn btn-default" onclick="addOverlayElement()">Add new DOM overlay element</button>
-            <button class="btn btn-default" onclick="deleteOverlayElement()">Remove a DOM overlay element</button>
-        </div>
+        <button class="btn btn-default" onclick="toggleDebug()">Debug</button>
+        <button class="btn btn-default" onclick="addMarker()">Add Markers</button>
+        <button class="btn btn-default" onclick="updateMarker()">Update Markers</button>
+        <button class="btn btn-default" onclick="deleteMarker()">Delete Markers</button>
+
+        <button class="btn btn-default" onclick="flyTo()">Camera</button>
+        <button class="btn btn-default" onclick="zoomIn()">zoom +</button>
+        <button class="btn btn-default" onclick="zoomOut()">zoom -</button>
+        <button class="btn btn-default" onclick="setCenter()">set center</button>
+        <button class="btn btn-default" onclick="setPitch()">set pitch</button>
+
+        <button class="btn btn-default" onclick="getZoom()">getZoom</button>
+        <button class="btn btn-default" onclick="getCenter()">get center</button>
+        <button class="btn btn-default" onclick="getPitch()">get pitch</button>
+        <button class="btn btn-default" onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
+        <button class="btn btn-default" onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">ctr2screen</button>
+        <button class="btn btn-default" onclick="getBounds()">get bounds</button>
+        <button class="btn btn-default" onclick="getCameraPosition()">get camera</button>
+
+        <button class="btn btn-default" onclick="addOverlayElement()">Add new DOM overlay element</button>
+        <button class="btn btn-default" onclick="deleteOverlayElement()">Remove a DOM overlay element</button>
     </div>
     <div class="mapContainer fill">
         <div id="mapId">
@@ -334,7 +329,6 @@
                             }
                         }
                     }],
-                    showUserLocation: true, // default false
                     hideAttribution: true, // default false
                     hideLogo: true, // default false
                     hideCompass: false, // default false

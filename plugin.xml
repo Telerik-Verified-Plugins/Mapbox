@@ -37,14 +37,18 @@
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/*">
-      <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-      <uses-permission android:name="android.permission.INTERNET" />
-      <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
-      <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-      <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        <uses-permission android:name="android.permission.INTERNET" />
+        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+        <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     </config-file>
+    
+    <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        <service android:name="com.mapbox.mapboxsdk.telemetry.TelemetryService" />
+    </config-file>
+    
     <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
     <source-file src="src/android/CDVMapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/Map.java" target-dir="src/com/telerik/plugins/mapbox"/>
@@ -88,12 +92,14 @@
     <source-file src="src/ios/Map.m" />
     <header-file src="src/ios/MapController.h" />
     <source-file src="src/ios/MapController.m" />
+    <header-file src="src/ios/MapOverlayDebugLayer.h" />
+    <source-file src="src/ios/MapOverlayDebugLayer.m" />
     <header-file src="src/ios/MapsManager.h" />
     <source-file src="src/ios/MapsManager.m" />
-    <header-file src="src/ios/PluginLayer.h" />
-    <source-file src="src/ios/PluginLayer.m" />
-    <header-file src="src/ios/PluginScrollView.h" />
-    <source-file src="src/ios/PluginScrollView.m" />
+    <header-file src="src/ios/PluginLayout.h" />
+    <source-file src="src/ios/PluginLayout.m" />
+    <source-file src="src/ios/PluginScrollLayout.m" />
+    <header-file src="src/ios/PluginScrollLayout.h" />
 
     <header-file src="src/ios/libs/Mapbox.framework/Headers/Mapbox.h" />
     <header-file src="src/ios/libs/Mapbox.framework/Headers/MGLAccountManager.h" />
