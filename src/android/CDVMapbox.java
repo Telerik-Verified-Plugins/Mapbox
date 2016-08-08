@@ -499,7 +499,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
           @Override
           public void run() {
             try{
-              ArrayList<String> ids = new ArrayList<>();
+              ArrayList<String> ids = new ArrayList<String>();
               JSONArray JSONIds =  args.getJSONArray(2);
               for (int i = 0; i < JSONIds.length(); i++){
                 ids.set(i, JSONIds.getString(i));

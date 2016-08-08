@@ -19,7 +19,7 @@ import org.apache.cordova.CordovaWebView;
 public class MapsManager {
     private static CordovaWebView _cdvWebView;
     private static MapsManager _ourInstance = new MapsManager();
-    private static SparseArray<Map> _maps = new SparseArray<>();
+    private static SparseArray<Map> _maps = new SparseArray();
     private static CDVMapbox _plugRef;
     private static Activity _activity;
 
