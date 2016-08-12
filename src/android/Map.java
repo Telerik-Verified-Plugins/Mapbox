@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.RectF;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -79,7 +80,7 @@ public class Map {
 
         // The view container. Contains maps and addons views.
         _layersGroup = new FrameLayout(_context);
-        _layersGroup.addView(_mapCtrl.getMapView());
+        _layersGroup.addView((View)_mapCtrl.getMapView());
     }
 
 

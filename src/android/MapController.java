@@ -69,9 +69,9 @@ public class MapController {
     private static float _retinaFactor;
     private final static String TAG = "MainActivity";
 
-    private MapView _mapView;
+    private MapView mMapView;
     private MapboxMapOptions _initOptions;
-    private MapboxMap _mapboxMap;
+    private MapboxMap mMapboxMap;
     private UiSettings _uiSettings;
     private CameraPosition _cameraPosition;
     private Activity _activity;
@@ -87,8 +87,8 @@ public class MapController {
     public final static String JSON_CHARSET = "UTF-8";
     public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
 
-    public View getMapView() {
-        return (View) _mapView;
+    public MapView getMapView() {
+        return mMapView;
     }
 
     public int getDownloadingProgress() {
@@ -119,20 +119,20 @@ public class MapController {
         _offlineManager = OfflineManager.getInstance(context);
         _activity = activity;
 
-        _mapView = new MapView(_activity, _initOptions);
-        _mapView.setLayoutParams(
+        mMapView = new MapView(_activity, _initOptions);
+        mMapView.setLayoutParams(
                 new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT
                 ));
 
         // need to do this to register a receiver which onPause later needs
-        _mapView.onResume();
-        _mapView.onCreate(null);
+        mMapView.onResume();
+        mMapView.onCreate(null);
 
         // Prevent scroll to intercept the touch when pane the map
         if (scrollView != null) {
-            _mapView.setOnTouchListener(new View.OnTouchListener() {
+            mMapView.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     switch (event.getAction()) {
@@ -144,15 +144,15 @@ public class MapController {
                             scrollView.requestDisallowInterceptTouchEvent(false);
                             break;
                     }
-                    return _mapView.onTouchEvent(event);
+                    return mMapView.onTouchEvent(event);
                 }
             });
         }
 
-        _mapView.getMapAsync(new OnMapReadyCallback() {
+        mMapView.getMapAsync(new OnMapReadyCallback() {
 
             public void onMapReady(MapboxMap map) {
-                _mapboxMap = map;
+                mMapboxMap = map;
 
                 try {
                     // drawing initial markers
@@ -187,19 +187,19 @@ public class MapController {
     }
 
     public LatLng getCenter() {
-        CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
+        CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
         double lat = cameraPosition.target.getLatitude();
         double lng = cameraPosition.target.getLongitude();
         return new LatLng(lat, lng);
     }
 
     public void setCenter(double... coords) {
-        CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
+        CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
         double lat = coords.length > 0 ? coords[0] : cameraPosition.target.getLatitude();
         double lng = coords.length > 1 ? coords[1] : cameraPosition.target.getLongitude();
         double alt = coords.length > 2 ? coords[2] : cameraPosition.target.getAltitude(); //todo alt or zoom ????
 
-        _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+        mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
                         .target(new LatLng(lat, lng, alt))
                         .build()
@@ -207,11 +207,11 @@ public class MapController {
     }
 
     public double getTilt() {
-        return _mapboxMap.getCameraPosition().tilt;
+        return mMapboxMap.getCameraPosition().tilt;
     }
 
     public void setTilt(double titl) {
-        _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+        mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
                         .tilt(titl)
                         .build()
@@ -219,12 +219,12 @@ public class MapController {
     }
 
     public void flyTo(JSONObject position) throws JSONException {
-        CameraPosition cameraPosition = _mapboxMap.getCameraPosition();
+        CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
 
         try {
             int duration = position.isNull("duration") ? 5000 : position.getInt("duration");
 
-            _mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(MapController.getCameraPosition(position, cameraPosition)), duration);
+            mMapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(MapController.getCameraPosition(position, cameraPosition)), duration);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -243,9 +243,9 @@ public class MapController {
 
         // Set the style, bounds zone and the min/max zoom whidh will be available once offline.
         String styleURL = _initOptions.getStyle();
-        LatLngBounds bounds = _mapboxMap.getProjection().getVisibleRegion().latLngBounds;
-        double minZoom = _mapboxMap.getCameraPosition().zoom;
-        double maxZoom = _mapboxMap.getMaxZoom();
+        LatLngBounds bounds = mMapboxMap.getProjection().getVisibleRegion().latLngBounds;
+        double minZoom = mMapboxMap.getCameraPosition().zoom;
+        double maxZoom = mMapboxMap.getMaxZoom();
         OfflineTilePyramidRegionDefinition definition = new OfflineTilePyramidRegionDefinition(
                 styleURL, bounds, minZoom, maxZoom, _retinaFactor);
 
@@ -429,7 +429,7 @@ public class MapController {
             ));
         } else throw new JSONException("No position found in marker.");
 
-        nativeMarker = _mapboxMap.addMarker(markerOptions);
+        nativeMarker = mMapboxMap.addMarker(markerOptions);
 
         // Store in the map markers collection
         _markers.put(id, nativeMarker);
@@ -519,18 +519,18 @@ public class MapController {
 
     public void removeMarker(String id) {
         if (_markers.get(id) == null) return;
-        _mapboxMap.removeMarker(_markers.get(id));
+        mMapboxMap.removeMarker(_markers.get(id));
         if (_markers.get(id) != null) _markers.remove(id);
         if (_anchors.get(id) != null) _anchors.remove(id);
     }
 
     public void addMarkerCallBack(Runnable callback) {
-        if (_mapboxMap == null) return;
-        _mapboxMap.setOnMarkerClickListener(new MarkerClickListener(callback));
+        if (mMapboxMap == null) return;
+        mMapboxMap.setOnMarkerClickListener(new MarkerClickListener(callback));
     }
 
     public double getZoom() {
-        return _mapboxMap.getCameraPosition().zoom;
+        return mMapboxMap.getCameraPosition().zoom;
     }
 
     public void setZoom(double zoom) {
@@ -538,7 +538,7 @@ public class MapController {
                 .zoom(zoom)
                 .build();
 
-        _mapboxMap.moveCamera(CameraUpdateFactory
+        mMapboxMap.moveCamera(CameraUpdateFactory
                 .newCameraPosition(position));
     }
 
@@ -547,12 +547,12 @@ public class MapController {
                 .zoom(zoom)
                 .build();
 
-        _mapboxMap.animateCamera(CameraUpdateFactory
+        mMapboxMap.animateCamera(CameraUpdateFactory
                 .newCameraPosition(position));
     }
 
     public void setCenter(LatLng coords) throws JSONException {
-        _mapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
+        mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
                         .target(coords)
                         .build()
@@ -560,15 +560,15 @@ public class MapController {
     }
 
     public LatLngBounds getBounds() {
-        return _mapboxMap.getProjection().getVisibleRegion().latLngBounds;
+        return mMapboxMap.getProjection().getVisibleRegion().latLngBounds;
     }
 
     public PointF convertCoordinates(LatLng coords) {
-        return _mapboxMap.getProjection().toScreenLocation(coords);
+        return mMapboxMap.getProjection().toScreenLocation(coords);
     }
 
     public LatLng convertPoint(PointF point) {
-        return _mapboxMap.getProjection().fromScreenLocation(point);
+        return mMapboxMap.getProjection().fromScreenLocation(point);
     }
 
     public void addOnMapChangedListener(String listenerType, Runnable callback) throws JSONException {
@@ -581,7 +581,7 @@ public class MapController {
             e.printStackTrace();
             throw new JSONException(e.getMessage());
         }
-        _mapView.addOnMapChangedListener(handler);
+        mMapView.addOnMapChangedListener(handler);
     }
 
     private int _applyRetinaFactor(long d) {
@@ -647,7 +647,7 @@ public class MapController {
     }
 
     public JSONObject getJSONCameraPosition() throws JSONException {
-        CameraPosition position = _mapboxMap.getCameraPosition();
+        CameraPosition position = mMapboxMap.getCameraPosition();
         try {
             return new JSONObject(
                     "{" +
