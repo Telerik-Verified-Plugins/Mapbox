@@ -203,6 +203,21 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "getCenter", [id]);
   },
 
+  getNextPositions: function (delta, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "nextMarkersPositionsPredicate", [id, delta]);
+  },
+
+  getMarkersPositions: function (successCallback, errorCallback, id) {
+      id = id || 0;
+      cordova.exec(successCallback, errorCallback, "Mapbox", "getMarkersPositions", [id]);
+    },
+
+  scrollMap: function (delta, successCallback, errorCallback, id) {
+    id = id || 0;
+    cordova.exec(successCallback, errorCallback, "Mapbox", "scrollMap", [id, delta]);
+  },
+
   setPitch: function (pitch, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "setPitch", [id, pitch]);

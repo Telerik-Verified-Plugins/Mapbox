@@ -70,6 +70,7 @@ public class MapController {
     private final static String TAG = "MainActivity";
 
     private MapView mMapView;
+    private boolean mIsReady = false;
     private MapboxMapOptions _initOptions;
     private MapboxMap mMapboxMap;
     private UiSettings _uiSettings;
@@ -81,14 +82,19 @@ public class MapController {
     private int _downloadingProgress;
     private String _selectedMarkerId;
     private ArrayList<String> _offlineRegionsNames = new ArrayList<String>();
-    private HashMap<String, String> _anchors = new HashMap<String, String>();
-    private HashMap<String, Marker> _markers = new HashMap<String, Marker>();
+    private HashMap<String, String> mAnchors = new HashMap<String, String>();
+    private HashMap<String, Marker> mMarkers = new HashMap<String, Marker>();
 
     public final static String JSON_CHARSET = "UTF-8";
     public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
+    private PointF mLastPos;
 
     public MapView getMapView() {
         return mMapView;
+    }
+
+    public boolean isReady(){
+        return mIsReady;
     }
 
     public int getDownloadingProgress() {
@@ -107,7 +113,7 @@ public class MapController {
         return _selectedMarkerId;
     }
 
-    public MapController(final JSONObject options, Activity activity, Context context, @Nullable final ScrollView scrollView) {
+    public MapController(final JSONObject options, Activity activity, Context context, CDVMapbox plugRef) {
 
         try {
             _initOptions = _createMapboxMapOptions(options);
@@ -118,6 +124,7 @@ public class MapController {
         _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
         _offlineManager = OfflineManager.getInstance(context);
         _activity = activity;
+        final ScrollView scrollView = plugRef.pluginLayout.getScrollView();
 
         mMapView = new MapView(_activity, _initOptions);
         mMapView.setLayoutParams(
@@ -131,7 +138,7 @@ public class MapController {
         mMapView.onCreate(null);
 
         // Prevent scroll to intercept the touch when pane the map
-        if (scrollView != null) {
+        if (scrollView != null && plugRef.pluginLayout.isClickable()) {
             mMapView.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
@@ -153,6 +160,8 @@ public class MapController {
 
             public void onMapReady(MapboxMap map) {
                 mMapboxMap = map;
+
+                mIsReady = true;
 
                 try {
                     // drawing initial markers
@@ -191,6 +200,17 @@ public class MapController {
         double lat = cameraPosition.target.getLatitude();
         double lng = cameraPosition.target.getLongitude();
         return new LatLng(lat, lng);
+    }
+
+    public void scrollMap(float x, float y){
+        //CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
+        mMapboxMap.moveCamera(CameraUpdateFactory.scrollBy(x, y));
+    }
+
+    public void panMap(PointF delta){
+        PointF centerPos = convertCoordinates(getCenter());
+        LatLng newCenterLatLng = convertPoint(new PointF(centerPos.x - delta.x, centerPos.y - centerPos.y));
+        setCenter(newCenterLatLng.getLatitude(), newCenterLatLng.getLongitude());
     }
 
     public void setCenter(double... coords) {
@@ -414,7 +434,7 @@ public class MapController {
     }
 
     public void addMarker(String id, JSONObject marker) throws JSONException {
-        Marker nativeMarker = _markers.get(id);
+        Marker nativeMarker = mMarkers.get(id);
 
         if (nativeMarker != null) {
             removeMarker(id);
@@ -432,7 +452,7 @@ public class MapController {
         nativeMarker = mMapboxMap.addMarker(markerOptions);
 
         // Store in the map markers collection
-        _markers.put(id, nativeMarker);
+        mMarkers.put(id, nativeMarker);
 
         // Hydrate the marker
         hydrateMarker(id, marker);
@@ -453,7 +473,7 @@ public class MapController {
          * To ensire ID consistency we base the ID from
          * the javascript part.
          */
-        Marker nativeMarker = _markers.get(id);
+        Marker nativeMarker = mMarkers.get(id);
         if (nativeMarker != null) {
             removeMarker(id);
         }
@@ -468,7 +488,7 @@ public class MapController {
         boolean domAnchor = false;
         Marker marker;
 
-        marker = _markers.get(id);
+        marker = mMarkers.get(id);
 
         if (geometry != null) {
             marker.setPosition(new LatLng(
@@ -489,7 +509,7 @@ public class MapController {
         domAnchor = properties.has("domAnchor");
         if (domAnchor) {
             // Store the marker as a dom element anchor
-            _anchors.put(id, properties.getString("domAnchor"));
+            mAnchors.put(id, properties.getString("domAnchor"));
             // Make an invisible marker
             IconFactory iconFactory = IconFactory.getInstance(_activity);
             Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
@@ -499,7 +519,7 @@ public class MapController {
             marker.setSnippet(null);
         } else {
             //if it was a dom anchor, delete it
-            if (_anchors.get(id) != null) _anchors.remove(id);
+            if (mAnchors.get(id) != null) mAnchors.remove(id);
             if (properties.has("image")) {
                 try {
                     marker.setIcon(createIcon(properties));
@@ -518,10 +538,10 @@ public class MapController {
     }
 
     public void removeMarker(String id) {
-        if (_markers.get(id) == null) return;
-        mMapboxMap.removeMarker(_markers.get(id));
-        if (_markers.get(id) != null) _markers.remove(id);
-        if (_anchors.get(id) != null) _anchors.remove(id);
+        if (mMarkers.get(id) == null) return;
+        mMapboxMap.removeMarker(mMarkers.get(id));
+        if (mMarkers.get(id) != null) mMarkers.remove(id);
+        if (mAnchors.get(id) != null) mAnchors.remove(id);
     }
 
     public void addMarkerCallBack(Runnable callback) {
@@ -646,22 +666,81 @@ public class MapController {
         return builder.build();
     }
 
-    public JSONObject getJSONCameraPosition() throws JSONException {
-        CameraPosition position = mMapboxMap.getCameraPosition();
+    public JSONArray getJSONMarkersNextScreenPositions(PointF delta){
+        JSONObject json = new JSONObject();
+        JSONArray nextMarkerPositions = new JSONArray();
+
         try {
-            return new JSONObject(
-                    "{" +
-                            "\"lat\":" + position.target.getLatitude() + ',' +
-                            "\"lng\":" + position.target.getLatitude() + ',' +
-                            "\"alt\":" + position.target.getAltitude() + ',' +
-                            "\"tilt\":" + position.tilt + ',' +
-                            "\"bearing\":" + position.bearing +
-                            "}");
+
+            for(Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
+                String id = entry.getKey();
+                Marker marker = entry.getValue();
+                PointF screenPosition = convertCoordinates(marker.getPosition());
+                LatLng nextMarkerPos = convertPoint(new PointF(screenPosition.x - delta.x, screenPosition.y - delta.y));
+                PointF nextMarkerScreenPos = convertCoordinates(nextMarkerPos);
+                JSONObject position = new JSONObject();
+                position.put("id", id);
+                position.put("x", nextMarkerScreenPos.x);
+                position.put("y", nextMarkerScreenPos.y);
+                nextMarkerPositions.put(position);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return nextMarkerPositions;
+    }
+
+    public JSONArray getJSONMarkersScreenPositions() {
+        JSONArray positions = new JSONArray();
+        try {
+            for(Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
+                String id = entry.getKey();
+                Marker marker = entry.getValue();
+                PointF screenPosition = mMapboxMap.getProjection().toScreenLocation(marker.getPosition());
+                JSONObject position = new JSONObject();
+                position.put("id", id);
+                position.put("x", screenPosition.x);
+                position.put("y", screenPosition.y);
+                positions.put(position);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return positions;
+    }
+
+    public JSONObject getJSONCameraScreenPosition() throws JSONException {
+        CameraPosition position = mMapboxMap.getCameraPosition();
+        PointF screenPosition = mMapboxMap.getProjection().toScreenLocation(position.target);
+        try {
+            return new JSONObject()
+                    .put("x", screenPosition.x)
+                    .put("y", screenPosition.y)
+                    .put("alt", position.target.getAltitude())
+                    .put("tilt", position.tilt)
+                    .put("bearing", position.bearing);
         } catch (JSONException e) {
             e.printStackTrace();
             throw new JSONException(e.getMessage());
         }
     }
+
+    public JSONObject getJSONCameraGeoPosition() throws JSONException {
+        CameraPosition position = mMapboxMap.getCameraPosition();
+        try {
+            return new JSONObject()
+                    .put("lat", position.target.getAltitude())
+                    .put("long", position.target.getAltitude())
+                    .put("alt", position.target.getAltitude())
+                    .put("tilt", position.tilt)
+                    .put("bearing", position.bearing);
+        }catch (JSONException e) {
+            e.printStackTrace();
+            throw new JSONException(e.getMessage());
+        }
+    }
+
 
     private BitmapDrawable createSVG(SVG svg, int width, int height) throws SVGParseException {
         if (width == 0)
@@ -789,7 +868,7 @@ public class MapController {
 
         @Override
         public boolean onMarkerClick(@NonNull Marker marker) {
-            Set<Map.Entry<String, Marker>> elements = _markers.entrySet();
+            Set<Map.Entry<String, Marker>> elements = mMarkers.entrySet();
             Iterator<Map.Entry<String, Marker>> iterator = elements.iterator();
             Map.Entry<String, Marker> entry;
             while (iterator.hasNext()) {
