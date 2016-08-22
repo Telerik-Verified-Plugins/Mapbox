@@ -193,6 +193,11 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "flyTo", [id, options]);
   },
 
+  addToggleTrackingCallback: function(callback, errorCallback, id){
+    id = id || 0;
+    cordova.exec(callback, errorCallback, "Mapbox", "toggleTracking", [id])
+  },
+
   setCenter: function (center, successCallback, errorCallback, id) {
     id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "setCenter", [id, center]);
