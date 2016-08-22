@@ -219,7 +219,7 @@ module.exports = {
     },
 
   scrollMap: function (delta, successCallback, errorCallback, id) {
-    id = id || 0;
+    id = id || 0;
     cordova.exec(successCallback, errorCallback, "Mapbox", "scrollMap", [id, delta]);
   },
 
