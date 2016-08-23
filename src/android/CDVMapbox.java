@@ -146,17 +146,16 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             final Map map = MapsManager.getMap(id);
 
             if (ACTION_SHOW.equals(action)) {
-
-                final Map aMap = map == null ? MapsManager.createMap(args, id, callbackContext) : map;
-                if (aMap == map) {
+                if (map != null) {
                     callbackContext.error("Map is already displayed");
                     return false;
                 } else {
-                    //todo handle null exception
-                    map.getMapCtrl().onMapReady = new Runnable() {
+                    _activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Runnable onMapReady = new Runnable() {
+                            final Map aMap = MapsManager.createMap(args, id, callbackContext);
+
+                            aMap.getMapCtrl().onMapReady = new Runnable() {
                                 @Override
                                 public void run() {
                                     //If it is the first map, we set the general layout.
@@ -180,9 +179,10 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
                                     callbackContext.success();
                                 }
+
                             };
                         }
-                    };
+                    });
                     return true;
                 }
             }
