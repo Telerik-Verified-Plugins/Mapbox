@@ -86,6 +86,8 @@ public class MapController {
 
     public final static String JSON_CHARSET = "UTF-8";
     public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
+    public boolean isReady = false;
+    public Runnable onMapReady;
 
     public MapView getMapView() {
         return mMapView;
@@ -153,6 +155,8 @@ public class MapController {
 
             public void onMapReady(MapboxMap map) {
                 mMapboxMap = map;
+                onMapReady.run();
+                isReady = true;
 
                 try {
                     // drawing initial markers

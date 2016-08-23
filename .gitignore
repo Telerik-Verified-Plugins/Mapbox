@@ -1,1 +1,5 @@
 .idea
+demo/platforms
+demo/hooks
+demo/plugins
+demo/info.txt
