@@ -606,7 +606,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } } else if (ACTION_GET_MARKERS_POSITIONS.equals(action)){
+            } else if (ACTION_GET_MARKERS_POSITIONS.equals(action)){
                 _activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
