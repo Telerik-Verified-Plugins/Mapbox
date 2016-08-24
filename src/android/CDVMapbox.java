@@ -52,11 +52,14 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     private static final String ACTION_GET_CAMERA_POSITION = "getCameraPosition";
     private static final String ACTION_GET_CENTER = "getCenter";
     private static final String ACTION_SET_CENTER = "setCenter";
+    private static final String ACTION_SCROLL_MAP = "scrollMap";
     private static final String ACTION_GET_PITCH = "getPitch";
     private static final String ACTION_SET_PITCH = "setPitch";
     private static final String ACTION_FLY_TO = "flyTo";
     private static final String ACTION_CONVERT_COORDINATES = "convertCoordinates";
     private static final String ACTION_CONVERT_POINT = "convertPoint";
+    private static final String ACTION_NEXT_MARKERS_POSITIONS_PREDICATE = "nextMarkersPositionsPredicate";
+    private static final String ACTION_GET_MARKERS_POSITIONS = "getMarkersPositions";
     private static final String ACTION_ADD_ON_MAP_CHANGE_LISTENER = "addOnMapChangeListener";
     private static final String ACTION_SET_CONTAINER = "setContainer";
     private CordovaWebView _webView;
@@ -154,7 +157,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         @Override
                         public void run() {
                             final Map aMap = MapsManager.createMap(args, id, callbackContext);
-//If it is the first map, we set the general layout.
+                            //If it is the first map, we set the general layout.
                             /**
                              * Arrange the layers. The final order is:
                              * - root (Application View)
@@ -289,6 +292,24 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             }
                             JSONArray center = args.getJSONArray(1);
                             mapCtrl.setCenter(center.getDouble(0), center.getDouble(0));
+                            callbackContext.success();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            callbackContext.error(e.getMessage());
+                        }
+                    }
+                });
+
+            } else if (ACTION_SCROLL_MAP.equals(action)) {
+                _activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (args.isNull(1)) {
+                                throw new JSONException(action + "need a [x, y] screen coordinates");
+                            }
+                            JSONArray delta = args.getJSONArray(1);
+                            mapCtrl.scrollMap(delta.getLong(0), delta.getLong(1));
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -585,6 +606,29 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
+            } } else if (ACTION_GET_MARKERS_POSITIONS.equals(action)){
+                _activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        PluginResult result = new PluginResult(PluginResult.Status.OK, mapCtrl.getJSONMarkersScreenPositions());
+                        callbackContext.sendPluginResult(result);
+
+                    }
+                });
+            } else if (ACTION_NEXT_MARKERS_POSITIONS_PREDICATE.equals(action)){
+                _activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            JSONArray delta = args.getJSONArray(1);
+                            PluginResult result = new PluginResult(PluginResult.Status.OK, mapCtrl.getJSONMarkersNextScreenPositions(new PointF(delta.getLong(0), delta.getLong(1))));
+                            callbackContext.sendPluginResult(result);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
             } else if (ACTION_ADD_ON_MAP_CHANGE_LISTENER.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     @Override
@@ -599,7 +643,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                                     @Override
                                     public void run() {
                                         try {
-                                            PluginResult result = new PluginResult(PluginResult.Status.OK, mapCtrl.getJSONCameraPosition());
+                                            PluginResult result = new PluginResult(PluginResult.Status.OK, mapCtrl.getJSONCameraScreenPosition());
                                             result.setKeepCallback(true);
                                             callbackContext.sendPluginResult(result);
                                         } catch (JSONException e) {
@@ -760,7 +804,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     @Override
                     public void run() {
                         try {
-                            callbackContext.success(mapCtrl.getJSONCameraPosition());
+                            callbackContext.success(mapCtrl.getJSONCameraGeoPosition());
                         } catch (JSONException e) {
                             callbackContext.error(e.getMessage());
                             e.printStackTrace();

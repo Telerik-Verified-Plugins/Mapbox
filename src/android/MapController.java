@@ -70,19 +70,19 @@ public class MapController {
     private final static String TAG = "MainActivity";
 
     private MapView mMapView;
-    private MapboxMapOptions _initOptions;
+    private MapboxMapOptions mInitOptions;
     private MapboxMap mMapboxMap;
-    private UiSettings _uiSettings;
-    private CameraPosition _cameraPosition;
-    private Activity _activity;
-    private OfflineManager _offlineManager;
-    private OfflineRegion _offlineRegion;
-    private boolean _downloading;
-    private int _downloadingProgress;
-    private String _selectedMarkerId;
-    private ArrayList<String> _offlineRegionsNames = new ArrayList<String>();
-    private HashMap<String, String> _anchors = new HashMap<String, String>();
-    private HashMap<String, Marker> _markers = new HashMap<String, Marker>();
+    private UiSettings mUiSettings;
+    private CameraPosition mCameraPosition;
+    private Activity mActivity;
+    private OfflineManager mOfflineManager;
+    private OfflineRegion mOfflineRegion;
+    private boolean mDownloading;
+    private int mDownloadingProgress;
+    private String mSelectedMarkerId;
+    private ArrayList<String> mOfflineRegionsNames = new ArrayList<String>();
+    private HashMap<String, String> mAnchors = new HashMap<String, String>();
+    private HashMap<String, Marker> mMarkers = new HashMap<String, Marker>();
 
     public final static String JSON_CHARSET = "UTF-8";
     public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
@@ -94,34 +94,34 @@ public class MapController {
     }
 
     public int getDownloadingProgress() {
-        return _downloadingProgress;
+        return mDownloadingProgress;
     }
 
     public boolean isDownloading() {
-        return _downloading;
+        return mDownloading;
     }
 
     public ArrayList<String> getOfflineRegionsNames() {
-        return _offlineRegionsNames;
+        return mOfflineRegionsNames;
     }
 
     public String getSelectedMarkerId() {
-        return _selectedMarkerId;
+        return mSelectedMarkerId;
     }
 
     public MapController(final JSONObject options, Activity activity, Context context, @Nullable final ScrollView scrollView) {
 
         try {
-            _initOptions = _createMapboxMapOptions(options);
+            mInitOptions = _createMapboxMapOptions(options);
         } catch (JSONException e) {
             e.printStackTrace();
             return;
         }
         _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
-        _offlineManager = OfflineManager.getInstance(context);
-        _activity = activity;
+        mOfflineManager = OfflineManager.getInstance(context);
+        mActivity = activity;
 
-        mMapView = new MapView(_activity, _initOptions);
+        mMapView = new MapView(mActivity, mInitOptions);
         mMapView.setLayoutParams(
                 new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
@@ -210,6 +210,17 @@ public class MapController {
         ));
     }
 
+    public void scrollMap(float x, float y){
+        //CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
+        mMapboxMap.moveCamera(CameraUpdateFactory.scrollBy(x, y));
+    }
+
+    public void panMap(PointF delta){
+        PointF centerPos = convertCoordinates(getCenter());
+        LatLng newCenterLatLng = convertPoint(new PointF(centerPos.x - delta.x, centerPos.y - centerPos.y));
+        setCenter(newCenterLatLng.getLatitude(), newCenterLatLng.getLongitude());
+    }
+
     public double getTilt() {
         return mMapboxMap.getCameraPosition().tilt;
     }
@@ -246,7 +257,7 @@ public class MapController {
     public void downloadRegion(final String regionName, final Runnable onStart, final Runnable onProgress, final Runnable onFinish) {
 
         // Set the style, bounds zone and the min/max zoom whidh will be available once offline.
-        String styleURL = _initOptions.getStyle();
+        String styleURL = mInitOptions.getStyle();
         LatLngBounds bounds = mMapboxMap.getProjection().getVisibleRegion().latLngBounds;
         double minZoom = mMapboxMap.getCameraPosition().zoom;
         double maxZoom = mMapboxMap.getMaxZoom();
@@ -268,11 +279,11 @@ public class MapController {
         }
 
         // Create the offline region and launch the download
-        _offlineManager.createOfflineRegion(definition, metadata, new OfflineManager.CreateOfflineRegionCallback() {
+        mOfflineManager.createOfflineRegion(definition, metadata, new OfflineManager.CreateOfflineRegionCallback() {
             @Override
             public void onCreate(OfflineRegion offlineRegion) {
                 Log.d(TAG, "Offline region created: " + regionName);
-                _offlineRegion = offlineRegion;
+                mOfflineRegion = offlineRegion;
                 launchDownload(onStart, onProgress, onFinish);
             }
 
@@ -287,10 +298,10 @@ public class MapController {
         // Set up an observer to handle download progress and
         // notify the user when the region is finished downloading
         // Start the progression
-        _downloading = true;
+        mDownloading = true;
         onStart.run();
 
-        _offlineRegion.setObserver(new OfflineRegion.OfflineRegionObserver() {
+        mOfflineRegion.setObserver(new OfflineRegion.OfflineRegionObserver() {
             @Override
             public void onStatusChanged(OfflineRegionStatus status) {
                 // Compute a percentage
@@ -300,13 +311,13 @@ public class MapController {
 
                 if (status.isComplete()) {
                     // Download complete
-                    _downloading = false;
+                    mDownloading = false;
                     onFinish.run();
                     return;
                 } else if (status.isRequiredResourceCountPrecise()) {
                     // Switch to determinate state
                     onProgress.run();
-                    _downloadingProgress = ((int) Math.round(percentage));
+                    mDownloadingProgress = ((int) Math.round(percentage));
                 }
 
                 // Log what is being currently downloaded
@@ -329,15 +340,15 @@ public class MapController {
         });
 
         // Change the region state
-        _offlineRegion.setDownloadState(OfflineRegion.STATE_ACTIVE);
+        mOfflineRegion.setDownloadState(OfflineRegion.STATE_ACTIVE);
     }
 
     public void pauseDownload() {
-        _offlineRegion.setDownloadState(OfflineRegion.STATE_INACTIVE);
+        mOfflineRegion.setDownloadState(OfflineRegion.STATE_INACTIVE);
     }
 
     public void getOfflineRegions(final Runnable callback) {
-        _offlineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
+        mOfflineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
             @Override
             public void onList(final OfflineRegion[] offlineRegions) {
 
@@ -348,9 +359,9 @@ public class MapController {
                 }
 
                 // Clean the last ref array and add all of the region names to the list.
-                _offlineRegionsNames.clear();
+                mOfflineRegionsNames.clear();
                 for (OfflineRegion offlineRegion : offlineRegions) {
-                    _offlineRegionsNames.add(getRegionName(offlineRegion));
+                    mOfflineRegionsNames.add(getRegionName(offlineRegion));
                 }
                 callback.run();
             }
@@ -363,7 +374,7 @@ public class MapController {
     }
 
     public void removeOfflineRegion(final int regionSelected, final Runnable onDeleteCallback) {
-        _offlineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
+        mOfflineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
             @Override
             public void onList(final OfflineRegion[] offlineRegions) {
 
@@ -418,7 +429,7 @@ public class MapController {
     }
 
     public void addMarker(String id, JSONObject marker) throws JSONException {
-        Marker nativeMarker = _markers.get(id);
+        Marker nativeMarker = mMarkers.get(id);
 
         if (nativeMarker != null) {
             removeMarker(id);
@@ -436,7 +447,7 @@ public class MapController {
         nativeMarker = mMapboxMap.addMarker(markerOptions);
 
         // Store in the map markers collection
-        _markers.put(id, nativeMarker);
+        mMarkers.put(id, nativeMarker);
 
         // Hydrate the marker
         hydrateMarker(id, marker);
@@ -457,7 +468,7 @@ public class MapController {
          * To ensire ID consistency we base the ID from
          * the javascript part.
          */
-        Marker nativeMarker = _markers.get(id);
+        Marker nativeMarker = mMarkers.get(id);
         if (nativeMarker != null) {
             removeMarker(id);
         }
@@ -472,7 +483,7 @@ public class MapController {
         boolean domAnchor = false;
         Marker marker;
 
-        marker = _markers.get(id);
+        marker = mMarkers.get(id);
 
         if (geometry != null) {
             marker.setPosition(new LatLng(
@@ -493,9 +504,9 @@ public class MapController {
         domAnchor = properties.has("domAnchor");
         if (domAnchor) {
             // Store the marker as a dom element anchor
-            _anchors.put(id, properties.getString("domAnchor"));
+            mAnchors.put(id, properties.getString("domAnchor"));
             // Make an invisible marker
-            IconFactory iconFactory = IconFactory.getInstance(_activity);
+            IconFactory iconFactory = IconFactory.getInstance(mActivity);
             Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
             iconDrawable.setAlpha(0);
             marker.setIcon(iconFactory.fromDrawable(iconDrawable));
@@ -503,7 +514,7 @@ public class MapController {
             marker.setSnippet(null);
         } else {
             //if it was a dom anchor, delete it
-            if (_anchors.get(id) != null) _anchors.remove(id);
+            if (mAnchors.get(id) != null) mAnchors.remove(id);
             if (properties.has("image")) {
                 try {
                     marker.setIcon(createIcon(properties));
@@ -511,7 +522,7 @@ public class MapController {
                     e.printStackTrace();
                 }
             } else {
-                IconFactory iconFactory = IconFactory.getInstance(_activity);
+                IconFactory iconFactory = IconFactory.getInstance(mActivity);
                 marker.setIcon(iconFactory.defaultMarker());
             }
         }
@@ -522,10 +533,10 @@ public class MapController {
     }
 
     public void removeMarker(String id) {
-        if (_markers.get(id) == null) return;
-        mMapboxMap.removeMarker(_markers.get(id));
-        if (_markers.get(id) != null) _markers.remove(id);
-        if (_anchors.get(id) != null) _anchors.remove(id);
+        if (mMarkers.get(id) == null) return;
+        mMapboxMap.removeMarker(mMarkers.get(id));
+        if (mMarkers.get(id) != null) mMarkers.remove(id);
+        if (mAnchors.get(id) != null) mAnchors.remove(id);
     }
 
     public void addMarkerCallBack(Runnable callback) {
@@ -642,18 +653,76 @@ public class MapController {
         return builder.build();
     }
 
-    public JSONObject getJSONCameraPosition() throws JSONException {
+    public JSONArray getJSONMarkersNextScreenPositions(PointF delta){
+        JSONObject json = new JSONObject();
+        JSONArray nextMarkerPositions = new JSONArray();
+
+        try {
+
+            for(Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
+                String id = entry.getKey();
+                Marker marker = entry.getValue();
+                PointF screenPosition = convertCoordinates(marker.getPosition());
+                LatLng nextMarkerPos = convertPoint(new PointF(screenPosition.x - delta.x, screenPosition.y - delta.y));
+                PointF nextMarkerScreenPos = convertCoordinates(nextMarkerPos);
+                JSONObject position = new JSONObject();
+                position.put("id", id);
+                position.put("x", nextMarkerScreenPos.x);
+                position.put("y", nextMarkerScreenPos.y);
+                nextMarkerPositions.put(position);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return nextMarkerPositions;
+    }
+
+    public JSONArray getJSONMarkersScreenPositions() {
+        JSONArray positions = new JSONArray();
+        try {
+            for(Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
+                String id = entry.getKey();
+                Marker marker = entry.getValue();
+                PointF screenPosition = mMapboxMap.getProjection().toScreenLocation(marker.getPosition());
+                JSONObject position = new JSONObject();
+                position.put("id", id);
+                position.put("x", screenPosition.x);
+                position.put("y", screenPosition.y);
+                positions.put(position);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return positions;
+    }
+
+    public JSONObject getJSONCameraScreenPosition() throws JSONException {
+        CameraPosition position = mMapboxMap.getCameraPosition();
+        PointF screenPosition = mMapboxMap.getProjection().toScreenLocation(position.target);
+        try {
+            return new JSONObject()
+                    .put("x", screenPosition.x)
+                    .put("y", screenPosition.y)
+                    .put("alt", position.target.getAltitude())
+                    .put("tilt", position.tilt)
+                    .put("bearing", position.bearing);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            throw new JSONException(e.getMessage());
+        }
+    }
+
+    public JSONObject getJSONCameraGeoPosition() throws JSONException {
         CameraPosition position = mMapboxMap.getCameraPosition();
         try {
-            return new JSONObject(
-                    "{" +
-                            "\"lat\":" + position.target.getLatitude() + ',' +
-                            "\"lng\":" + position.target.getLatitude() + ',' +
-                            "\"alt\":" + position.target.getAltitude() + ',' +
-                            "\"tilt\":" + position.tilt + ',' +
-                            "\"bearing\":" + position.bearing +
-                            "}");
-        } catch (JSONException e) {
+            return new JSONObject()
+                    .put("lat", position.target.getAltitude())
+                    .put("long", position.target.getAltitude())
+                    .put("alt", position.target.getAltitude())
+                    .put("tilt", position.tilt)
+                    .put("bearing", position.bearing);
+        }catch (JSONException e) {
             e.printStackTrace();
             throw new JSONException(e.getMessage());
         }
@@ -667,7 +736,7 @@ public class MapController {
         Bitmap newBM = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas bmcanvas = new Canvas(newBM);
         svg.renderToCanvas(bmcanvas);
-        return new BitmapDrawable(_activity.getApplicationContext().getResources(), newBM);
+        return new BitmapDrawable(mActivity.getApplicationContext().getResources(), newBM);
     }
 
     /**
@@ -684,9 +753,9 @@ public class MapController {
         InputStream istream = null;
         BitmapDrawable bitmap;
         Icon icon;
-        Context ctx = _activity.getApplicationContext();
+        Context ctx = mActivity.getApplicationContext();
         AssetManager am = ctx.getResources().getAssets();
-        IconFactory iconFactory = IconFactory.getInstance(_activity);
+        IconFactory iconFactory = IconFactory.getInstance(mActivity);
         final JSONObject imageSettings = properties.optJSONObject("image");
         try {
             if (imageSettings != null) {
@@ -785,12 +854,12 @@ public class MapController {
 
         @Override
         public boolean onMarkerClick(@NonNull Marker marker) {
-            Set<Map.Entry<String, Marker>> elements = _markers.entrySet();
+            Set<Map.Entry<String, Marker>> elements = mMarkers.entrySet();
             Iterator<Map.Entry<String, Marker>> iterator = elements.iterator();
             Map.Entry<String, Marker> entry;
             while (iterator.hasNext()) {
                 entry = iterator.next();
-                if (entry.getValue() == marker) _selectedMarkerId = entry.getKey();
+                if (entry.getValue() == marker) mSelectedMarkerId = entry.getKey();
             }
 
             _callback.run();
