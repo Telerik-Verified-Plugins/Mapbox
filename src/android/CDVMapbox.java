@@ -384,9 +384,15 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             @Override
                             public void run() {
                                 if (map.markerCallbackContext != null) {
-                                    PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "{\"markerId\": \"" + mapCtrl.getSelectedMarkerId() + "\"}");
-                                    pluginResult.setKeepCallback(true);
-                                    map.markerCallbackContext.sendPluginResult(pluginResult);
+                                    try {
+                                        JSONObject json = new JSONObject().put("markerId", mapCtrl.getSelectedMarkerId());
+                                        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
+                                        pluginResult.setKeepCallback(true);
+                                        map.markerCallbackContext.sendPluginResult(pluginResult);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                        callbackContext.error(e.getMessage());
+                                    }
                                 }
                             }
                         });
