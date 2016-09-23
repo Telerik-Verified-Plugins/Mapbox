@@ -559,7 +559,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     @Override
                     public void run() {
                         try {
-                            pluginLayout.setClickable(args.getInt(1) != 0);
+                            pluginLayout.setClickable(args.getBoolean(1));
                         } catch (JSONException e) {
                             e.printStackTrace();
                             callbackContext.error(e.getMessage());
