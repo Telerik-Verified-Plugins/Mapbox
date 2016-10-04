@@ -488,14 +488,20 @@ public class Mapbox extends CordovaPlugin {
   }
 
   public void onPause(boolean multitasking) {
-    mapView.onPause();
+    if (mapView != null) {
+      mapView.onPause();
+    }
   }
 
   public void onResume(boolean multitasking) {
-    mapView.onResume();
+    if (mapView != null) {
+      mapView.onResume();
+    }
   }
 
   public void onDestroy() {
-    mapView.onDestroy();
+    if (mapView != null) {
+      mapView.onDestroy();
+    }
   }
 }
