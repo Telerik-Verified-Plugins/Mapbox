@@ -47,6 +47,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -67,7 +69,7 @@ public class MapController {
     public FrameLayout.LayoutParams mapFrame;
 
     private static float _retinaFactor;
-    private final static String TAG = "MainActivity";
+    private final static String TAG = "MAP_CONTROLLER";
 
     private MapView mMapView;
     private MapboxMapOptions mInitOptions;
@@ -88,6 +90,7 @@ public class MapController {
     public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
     public boolean isReady = false;
     public Runnable mapReady;
+    public String assetsDirectory;
 
     public MapView getMapView() {
         return mMapView;
@@ -761,7 +764,12 @@ public class MapController {
             if (imageSettings != null) {
                 if (imageSettings.has("url")) {
                     String filePath = imageSettings.getString("url");
-                    istream = am.open(filePath);
+                    // We first look in the current asset bundle. It file does not exists we
+                    // get the original version in the initial asset bundle with AssetsManager
+                    File iconFile = new File(mActivity.getFilesDir(), assetsDirectory + "/app/" +filePath);
+                    if (iconFile.exists()) istream = new FileInputStream(iconFile);
+                    else istream = am.open("www/application/app/"+filePath);
+
                     if (filePath.endsWith(".svg")) {
                         bitmap = createSVG(SVG.getFromInputStream(istream), imageSettings.has("width") ? _applyRetinaFactor(imageSettings.getInt("width")) : 0,
                                 imageSettings.has("height") ? _applyRetinaFactor(imageSettings.getInt("height")) : 0);

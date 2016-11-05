@@ -32,6 +32,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     private static final String ACTION_HIDE = "hide";
     private static final String ACTION_RESIZE = "resize";
     private static final String ACTION_SET_CLICKABLE = "setClickable";
+    private static final String SET_ASSETS_DIRECTORY = "setAssetsDirectory";
     private static final String ACTION_SET_DEBUG = "setDebug";
     private static final String ACTION_ADD_MARKERS = "addMarkers";
     private static final String ACTION_ADD_MARKER = "addMarker";
@@ -209,7 +210,20 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_RESIZE.equals(action)) {
+            } else if (SET_ASSETS_DIRECTORY.equals(action)) {
+                _activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            mapCtrl.assetsDirectory = args.getString(1);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        callbackContext.success();
+                    }
+                });
+
+            }  else if (ACTION_RESIZE.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     public void run() {
                         map.setContainer(args, callbackContext);
