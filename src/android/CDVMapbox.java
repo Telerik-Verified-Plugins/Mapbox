@@ -287,12 +287,16 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     @Override
                     public void run() {
                         LatLng latLng = mapCtrl.getCenter();
-                        callbackContext.success('{' +
-                                "\"center\": {" +
-                                "\"lat\": " + latLng.getLatitude() + ',' +
-                                "\"lng\": " + latLng.getLongitude() +
-                                '}'
-                        );
+                        JSONObject json = null;
+                        try {
+                            json = new JSONObject()
+                                    .put("lat", latLng.getLatitude())
+                                    .put("lng", latLng.getLongitude());
+                            callbackContext.success(json);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            callbackContext.error(e.getMessage());
+                        }
                     }
                 });
 
@@ -354,7 +358,8 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     @Override
                     public void run() {
                         try {
-                            callbackContext.success(new JSONObject("{\"pitch\":" + mapCtrl.getTilt() + '}'));
+                            JSONObject json = new JSONObject().put("pitch", mapCtrl.getTilt());
+                            callbackContext.success(json);
                         } catch (JSONException e) {
                             e.printStackTrace();
                             callbackContext.error(e.getMessage());
