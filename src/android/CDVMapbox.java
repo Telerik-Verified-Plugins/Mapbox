@@ -309,7 +309,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                                 throw new JSONException(action + "need a [long, lat] coordinates");
                             }
                             JSONArray center = args.getJSONArray(1);
-                            mapCtrl.setCenter(center.getDouble(0), center.getDouble(0));
+                            mapCtrl.setCenter(center.getDouble(0), center.getDouble(1));
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();

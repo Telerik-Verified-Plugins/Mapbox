@@ -202,8 +202,8 @@ public class MapController {
 
     public void setCenter(double... coords) {
         CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
-        double lat = coords.length > 0 ? coords[0] : cameraPosition.target.getLatitude();
-        double lng = coords.length > 1 ? coords[1] : cameraPosition.target.getLongitude();
+        double lng = coords.length > 0 ? coords[0] : cameraPosition.target.getLongitude();
+        double lat = coords.length > 1 ? coords[1] : cameraPosition.target.getLatitude();
         double alt = coords.length > 2 ? coords[2] : cameraPosition.target.getAltitude(); //todo alt or zoom ????
 
         mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
@@ -221,7 +221,7 @@ public class MapController {
     public void panMap(PointF delta){
         PointF centerPos = convertCoordinates(getCenter());
         LatLng newCenterLatLng = convertPoint(new PointF(centerPos.x - delta.x, centerPos.y - centerPos.y));
-        setCenter(newCenterLatLng.getLatitude(), newCenterLatLng.getLongitude());
+        setCenter(newCenterLatLng.getLongitude(), newCenterLatLng.getLatitude());
     }
 
     public double getTilt() {
