@@ -50,6 +50,7 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_SHOW = "show";
   private static final String ACTION_HIDE = "hide";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
+  private static final String ACTION_REMOVE_ALL_MARKERS = "removeAllMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
@@ -367,6 +368,17 @@ public class Mapbox extends CordovaPlugin {
             }
           }
         });
+
+      } else if (ACTION_REMOVE_ALL_MARKERS.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              mapView.removeAllAnnotations();
+              callbackContext.success();
+            }
+          });
+        }
 
       } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
         this.markerCallbackContext = callbackContext;

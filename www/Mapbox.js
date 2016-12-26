@@ -13,6 +13,10 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addMarkers", [options]);
   },
 
+  removeAllMarkers: function (successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "removeAllMarkers", []);
+  },
+
   addMarkerCallback: function (callback) {
     cordova.exec(callback, null, "Mapbox", "addMarkerCallback", []);
   },
