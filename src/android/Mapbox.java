@@ -52,6 +52,8 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_REMOVE_ALL_MARKERS = "removeAllMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
+  // TODO:
+  // private static final String ACTION_REMOVE_MARKER_CALLBACK = "removeMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
   private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
@@ -61,6 +63,13 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_GET_TILT = "getTilt";
   private static final String ACTION_SET_TILT = "setTilt";
   private static final String ACTION_ANIMATE_CAMERA = "animateCamera";
+  private static final String ACTION_ON_REGION_WILL_CHANGE = "onRegionWillChange";
+  private static final String ACTION_ON_REGION_IS_CHANGING = "onRegionIsChanging";
+  private static final String ACTION_ON_REGION_DID_CHANGE = "onRegionDidChange";
+  // TODO:
+  // private static final String ACTION_OFF_REGION_WILL_CHANGE = "offRegionWillChange";
+  // private static final String ACTION_OFF_REGION_IS_CHANGING = "offRegionIsChanging";
+  // private static final String ACTION_OFF_REGION_DID_CHANGE = "offRegionDidChange";
 
   public static MapView mapView;
   private static float retinaFactor;
@@ -384,6 +393,21 @@ public class Mapbox extends CordovaPlugin {
         this.markerCallbackContext = callbackContext;
         mapView.setOnInfoWindowClickListener(new MarkerClickListener());
 
+      } else if (ACTION_ON_REGION_WILL_CHANGE.equals(action)) {
+        if (mapView != null) {
+          mapView.addOnMapChangedListener(new RegionWillChangeListener(callbackContext));
+        }
+
+      } else if (ACTION_ON_REGION_IS_CHANGING.equals(action)) {
+        if (mapView != null) {
+          mapView.addOnMapChangedListener(new RegionIsChangingListener(callbackContext));
+        }
+
+      } else if (ACTION_ON_REGION_DID_CHANGE.equals(action)) {
+        if (mapView != null) {
+          mapView.addOnMapChangedListener(new RegionDidChangeListener(callbackContext));
+        }
+
       } else {
         return false;
       }
@@ -402,6 +426,57 @@ public class Mapbox extends CordovaPlugin {
       mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
       mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
       mapView.addMarker(mo);
+    }
+  }
+
+  private class RegionWillChangeListener implements MapView.OnMapChangedListener {
+    private CallbackContext callback;
+
+    public RegionWillChangeListener(CallbackContext providedCallback) {
+      this.callback = providedCallback;
+    }
+
+    @Override
+    public void onMapChanged(int change) {
+      if ( change == MapView.REGION_WILL_CHANGE_ANIMATED ) {
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+        pluginResult.setKeepCallback(true);
+        callback.sendPluginResult(pluginResult);
+      }
+    }
+  }
+
+  private class RegionIsChangingListener implements MapView.OnMapChangedListener {
+    private CallbackContext callback;
+
+    public RegionIsChangingListener(CallbackContext providedCallback) {
+      this.callback = providedCallback;
+    }
+
+    @Override
+    public void onMapChanged(int change) {
+      if ( change == MapView.REGION_IS_CHANGING ) {
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+        pluginResult.setKeepCallback(true);
+        callback.sendPluginResult(pluginResult);
+      }
+    }
+  }
+
+  private class RegionDidChangeListener implements MapView.OnMapChangedListener {
+    private CallbackContext callback;
+
+    public RegionDidChangeListener(CallbackContext providedCallback) {
+      this.callback = providedCallback;
+    }
+
+    @Override
+    public void onMapChanged(int change) {
+      if ( change == MapView.REGION_DID_CHANGE_ANIMATED ) {
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+        pluginResult.setKeepCallback(true);
+        callback.sendPluginResult(pluginResult);
+      }
     }
   }
 
