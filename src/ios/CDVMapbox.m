@@ -223,6 +223,16 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) removeAllMarkers:(CDVInvokedUrlCommand*)command {
+  NSArray *annotations = _mapView.annotations;
+  if (annotations) {
+    [_mapView removeAnnotations:annotations];
+  }
+
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void) addMarkerCallback:(CDVInvokedUrlCommand*)command {
   self.markerCallbackId = command.callbackId;
 }
