@@ -80,16 +80,13 @@
   }
 
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  // keep the callback because there are various events the developer may be interested in
-  pluginResult.keepCallback = [NSNumber numberWithBool:YES];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) hide:(CDVInvokedUrlCommand*)command {
   [_mapView removeFromSuperview];
+
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  // keep the callback because there are various events the developer may be interested in
-  pluginResult.keepCallback = [NSNumber numberWithBool:YES];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
