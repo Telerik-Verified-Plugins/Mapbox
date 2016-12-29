@@ -1,5 +1,5 @@
 #import <Cordova/CDVPlugin.h>
-#import "Mapbox.h"
+#import <Mapbox/Headers/Mapbox.h>
 
 @interface CDVMapbox : CDVPlugin<MGLMapViewDelegate>
 
