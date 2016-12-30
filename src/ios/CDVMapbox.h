@@ -15,6 +15,7 @@
 - (void) hide:(CDVInvokedUrlCommand*)command;
 
 - (void) addMarkers:(CDVInvokedUrlCommand*)command;
+- (void) removeAllMarkers:(CDVInvokedUrlCommand*)command;
 - (void) addMarkerCallback:(CDVInvokedUrlCommand*)command;
 
 - (void) animateCamera:(CDVInvokedUrlCommand*)command;

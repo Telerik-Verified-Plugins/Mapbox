@@ -94,16 +94,12 @@
   }
 
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  // keep the callback because there are various events the developer may be interested in
-  pluginResult.keepCallback = [NSNumber numberWithBool:YES];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) hide:(CDVInvokedUrlCommand*)command {
   [_mapView removeFromSuperview];
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-  // keep the callback because there are various events the developer may be interested in
-  pluginResult.keepCallback = [NSNumber numberWithBool:YES];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -235,6 +231,16 @@
   NSArray *markers = [command.arguments objectAtIndex:0];
   if (markers != nil) {
     [self putMarkersOnTheMap:markers];
+  }
+
+  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) removeAllMarkers:(CDVInvokedUrlCommand*)command {
+  NSArray *annotations = _mapView.annotations;
+  if (annotations) {
+    [_mapView removeAnnotations:annotations];
   }
 
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
@@ -513,8 +519,10 @@
     return [MGLStyle satelliteStyleURL];
   } else if ([input isEqualToString:@"hybrid"]) {
     return [MGLStyle hybridStyleURL];
+  } else if ( input != nil ) {
+    NSURL *url = [NSURL URLWithString:input];
+    return url;
   } else {
-    // default (TODO allow an arbitrary url (see Android))
     return [MGLStyle streetsStyleURL];
   }
 }

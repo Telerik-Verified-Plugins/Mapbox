@@ -68,7 +68,10 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_HIDE = "hide";
   private static final String ACTION_ADD_BACKBUTTON_CALLBACK = "addBackButtonCallback";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
+  private static final String ACTION_REMOVE_ALL_MARKERS = "removeAllMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
+  // TODO:
+  // private static final String ACTION_REMOVE_MARKER_CALLBACK = "removeMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
   private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
@@ -78,6 +81,13 @@ public class Mapbox extends CordovaPlugin {
   private static final String ACTION_GET_TILT = "getTilt";
   private static final String ACTION_SET_TILT = "setTilt";
   private static final String ACTION_ANIMATE_CAMERA = "animateCamera";
+  private static final String ACTION_ON_REGION_WILL_CHANGE = "onRegionWillChange";
+  private static final String ACTION_ON_REGION_IS_CHANGING = "onRegionIsChanging";
+  private static final String ACTION_ON_REGION_DID_CHANGE = "onRegionDidChange";
+  // TODO:
+  // private static final String ACTION_OFF_REGION_WILL_CHANGE = "offRegionWillChange";
+  // private static final String ACTION_OFF_REGION_IS_CHANGING = "offRegionIsChanging";
+  // private static final String ACTION_OFF_REGION_DID_CHANGE = "offRegionDidChange";
 
   public static MapView mapView;
   private static float retinaFactor;
@@ -383,24 +393,35 @@ public class Mapbox extends CordovaPlugin {
           }
         });
 
+      } else if (ACTION_REMOVE_ALL_MARKERS.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              mapView.removeAllAnnotations();
+              callbackContext.success();
+            }
+          });
+        }
+
       } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
         this.markerCallbackContext = callbackContext;
         mapView.setOnInfoWindowClickListener(new MarkerClickListener());
 
       } else if(ACTION_ADD_BACKBUTTON_CALLBACK.equals(action)){
-		this.backbuttonCallbackContext = callbackContext;
-		cordova.getActivity().runOnUiThread(new Runnable() {
+		    this.backbuttonCallbackContext = callbackContext;
+		    cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-		if(mapView!=null)
-			if(backbuttonCallbackContext!=null)
-			//@anothar registering backbutton handler
-            mapView.setOnKeyListener(new View.OnKeyListener() {
-              @Override
-              public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if (Integer.parseInt(android.os.Build.VERSION.SDK) > 5
-                        && keyCode == KeyEvent.KEYCODE_BACK
-                        && event.getRepeatCount() == 0) {
+		        if(mapView!=null)
+			        if(backbuttonCallbackContext!=null)
+			          //@anothar registering backbutton handler
+                mapView.setOnKeyListener(new View.OnKeyListener() {
+                @Override
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                  if (Integer.parseInt(android.os.Build.VERSION.SDK) > 5
+                          && keyCode == KeyEvent.KEYCODE_BACK
+                          && event.getRepeatCount() == 0) {
 
                     if(event.getAction()!=KeyEvent.ACTION_DOWN)
                     {
@@ -409,15 +430,29 @@ public class Mapbox extends CordovaPlugin {
 						backbuttonCallbackContext.sendPluginResult(pluginResult);
                     }  
                     return true;
+                  }
+                  return false;
                 }
-                return false;
-              }
-            });
-			else
-				mapView.setOnKeyListener(null);
-		  }
-		});
-	  } else {
+              });
+			    else
+				    mapView.setOnKeyListener(null);
+		  }});
+	  } else if (ACTION_ON_REGION_WILL_CHANGE.equals(action)) {
+        if (mapView != null) {
+          mapView.addOnMapChangedListener(new RegionWillChangeListener(callbackContext));
+        }
+
+      } else if (ACTION_ON_REGION_IS_CHANGING.equals(action)) {
+        if (mapView != null) {
+          mapView.addOnMapChangedListener(new RegionIsChangingListener(callbackContext));
+        }
+
+      } else if (ACTION_ON_REGION_DID_CHANGE.equals(action)) {
+        if (mapView != null) {
+          mapView.addOnMapChangedListener(new RegionDidChangeListener(callbackContext));
+        }
+
+      } else {
         return false;
       }
     } catch (Throwable t) {
@@ -504,6 +539,57 @@ public class Mapbox extends CordovaPlugin {
         mo.icon(createIcon(marker));
       }
       mapView.addMarker(mo);
+    }
+  }
+
+  private class RegionWillChangeListener implements MapView.OnMapChangedListener {
+    private CallbackContext callback;
+
+    public RegionWillChangeListener(CallbackContext providedCallback) {
+      this.callback = providedCallback;
+    }
+
+    @Override
+    public void onMapChanged(int change) {
+      if ( change == MapView.REGION_WILL_CHANGE_ANIMATED ) {
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+        pluginResult.setKeepCallback(true);
+        callback.sendPluginResult(pluginResult);
+      }
+    }
+  }
+
+  private class RegionIsChangingListener implements MapView.OnMapChangedListener {
+    private CallbackContext callback;
+
+    public RegionIsChangingListener(CallbackContext providedCallback) {
+      this.callback = providedCallback;
+    }
+
+    @Override
+    public void onMapChanged(int change) {
+      if ( change == MapView.REGION_IS_CHANGING ) {
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+        pluginResult.setKeepCallback(true);
+        callback.sendPluginResult(pluginResult);
+      }
+    }
+  }
+
+  private class RegionDidChangeListener implements MapView.OnMapChangedListener {
+    private CallbackContext callback;
+
+    public RegionDidChangeListener(CallbackContext providedCallback) {
+      this.callback = providedCallback;
+    }
+
+    @Override
+    public void onMapChanged(int change) {
+      if ( change == MapView.REGION_DID_CHANGE_ANIMATED ) {
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+        pluginResult.setKeepCallback(true);
+        callback.sendPluginResult(pluginResult);
+      }
     }
   }
 
@@ -602,14 +688,20 @@ public class Mapbox extends CordovaPlugin {
   }
 
   public void onPause(boolean multitasking) {
-    mapView.onPause();
+    if (mapView != null) {
+      mapView.onPause();
+    }
   }
 
   public void onResume(boolean multitasking) {
-    mapView.onResume();
+    if (mapView != null) {
+      mapView.onResume();
+    }
   }
 
   public void onDestroy() {
-    mapView.onDestroy();
+    if (mapView != null) {
+      mapView.onDestroy();
+    }
   }
 }
