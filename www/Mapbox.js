@@ -1,12 +1,21 @@
 var exec = require("cordova/exec");
 
 module.exports = {
+  defaultBackButtonAction: function () {
+    cordova.fireDocumentEvent('backbutton', {});
+  },
+
   show: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "show", [options]);
+    this.addBackButtonCallback(this.defaultBackButtonAction);
   },
 
   hide: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "hide", [options]);
+  },
+
+  addBackButtonCallback: function(callback){
+    cordova.exec(callback, null, "Mapbox", "addBackButtonCallback", []);
   },
 
   addMarkers: function (options, successCallback, errorCallback) {
