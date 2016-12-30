@@ -368,8 +368,10 @@
     return [MGLStyle satelliteStyleURL];
   } else if ([input isEqualToString:@"hybrid"]) {
     return [MGLStyle hybridStyleURL];
+  } else if ( input != nil ) {
+    NSURL *url = [NSURL URLWithString:input];
+    return url;
   } else {
-    // default (TODO allow an arbitrary url (see Android))
     return [MGLStyle streetsStyleURL];
   }
 }
