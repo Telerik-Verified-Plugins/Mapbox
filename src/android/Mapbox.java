@@ -190,9 +190,14 @@ public class Mapbox extends CordovaPlugin {
             @Override
             public void run() {
               ViewGroup vg = (ViewGroup) mapView.getParent();
+
               if (vg != null) {
                 vg.removeView(mapView);
               }
+
+              // Remove marker callback handler
+              this.markerCallbackContext = null;
+
               callbackContext.success();
             }
           });
