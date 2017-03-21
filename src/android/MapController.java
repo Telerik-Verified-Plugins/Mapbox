@@ -720,7 +720,7 @@ public class MapController {
         CameraPosition position = mMapboxMap.getCameraPosition();
         try {
             return new JSONObject()
-                    .put("lat", position.target.getLatitude())
+                    .put("zoom", position.zoom)
                     .put("long", position.target.getLongitude())
                     .put("alt", position.target.getAltitude())
                     .put("tilt", position.tilt)
