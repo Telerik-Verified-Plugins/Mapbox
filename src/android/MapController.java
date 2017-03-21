@@ -721,7 +721,7 @@ public class MapController {
         try {
             return new JSONObject()
                     .put("lat", position.target.getLatitude())
-                    .put("long", position.target.Longitude())
+                    .put("long", position.target.getLongitude())
                     .put("alt", position.target.getAltitude())
                     .put("tilt", position.tilt)
                     .put("bearing", position.bearing);
