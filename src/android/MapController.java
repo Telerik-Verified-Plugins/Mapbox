@@ -720,8 +720,8 @@ public class MapController {
         CameraPosition position = mMapboxMap.getCameraPosition();
         try {
             return new JSONObject()
-                    .put("lat", position.target.getAltitude())
-                    .put("long", position.target.getAltitude())
+                    .put("lat", position.target.getLatitude())
+                    .put("long", position.target.Longitude())
                     .put("alt", position.target.getAltitude())
                     .put("tilt", position.tilt)
                     .put("bearing", position.bearing);
