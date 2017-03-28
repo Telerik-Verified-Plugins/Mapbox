@@ -545,6 +545,7 @@ public class MapController {
     public void addMarkerCallBack(Runnable callback) {
         if (mMapboxMap == null) return;
         mMapboxMap.setOnMarkerClickListener(new MarkerClickListener(callback));
+        mMapboxMap.setOnMapClickListener(new MapClickListener(callback));
     }
 
     public double getZoom() {
@@ -872,6 +873,21 @@ public class MapController {
 
             _callback.run();
             return true;
+        }
+    }
+
+    private class MapClickListener implements MapboxMap.OnMapClickListener {
+        private Runnable _callback;
+
+        public MapClickListener(Runnable callback) {
+            _callback = callback;
+        }
+
+        @Override
+        public void onMapClick(@NonNull LatLng point) {
+            mSelectedMarkerId = "";
+
+            _callback.run();
         }
     }
 /*
