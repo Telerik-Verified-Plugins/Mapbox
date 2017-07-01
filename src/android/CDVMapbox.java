@@ -37,7 +37,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     private static final String ACTION_ADD_MARKERS = "addMarkers";
     private static final String ACTION_ADD_MARKER = "addMarker";
     private static final String ACTION_UPDATE_MARKERS = "updateMarkers";
-    private static final String ACTION_UPDATE_MARKER = "updateMarker";
+    private static final String MARKER__SET_LNG_LAT = "Marker.setLngLat";
     private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
     private static final String ACTION_REMOVE_MARKERS = "removeMarkers";
     private static final String ACTION_REMOVE_MARKER = "removeMarker";
@@ -481,7 +481,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             }*/
                     }
                 });
-            } else if (ACTION_UPDATE_MARKER.equals(action)) {
+            } else if (MARKER__SET_LNG_LAT.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -489,22 +489,15 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             if (args.isNull(1))
                                 throw new JSONException(action + " need a source ID");
                             if (args.isNull(2))
-                                throw new JSONException(action + " no source provided");
-                            if (!args.getJSONObject(2).getString("type").equals("geojson"))
-                                throw new JSONException(action + " only handle GeoJSON");
+                                throw new JSONException(action + " no coordinates provided");
 
-                            String dataType = args.getJSONObject(2).getJSONObject("data").getString("type");
-                            if (!dataType.equals("Feature"))
-                                throw new JSONException("Only feature are supported as markers source");
+                            JSONArray coords = args.getJSONArray(2);
 
-                            JSONObject marker = args.getJSONObject(2).getJSONObject("data");
+                            mapCtrl.setMarkerPosition(args.getString(1), new LatLng(
+                                    coords.getDouble(1),
+                                    coords.getDouble(0)
+                            ));
 
-                            String type = marker.getJSONObject("geometry").getString("type");
-
-                            if (!type.equals("Point"))
-                                throw new JSONException("Only type Point are supported for markers");
-
-                            mapCtrl.updateMarker(args.getString(1), marker);
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();

@@ -44,9 +44,9 @@
         </div>
 
         <button class="btn btn-default" onclick="toggleDebug()">Debug</button>
-        <button class="btn btn-default" onclick="addMarker()">Add Markers</button>
-        <button class="btn btn-default" onclick="updateMarker()">Update Markers</button>
-        <button class="btn btn-default" onclick="deleteMarker()">Delete Markers</button>
+        <button class="btn btn-default" onclick="addMarker()">Add Marker</button>
+        <button class="btn btn-default" onclick="setMarkerLngLat()">Move Marker</button>
+        <button class="btn btn-default" onclick="deleteMarker()">Delete Marker</button>
 
         <button class="btn btn-default" onclick="flyTo()">Camera</button>
         <button class="btn btn-default" onclick="zoomIn()">zoom +</button>
@@ -90,14 +90,14 @@
         Mapbox.setDebug(debug)
     }
 
-    function taller(){
+    function taller() {
         $("#mapId").height($("#mapId").height() + 50)
-        Mapbox.setContainer({domElement:document.getElementById("mapId")});
+        Mapbox.setContainer({domElement: document.getElementById("mapId")});
     }
 
-    function smaller(){
+    function smaller() {
         $("#mapId").height($("#mapId").height() - 50)
-        Mapbox.setContainer({domElement:document.getElementById("mapId")});
+        Mapbox.setContainer({domElement: document.getElementById("mapId")});
     }
 
     function deleteOffline() {
@@ -123,30 +123,30 @@
         Mapbox.setContainer({domElement: document.getElementById('mapId')});
 
         Mapbox.downloadCurrentMap(0,
-                function (d) {
-                    if (d.mapDownloadStatus.started) {
-                        console.log("started");
-                        return;
-                    } else if (d.mapDownloadStatus.downloading) {
-                        progressBar
-                                .attr("aria-valuenow", d.mapDownloadStatus.progress)
-                                .width(d.mapDownloadStatus.progress + "%")
-                                .first(".progress-bar").text(d.mapDownloadStatus.progress + "%");
+            function (d) {
+                if (d.mapDownloadStatus.started) {
+                    console.log("started");
+                    return;
+                } else if (d.mapDownloadStatus.downloading) {
+                    progressBar
+                        .attr("aria-valuenow", d.mapDownloadStatus.progress)
+                        .width(d.mapDownloadStatus.progress + "%")
+                        .first(".progress-bar").text(d.mapDownloadStatus.progress + "%");
 
-                    } else if (d.mapDownloadStatus.finished) {
-                        console.log("finished");
-                        dButton.css("display", "inline");
-                        dCancelButton.css("display", "none");
-                        progressBar
-                                .attr("aria-valuenow", d.mapDownloadStatus.progress)
-                                .css("min-width: 2em; width: 2%;")
-                                .first(".progress-bar").text("0%");
-                        progressBar.css("display", "none");
-                    }
-                },
-                function (e) {
-                    console.log(e);
+                } else if (d.mapDownloadStatus.finished) {
+                    console.log("finished");
+                    dButton.css("display", "inline");
+                    dCancelButton.css("display", "none");
+                    progressBar
+                        .attr("aria-valuenow", d.mapDownloadStatus.progress)
+                        .css("min-width: 2em; width: 2%;")
+                        .first(".progress-bar").text("0%");
+                    progressBar.css("display", "none");
                 }
+            },
+            function (e) {
+                console.log(e);
+            }
         );
     }
 
@@ -156,26 +156,26 @@
         var progressBar = $("#dProgress");
 
         Mapbox.pauseDownload(0,
-                function () {
-                    dButton.css("display", "inline");
-                    dCancelButton.css("display", "none");
-                    progressBar
-                            .attr("aria-valuenow", 0)
-                            .css("min-width: 2em; width: 2%;");
-                    progressBar.first(".progress-bar").text("0%");
-                    progressBar.css("display", "none");
+            function () {
+                dButton.css("display", "inline");
+                dCancelButton.css("display", "none");
+                progressBar
+                    .attr("aria-valuenow", 0)
+                    .css("min-width: 2em; width: 2%;");
+                progressBar.first(".progress-bar").text("0%");
+                progressBar.css("display", "none");
 
-                    Mapbox.setContainer({domElement: document.getElementById('mapId')});
+                Mapbox.setContainer({domElement: document.getElementById('mapId')});
 
-                }
+            }
         );
     }
 
     function getOfflineRegionsList() {
         Mapbox.getOfflineRegionsList(0,
-                function (r) {
-                    alert(JSON.stringify(r))
-                });
+            function (r) {
+                alert(JSON.stringify(r))
+            });
     }
 
     function getBounds() {
@@ -214,16 +214,16 @@
     }
 
     function setCenter() {
-        Mapbox.setCenter([5.2344, 50.2222]); //[long, lat]
+        Mapbox.setCenter([2.8912, 52.3702160]); //[long, lat]
     }
 
     function getCenter() {
         Mapbox.getCenter(function (c) {
-                    alert(c)
-                },
-                function (err) {
-                    alert(err)
-                });
+                alert(c)
+            },
+            function (err) {
+                alert(err)
+            });
     }
 
     function setPitch() {
@@ -252,124 +252,124 @@
 
     function showMap(div) {
         Mapbox.show({
-                    domElement: div || null,
-                    style: 'mapbox://styles/vikti/ciqi9isrt002ve1njkb6la458',
-                    cameraPosition: {
-                        // Sets the center of the map to Maracanã
-                        target: {
-                            lat: 52.3702160,
-                            lng: 4.8951680
-                        },
-                        zoom: zoom,
-                        bearing: 270, // Sets the orientation of the camera to look west
-                        tilt: 40, // // Sets the tilt of the camera to 30 degrees
-                        duration: 3000 // in milliseconds
+                domElement: div || null,
+                style: 'mapbox://styles/vikti/ciqi9isrt002ve1njkb6la458',
+                cameraPosition: {
+                    // Sets the center of the map to Maracanã
+                    target: {
+                        lat: 52.3702160,
+                        lng: 4.8951680
                     },
-                    sources: [{
-                        sourceId: "0",
-                        source: {
-                            type: "geojson",
-                            data: {
-                                type: "Feature",
-                                geometry: {
-                                    type: "Point",
-                                    coordinates: [4.8891680, 52.3601160]
-                                },
-                                properties: {
-                                    title: "Leaf",
-                                    snippet: "This is a custom marker image",
-                                    image: {
-                                        height: 40,
-                                        width: 20,
-                                        url: 'www/leaf-orange.png'
-                                    }
-                                }
-                            }
-                        }
-                    },{
-                        sourceId: "1",
-                        source: {
-                            type: "geojson",
-                            data: {
-                                type: "Feature",
-                                geometry: {
-                                    type: "Point",
-                                    coordinates: [4.8890640, 52.3601170]
-                                },
-                                properties: {
-                                    title: "Leaf",
-                                    snippet: "This is a custom marker image",
-                                    image: {
-                                        height: 40,
-                                        width: 20,
-                                        url: 'www/leaf-orange.png'
-                                    }
-                                }
-                            }
-                        }
-                    },{
-                        sourceId: "2",
-                        source: {
-                            type: "geojson",
-                            data: {
-                                type: "Feature",
-                                geometry: {
-                                    type: "Point",
-                                    coordinates: [4.8892640, 52.3601120]
-                                },
-                                properties: {
-                                    title: "Leaf",
-                                    snippet: "This is a custom marker image",
-                                    image: {
-                                        height: 40,
-                                        width: 20,
-                                        url: 'www/leaf-orange.png'
-                                    }
-                                }
-                            }
-                        }
-                    }],
-                    hideAttribution: true, // default false
-                    hideLogo: true, // default false
-                    hideCompass: false, // default false
-                    disableRotation: false, // default false
-                    disableScroll: false, // default false
-                    disableTilt: false, // default false
-                    disableZoom: false, // default false
-                    disablePitch: false, // default false
+                    zoom: zoom,
+                    bearing: 270, // Sets the orientation of the camera to look west
+                    tilt: 40, // // Sets the tilt of the camera to 30 degrees
+                    duration: 3000 // in milliseconds
                 },
-                function (result) {
-                    Mapbox.addMarkerCallback(0, function (r) {
-                        console.log(r + "was touched")
-                    });
-                    // let's add callbacks for region changing
-                    //
-                    // - invoked when the map is about to moved (animated or not).
-                    Mapbox.addOnMapChangeListener("REGION_WILL_CHANGE", function (cameraPosition) {
-                        console.log("Camera will move from: ", cameraPosition);
-                    });
-                    // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
-                    Mapbox.addOnMapChangeListener("REGION_IS_CHANGING", function (cameraPosition) {
-                        console.log("Camera map center is: ", cameraPosition);
-                    });
-                    // - invoked after the map has moved (animated or not).
-                    Mapbox.addOnMapChangeListener("REGION_DID_CHANGE", function (cameraPosition) {
-                        console.log("Camera as finished to move to : ", cameraPosition);
-                    });
-                },
-                function (error) {
-                    alert(error);
-                })
+                sources: [{
+                    sourceId: "0",
+                    source: {
+                        type: "geojson",
+                        data: {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [4.8891680, 52.3601160]
+                            },
+                            properties: {
+                                title: "Leaf",
+                                snippet: "This is a custom marker image",
+                                image: {
+                                    height: 40,
+                                    width: 20,
+                                    url: 'leaf-orange.png'
+                                }
+                            }
+                        }
+                    }
+                }, {
+                    sourceId: "1",
+                    source: {
+                        type: "geojson",
+                        data: {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [4.8890640, 52.3601170]
+                            },
+                            properties: {
+                                title: "Leaf",
+                                snippet: "This is a custom marker image",
+                                image: {
+                                    height: 40,
+                                    width: 20,
+                                    url: 'leaf-orange.png'
+                                }
+                            }
+                        }
+                    }
+                }, {
+                    sourceId: "2",
+                    source: {
+                        type: "geojson",
+                        data: {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [4.8892640, 52.3601120]
+                            },
+                            properties: {
+                                title: "Leaf",
+                                snippet: "This is a custom marker image",
+                                image: {
+                                    height: 40,
+                                    width: 20,
+                                    url: 'leaf-orange.png'
+                                }
+                            }
+                        }
+                    }
+                }],
+                hideAttribution: true, // default false
+                hideLogo: true, // default false
+                hideCompass: false, // default false
+                disableRotation: false, // default false
+                disableScroll: false, // default false
+                disableTilt: false, // default false
+                disableZoom: false, // default false
+                disablePitch: false, // default false
+            },
+            function (result) {
+                Mapbox.addMarkerCallback(0, function (r) {
+                    console.log(r + "was touched")
+                });
+                // let's add callbacks for region changing
+                //
+                // - invoked when the map is about to moved (animated or not).
+                Mapbox.addOnMapChangeListener("REGION_WILL_CHANGE", function (cameraPosition) {
+                    console.log("Camera will move from: ", cameraPosition);
+                });
+                // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
+                Mapbox.addOnMapChangeListener("REGION_IS_CHANGING", function (cameraPosition) {
+                    console.log("Camera map center is: ", cameraPosition);
+                });
+                // - invoked after the map has moved (animated or not).
+                Mapbox.addOnMapChangeListener("REGION_DID_CHANGE", function (cameraPosition) {
+                    console.log("Camera as finished to move to : ", cameraPosition);
+                });
+            },
+            function (error) {
+                alert(error);
+            })
     }
 
     function hideMap() {
         Mapbox.hide(0,
-                function (result) {
-                    console.log(JSON.parse(result));
-                },
-                function (error) {
-                    alert(error);
-                }
+            function (result) {
+                console.log(JSON.parse(result));
+            },
+            function (error) {
+                alert(error);
+            }
         )
     }
 
@@ -392,53 +392,33 @@
 
     function addMarker() {
         Mapbox.addSource("3", {
-                    "type": "geojson",
-                    "data": {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": [4.8891680, 52.3602160]
-                        },
-                        "properties": {
-                            "title": "Leaf",
-                            "snippet": "This is a custom marker image",
-                            "image": {
-                                height: 40,
-                                width: 20,
-                                url: 'www/leaf-orange.png'
-                            }
+                "type": "geojson",
+                "data": {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [4.9011680, 52.3632160]
+                    },
+                    "properties": {
+                        "title": "Leaf",
+                        "snippet": "This is a custom marker image",
+                        "image": {
+                            height: 40,
+                            width: 20,
+                            url: 'leaf-orange.png'
                         }
                     }
-                },
-                function (result) {
-
-                },
-                function (error) {
-
                 }
+            },
+            console.log,
+            console.error
         );
     }
 
-    function updateMarker() {
-        Mapbox.updateSource("3", {
-                    "type": "geojson",
-                    "data": {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": [2.8911680, 52.3702160]
-                        },
-                        "properties": {
-                            "domAnchor": true
-                        }
-                    }
-                },
-                function (result) {
-
-                },
-                function (error) {
-
-                }
+    function setMarkerLngLat() {
+        Mapbox.setMarkerLngLat("3", [2.8912, 52.3702160],
+            console.log,
+            console.error
         );
     }
 
@@ -448,35 +428,29 @@
 
     function coords2Screen(coords) {
         Mapbox.convertCoordinates(coords,
-                function (point) {
-                    try {
-                        alert(JSON.stringify(point))
-                    } catch (e) {
-                        alert(e);
-                        console.log(e);
-                    }
-                },
-                function (error) {
-                    alert(error)
-                })
+            function (point) {
+                try {
+                    alert(JSON.stringify(point))
+                } catch (e) {
+                    alert(e);
+                    console.error(e);
+                }
+            }, alert)
     }
 
     function screen2Coords(point) {
         Mapbox.convertPoint({
-                    'x': point.x,
-                    'y': point.y
-                },
-                function (latlng) {
-                    try {
-                        alert(JSON.stringify(latlng))
-                    } catch (e) {
-                        alert(e);
-                        console.log(e);
-                    }
-                },
-                function (error) {
-                    alert(error)
-                })
+                'x': point.x,
+                'y': point.y
+            },
+            function (latLng) {
+                try {
+                    alert(JSON.stringify(latLng))
+                } catch (e) {
+                    alert(e);
+                    console.error(e);
+                }
+            }, alert)
     }
 
 </script>

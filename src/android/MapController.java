@@ -381,6 +381,8 @@ public class MapController {
             @Override
             public void onList(final OfflineRegion[] offlineRegions) {
 
+                if(offlineRegions.length > regionSelected) return;
+
                 offlineRegions[regionSelected].delete(new OfflineRegion.OfflineRegionDeleteCallback() {
                     @Override
                     public void onDelete() {
@@ -456,28 +458,11 @@ public class MapController {
         hydrateMarker(id, marker);
     }
 
-    public void updateMarkers(JSONArray markers) throws JSONException {
-        HashMap<Long, JSONObject> jsonMarkers = new HashMap(); // This hash will be passed to updateMarkers to hydrate them.
-        for (int i = 0; i < markers.length(); i++) {
-            //todo refactor when #5626
-            updateMarker(markers.getJSONObject(i).getString("id"), markers.getJSONObject(i));
-        }
-    }
-
-    public void updateMarker(String id, JSONObject marker) throws JSONException {
-        /**
-         * todo refactor when #5626
-         * For now we remove and replace a new marker.
-         * To ensire ID consistency we base the ID from
-         * the javascript part.
-         */
-        Marker nativeMarker = mMarkers.get(id);
-        if (nativeMarker != null) {
-            removeMarker(id);
-        }
-
-        addMarker(id, marker);
-        //hydrateMarker(id, marker);
+    void setMarkerPosition(String id, LatLng latLng) throws JSONException {
+        Marker marker = mMarkers.get(id);
+        if (marker != null) {
+            marker.setPosition(latLng);
+        } else throw new JSONException(" MapController.setMarkerPosition: unknown marker id " + id);
     }
 
     public void hydrateMarker(String id, JSONObject jsonMarker) throws JSONException {
@@ -759,6 +744,7 @@ public class MapController {
         Icon icon;
         Context ctx = mActivity.getApplicationContext();
         AssetManager am = ctx.getResources().getAssets();
+        String[] filelist = am.list("www");
         IconFactory iconFactory = IconFactory.getInstance(mActivity);
         final JSONObject imageSettings = properties.optJSONObject("image");
         try {
@@ -769,7 +755,7 @@ public class MapController {
                     // get the original version in the initial asset bundle with AssetsManager
                     File iconFile = new File(mActivity.getFilesDir(), assetsDirectory + "/app/" +filePath);
                     if (iconFile.exists()) istream = new FileInputStream(iconFile);
-                    else istream = am.open("www/application/app/"+filePath);
+                    else istream = am.open("www/"+filePath);
 
                     if (filePath.endsWith(".svg")) {
                         bitmap = createSVG(SVG.getFromInputStream(istream), imageSettings.has("width") ? _applyRetinaFactor(imageSettings.getInt("width")) : 0,

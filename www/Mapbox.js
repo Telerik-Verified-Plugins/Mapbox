@@ -1,3 +1,4 @@
+cordova.define("cordova-plugin-mapbox.Mapbox", function(require, exports, module) {
 var exec = require("cordova/exec");
 
 
@@ -182,10 +183,9 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addMarker", [id, sourceId, source]);
   },
 
-  //only handle marker for now
-  updateSource: function (sourceId, source, successCallback, errorCallback, id) {
+  setMarkerLngLat: function (sourceId, coordinates, successCallback, errorCallback, id) {
     id = id || 0;
-    cordova.exec(successCallback, errorCallback, "Mapbox", "updateMarker", [id, sourceId, source])
+    cordova.exec(successCallback, errorCallback, "Mapbox", "Marker.setLngLat", [id, sourceId, coordinates])
   },
 
   removeSource: function (sourceId, successCallback, errorCallback, id) {
@@ -278,3 +278,5 @@ module.exports = {
     cordova.exec(callback, null, "Mapbox", "addOnMapChangeListener", [id, listener]);
   },
 };
+
+});
