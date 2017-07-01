@@ -65,13 +65,14 @@ import java.util.Set;
  * - Mapbox https://www.mapbox.com/android-sdk/examples/offline-manager/ for the offline part
  * - Anothar (@anothar) for the custom icon createIcon method
  */
-public class MapController {
+class MapController {
     public FrameLayout.LayoutParams mapFrame;
 
     private static float _retinaFactor;
     private final static String TAG = "MAP_CONTROLLER";
 
     private MapView mMapView;
+    private HashMap<String, Icon> mIcons = new HashMap<String, Icon>();
     private MapboxMapOptions mInitOptions;
     private MapboxMap mMapboxMap;
     private UiSettings mUiSettings;
@@ -86,33 +87,33 @@ public class MapController {
     private HashMap<String, String> mAnchors = new HashMap<String, String>();
     private HashMap<String, Marker> mMarkers = new HashMap<String, Marker>();
 
-    public final static String JSON_CHARSET = "UTF-8";
-    public final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
-    public boolean isReady = false;
-    public Runnable mapReady;
-    public String assetsDirectory;
+    private final static String JSON_CHARSET = "UTF-8";
+    private final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
+    boolean isReady = false;
+    Runnable mapReady;
+    String assetsDirectory;
 
-    public MapView getMapView() {
+    MapView getMapView() {
         return mMapView;
     }
 
-    public int getDownloadingProgress() {
+    int getDownloadingProgress() {
         return mDownloadingProgress;
     }
 
-    public boolean isDownloading() {
+    boolean isDownloading() {
         return mDownloading;
     }
 
-    public ArrayList<String> getOfflineRegionsNames() {
+    ArrayList<String> getOfflineRegionsNames() {
         return mOfflineRegionsNames;
     }
 
-    public String getSelectedMarkerId() {
+    String getSelectedMarkerId() {
         return mSelectedMarkerId;
     }
 
-    public MapController(final JSONObject options, Activity activity, Context context, @Nullable final ScrollView scrollView) {
+    MapController(final JSONObject options, Activity activity, Context context, @Nullable final ScrollView scrollView) {
 
         try {
             mInitOptions = _createMapboxMapOptions(options);
@@ -213,22 +214,22 @@ public class MapController {
         ));
     }
 
-    public void scrollMap(float x, float y){
+    void scrollMap(float x, float y) {
         //CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
         mMapboxMap.moveCamera(CameraUpdateFactory.scrollBy(x, y));
     }
 
-    public void panMap(PointF delta){
+    public void panMap(PointF delta) {
         PointF centerPos = convertCoordinates(getCenter());
         LatLng newCenterLatLng = convertPoint(new PointF(centerPos.x - delta.x, centerPos.y - centerPos.y));
         setCenter(newCenterLatLng.getLongitude(), newCenterLatLng.getLatitude());
     }
 
-    public double getTilt() {
+    double getTilt() {
         return mMapboxMap.getCameraPosition().tilt;
     }
 
-    public void setTilt(double titl) {
+    void setTilt(double titl) {
         mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
                         .tilt(titl)
@@ -236,7 +237,7 @@ public class MapController {
         ));
     }
 
-    public void flyTo(JSONObject position) throws JSONException {
+    void flyTo(JSONObject position) throws JSONException {
         CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
 
         try {
@@ -257,7 +258,7 @@ public class MapController {
      * @param onProgress a callback fired along the download progression
      * @param onFinish   a callback fired at the end of the download
      */
-    public void downloadRegion(final String regionName, final Runnable onStart, final Runnable onProgress, final Runnable onFinish) {
+    void downloadRegion(final String regionName, final Runnable onStart, final Runnable onProgress, final Runnable onFinish) {
 
         // Set the style, bounds zone and the min/max zoom whidh will be available once offline.
         String styleURL = mInitOptions.getStyle();
@@ -346,11 +347,11 @@ public class MapController {
         mOfflineRegion.setDownloadState(OfflineRegion.STATE_ACTIVE);
     }
 
-    public void pauseDownload() {
+    void pauseDownload() {
         mOfflineRegion.setDownloadState(OfflineRegion.STATE_INACTIVE);
     }
 
-    public void getOfflineRegions(final Runnable callback) {
+    void getOfflineRegions(final Runnable callback) {
         mOfflineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
             @Override
             public void onList(final OfflineRegion[] offlineRegions) {
@@ -376,12 +377,12 @@ public class MapController {
         });
     }
 
-    public void removeOfflineRegion(final int regionSelected, final Runnable onDeleteCallback) {
+    void removeOfflineRegion(final int regionSelected, final Runnable onDeleteCallback) {
         mOfflineManager.listOfflineRegions(new OfflineManager.ListOfflineRegionsCallback() {
             @Override
             public void onList(final OfflineRegion[] offlineRegions) {
 
-                if(offlineRegions.length > regionSelected) return;
+                if (offlineRegions.length > regionSelected) return;
 
                 offlineRegions[regionSelected].delete(new OfflineRegion.OfflineRegionDeleteCallback() {
                     @Override
@@ -433,7 +434,7 @@ public class MapController {
         }
     }
 
-    public void addMarker(String id, JSONObject marker) throws JSONException {
+    void addMarker(String id, JSONObject marker) throws JSONException {
         Marker nativeMarker = mMarkers.get(id);
 
         if (nativeMarker != null) {
@@ -465,7 +466,15 @@ public class MapController {
         } else throw new JSONException(" MapController.setMarkerPosition: unknown marker id " + id);
     }
 
-    public void hydrateMarker(String id, JSONObject jsonMarker) throws JSONException {
+    void setMarkerIcon(String id, JSONObject imageObject) throws JSONException, IOException, SVGParseException {
+        Marker marker = mMarkers.get(id);
+        if (marker != null) {
+            marker.setIcon(getIcon(imageObject));
+        } else throw new JSONException(" MapController.setMarkerPosition: unknown marker id " + id);
+    }
+
+
+    private void hydrateMarker(String id, JSONObject jsonMarker) throws JSONException {
         JSONObject geometry = jsonMarker.isNull("geometry") ? null : jsonMarker.getJSONObject("geometry");
         JSONObject properties = jsonMarker.isNull("properties") ? null : jsonMarker.getJSONObject("properties");
         boolean domAnchor = false;
@@ -505,7 +514,7 @@ public class MapController {
             if (mAnchors.get(id) != null) mAnchors.remove(id);
             if (properties.has("image")) {
                 try {
-                    marker.setIcon(createIcon(properties));
+                    marker.setIcon(getIcon(properties.getJSONObject("image")));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -516,18 +525,39 @@ public class MapController {
         }
     }
 
-    public void removeMarkers(ArrayList<String> ids) {
+    /**
+     * Retrun an icon if exists or create a new one.
+     * @param imageObject {"image": {height: 40,width: 20,url: 'leaf-orange.png'}}
+     * @return Icon
+     * @throws JSONException
+     * @throws IOException
+     * @throws SVGParseException
+     */
+    private Icon getIcon(JSONObject imageObject) throws JSONException, IOException, SVGParseException {
+        String filePath = "";
+        if (imageObject.has("url")) filePath = imageObject.getString("url");
+        if (imageObject.has("image")) filePath = imageObject.getString("url");
+        if (filePath.equals(""))
+            throw new JSONException("MapController.setMarkerIconImage: No url or image path found in " + imageObject);
+
+        Icon icon = mIcons.get(filePath) != null ? mIcons.get(filePath) : createIcon(imageObject);
+        mIcons.put(filePath, icon); // TODO remove icons when non used anymore. Does C++ part remove image that are no longer needed ?
+
+        return icon;
+    }
+
+    void removeMarkers(ArrayList<String> ids) {
         for (int i = 0; i < ids.size(); i++) removeMarker(ids.get(i));
     }
 
-    public void removeMarker(String id) {
+    void removeMarker(String id) {
         if (mMarkers.get(id) == null) return;
         mMapboxMap.removeMarker(mMarkers.get(id));
         if (mMarkers.get(id) != null) mMarkers.remove(id);
         if (mAnchors.get(id) != null) mAnchors.remove(id);
     }
 
-    public void addMarkerCallBack(Runnable callback) {
+    void addMarkerCallBack(Runnable callback) {
         if (mMapboxMap == null) return;
         mMapboxMap.setOnMarkerClickListener(new MarkerClickListener(callback));
         mMapboxMap.setOnMapClickListener(new MapClickListener(callback));
@@ -546,7 +576,7 @@ public class MapController {
                 .newCameraPosition(position));
     }
 
-    public void zoomTo(double zoom) {
+    void zoomTo(double zoom) {
         CameraPosition position = new CameraPosition.Builder()
                 .zoom(zoom)
                 .build();
@@ -555,19 +585,19 @@ public class MapController {
                 .newCameraPosition(position));
     }
 
-    public LatLngBounds getBounds() {
+    LatLngBounds getBounds() {
         return mMapboxMap.getProjection().getVisibleRegion().latLngBounds;
     }
 
-    public PointF convertCoordinates(LatLng coords) {
+    PointF convertCoordinates(LatLng coords) {
         return mMapboxMap.getProjection().toScreenLocation(coords);
     }
 
-    public LatLng convertPoint(PointF point) {
+    LatLng convertPoint(PointF point) {
         return mMapboxMap.getProjection().fromScreenLocation(point);
     }
 
-    public void addOnMapChangedListener(String listenerType, Runnable callback) throws JSONException {
+    void addOnMapChangedListener(String listenerType, Runnable callback) throws JSONException {
         MapChangedListener handler;
 
         try {
@@ -618,7 +648,7 @@ public class MapController {
         }
     }
 
-    public static CameraPosition getCameraPosition(JSONObject position, @Nullable CameraPosition start) throws JSONException {
+    private static CameraPosition getCameraPosition(JSONObject position, @Nullable CameraPosition start) throws JSONException {
         CameraPosition.Builder builder = new CameraPosition.Builder(start);
 
         if (position != null) {
@@ -642,13 +672,13 @@ public class MapController {
         return builder.build();
     }
 
-    public JSONArray getJSONMarkersNextScreenPositions(PointF delta){
+    JSONArray getJSONMarkersNextScreenPositions(PointF delta) {
         JSONObject json = new JSONObject();
         JSONArray nextMarkerPositions = new JSONArray();
 
         try {
 
-            for(Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
+            for (Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
                 String id = entry.getKey();
                 Marker marker = entry.getValue();
                 PointF screenPosition = convertCoordinates(marker.getPosition());
@@ -667,10 +697,10 @@ public class MapController {
         return nextMarkerPositions;
     }
 
-    public JSONArray getJSONMarkersScreenPositions() {
+    JSONArray getJSONMarkersScreenPositions() {
         JSONArray positions = new JSONArray();
         try {
-            for(Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
+            for (Map.Entry<String, Marker> entry : mMarkers.entrySet()) {
                 String id = entry.getKey();
                 Marker marker = entry.getValue();
                 PointF screenPosition = mMapboxMap.getProjection().toScreenLocation(marker.getPosition());
@@ -686,7 +716,7 @@ public class MapController {
         return positions;
     }
 
-    public JSONObject getJSONCameraScreenPosition() throws JSONException {
+    JSONObject getJSONCameraScreenPosition() throws JSONException {
         CameraPosition position = mMapboxMap.getCameraPosition();
         PointF screenPosition = mMapboxMap.getProjection().toScreenLocation(position.target);
         try {
@@ -702,7 +732,7 @@ public class MapController {
         }
     }
 
-    public JSONObject getJSONCameraGeoPosition() throws JSONException {
+    JSONObject getJSONCameraGeoPosition() throws JSONException {
         CameraPosition position = mMapboxMap.getCameraPosition();
         try {
             return new JSONObject()
@@ -711,7 +741,7 @@ public class MapController {
                     .put("alt", position.target.getAltitude())
                     .put("tilt", position.tilt)
                     .put("bearing", position.bearing);
-        }catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
             throw new JSONException(e.getMessage());
         }
@@ -731,63 +761,52 @@ public class MapController {
     /**
      * Creates image for marker
      *
-     * @param properties The properties.image part of a JSON marker
+     * @param imageObject The properties.image part of a JSON marker
      * @return an icon with a custom image
-     * @throws JSONException     if
+     * @throws JSONException
      * @throws IOException
      * @throws SVGParseException
      */
     // Thanks Anothar :)
-    private Icon createIcon(JSONObject properties) throws JSONException, IOException, SVGParseException {
+    private Icon createIcon(JSONObject imageObject) throws JSONException, IOException, SVGParseException {
         InputStream istream = null;
         BitmapDrawable bitmap;
-        Icon icon;
+        Icon icon = null;
         Context ctx = mActivity.getApplicationContext();
         AssetManager am = ctx.getResources().getAssets();
-        String[] filelist = am.list("www");
         IconFactory iconFactory = IconFactory.getInstance(mActivity);
-        final JSONObject imageSettings = properties.optJSONObject("image");
         try {
-            if (imageSettings != null) {
-                if (imageSettings.has("url")) {
-                    String filePath = imageSettings.getString("url");
+            if (imageObject != null) {
+                if (imageObject.has("url")) {
+                    String filePath = imageObject.getString("url");
                     // We first look in the current asset bundle. It file does not exists we
                     // get the original version in the initial asset bundle with AssetsManager
-                    File iconFile = new File(mActivity.getFilesDir(), assetsDirectory + "/app/" +filePath);
+                    File iconFile = new File(mActivity.getFilesDir(), assetsDirectory + "/app/" + filePath);
                     if (iconFile.exists()) istream = new FileInputStream(iconFile);
-                    else istream = am.open("www/"+filePath);
+                    else istream = am.open("www/application/app/" + filePath);
 
                     if (filePath.endsWith(".svg")) {
-                        bitmap = createSVG(SVG.getFromInputStream(istream), imageSettings.has("width") ? _applyRetinaFactor(imageSettings.getInt("width")) : 0,
-                                imageSettings.has("height") ? _applyRetinaFactor(imageSettings.getInt("height")) : 0);
+                        bitmap = createSVG(SVG.getFromInputStream(istream), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
+                                imageObject.has("height") ? _applyRetinaFactor(imageObject.getInt("height")) : 0);
                     } else {
                         bitmap = new BitmapDrawable(ctx.getResources(), istream);
                     }
-                } else if (imageSettings.has("data")) {
-                    byte[] decodedBytes = Base64.decode(imageSettings.getString("data"), 0);
+                } else if (imageObject.has("data")) {
+                    byte[] decodedBytes = Base64.decode(imageObject.getString("data"), 0);
                     bitmap = new BitmapDrawable(ctx.getResources(), BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length));
 
-                } else if (imageSettings.has("svg")) {
-                    bitmap = createSVG(SVG.getFromString(imageSettings.getString("svg")), imageSettings.has("width") ? _applyRetinaFactor(imageSettings.getInt("width")) : 0,
-                            imageSettings.has("height") ? _applyRetinaFactor(imageSettings.getInt("height")) : 0);
+                } else if (imageObject.has("svg")) {
+                    bitmap = createSVG(SVG.getFromString(imageObject.getString("svg")), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
+                            imageObject.has("height") ? _applyRetinaFactor(imageObject.getInt("height")) : 0);
                 } else {
                     throw new JSONException("Not found image data");
                 }
-                if (imageSettings.has("width") && imageSettings.has("height")) {
-                    icon = iconFactory.fromDrawable(bitmap, _applyRetinaFactor(imageSettings.getInt("width")),
-                            _applyRetinaFactor(imageSettings.getInt("height")));
+                if (imageObject.has("width") && imageObject.has("height")) {
+                    icon = iconFactory.fromDrawable(bitmap, _applyRetinaFactor(imageObject.getInt("width")),
+                            _applyRetinaFactor(imageObject.getInt("height")));
                 } else {
                     icon = iconFactory.fromDrawable(bitmap);
                 }
-
-            } else {
-                String filePath = properties.getString("image");
-                istream = am.open(filePath);
-                if (filePath.endsWith(".svg"))
-                    bitmap = createSVG(SVG.getFromInputStream(istream), 0, 0);
-                else
-                    bitmap = new BitmapDrawable(ctx.getResources(), istream);
-                icon = iconFactory.fromDrawable(bitmap);
             }
         } finally {
             if (istream != null)

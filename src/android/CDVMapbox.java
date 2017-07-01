@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 
+import com.caverock.androidsvg.SVGParseException;
 import com.mapbox.mapboxsdk.MapboxAccountManager;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
@@ -21,6 +22,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrollChangedListener {
@@ -36,7 +38,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     private static final String ACTION_SET_DEBUG = "setDebug";
     private static final String ACTION_ADD_MARKERS = "addMarkers";
     private static final String ACTION_ADD_MARKER = "addMarker";
-    private static final String ACTION_UPDATE_MARKERS = "updateMarkers";
+    private static final String MARKER__SET_ICON = "Marker.setIccon";
     private static final String MARKER__SET_LNG_LAT = "Marker.setLngLat";
     private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
     private static final String ACTION_REMOVE_MARKERS = "removeMarkers";
@@ -505,38 +507,37 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_UPDATE_MARKERS.equals(action)) {
+            } else if (MARKER__SET_ICON.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        //todo refactor when #5626
-                        callbackContext.error("Not yet implemented.");
-/*            try {
-              if(args.isNull(1)) throw new JSONException(action + " need a source ID");
-              if(args.isNull(2)) throw new JSONException(action + " no source provided");
-              if(!args.getJSONObject(2).getString("type").equals("geojson")) throw new JSONException(action + " only handle GeoJSON");
+                        try {
+                            if (args.isNull(1))
+                                throw new JSONException(action + " need a source ID");
+                            if (args.isNull(2))
+                                throw new JSONException(action + " no images properties provided");
 
-              String dataType = args.getJSONObject(2).getJSONObject("data").getString("type");
-              if (!dataType.equals("FeatureCollection")) throw new JSONException("Only features collection are supported as markers source");
+                            JSONObject imageProps = args.getJSONObject(2);
 
-              JSONArray markers = args.getJSONObject(2).getJSONObject("data").getJSONArray("features");
-              JSONObject marker;
+                            if (!imageProps.has("url") && !imageProps.has("data") && !imageProps.has("svg"))
+                                throw new JSONException(action + " no images url or file name provided");
 
-              for (int i = 0; i < markers.length(); i++) {
-                marker = markers.getJSONObject(i);
-                String type = marker.getJSONObject("geometry").getString("type");
+                            mapCtrl.setMarkerIcon(args.getString(1), imageProps);
 
-                if (!type.equals("Point")) throw new JSONException("Only type Point are supported for markers");
-              }
-
-              mapCtrl.updateMarkers(markers);
-              callbackContext.success();
-            }catch (JSONException e){
-              e.printStackTrace();
-              callbackContext.error(e.getMessage());
-            }*/
+                            callbackContext.success();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            callbackContext.error(e.getMessage());
+                        } catch (SVGParseException e) {
+                            e.printStackTrace();
+                            callbackContext.error(e.getMessage());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            callbackContext.error(e.getMessage());
+                        }
                     }
                 });
+
             } else if (ACTION_REMOVE_MARKER.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     @Override
