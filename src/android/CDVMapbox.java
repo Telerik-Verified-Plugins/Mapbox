@@ -546,7 +546,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             mapCtrl.removeMarker(args.getString(1));
                         } catch (JSONException e) {
                             callbackContext.error("Delete need an array of ids");
-                            e.printStackTrace()"action " + ;
+                            e.printStackTrace("action " + e.getMessage());
                         }
                     }
                 });
@@ -563,7 +563,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             mapCtrl.removeMarkers(ids);
                         } catch (JSONException e) {
                             callbackContext.error("Delete need an array of ids");
-                            e.printStackTrace()"action " + ;
+                            e.printStackTrace("action " + e.getMessage());
                         }
                     }
                 });
