@@ -38,7 +38,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
     private static final String ACTION_SET_DEBUG = "setDebug";
     private static final String ACTION_ADD_MARKERS = "addMarkers";
     private static final String ACTION_ADD_MARKER = "addMarker";
-    private static final String MARKER__SET_ICON = "Marker.setIccon";
+    private static final String MARKER__SET_ICON = "Marker.setIcon";
     private static final String MARKER__SET_LNG_LAT = "Marker.setLngLat";
     private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
     private static final String ACTION_REMOVE_MARKERS = "removeMarkers";
@@ -279,7 +279,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -297,7 +297,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success(json);
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -315,7 +315,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -333,7 +333,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -350,7 +350,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -364,7 +364,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success(json);
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -383,7 +383,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -412,7 +412,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                                         map.markerCallbackContext.sendPluginResult(pluginResult);
                                     } catch (JSONException e) {
                                         e.printStackTrace();
-                                        callbackContext.error(e.getMessage());
+                                        callbackContext.error("action " + e.getMessage());
                                     }
                                 }
                             }
@@ -446,7 +446,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -503,7 +503,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -527,7 +527,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success();
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         } catch (SVGParseException e) {
                             e.printStackTrace();
                             callbackContext.error(e.getMessage());
@@ -546,7 +546,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             mapCtrl.removeMarker(args.getString(1));
                         } catch (JSONException e) {
                             callbackContext.error("Delete need an array of ids");
-                            e.printStackTrace();
+                            e.printStackTrace()"action " + ;
                         }
                     }
                 });
@@ -563,7 +563,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             mapCtrl.removeMarkers(ids);
                         } catch (JSONException e) {
                             callbackContext.error("Delete need an array of ids");
-                            e.printStackTrace();
+                            e.printStackTrace()"action " + ;
                         }
                     }
                 });
@@ -575,7 +575,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             pluginLayout.setClickable(args.getBoolean(1));
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -587,7 +587,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             pluginLayout.setDebug(args.getInt(1) != 0);
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -604,7 +604,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success(new JSONObject("{\"x\": " + point.x + ", \"y\": " + point.y + "}"));
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -621,7 +621,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             callbackContext.success(new JSONObject("{\"lat\": " + latLng.getLatitude() + ", \"lng\": " + latLng.getLongitude() + "}"));
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
@@ -673,7 +673,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             } else throw new JSONException(listener + "not implemented yet.");
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            callbackContext.error(e.getMessage());
+                            callbackContext.error("action " + e.getMessage());
                         }
                     }
                 });
