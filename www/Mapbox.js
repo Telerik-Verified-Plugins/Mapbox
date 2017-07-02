@@ -189,7 +189,7 @@ module.exports = {
 
     setMarkerIcon: function (sourceId, imageProperties, successCallback, errorCallback, id) {
         id = id || 0;
-        cordova.exec(successCallback, errorCallback, "Mapbox", "Marker.seIcon", [id, imageProperties, imageProperties])
+        cordova.exec(successCallback, errorCallback, "Mapbox", "Marker.setIcon", [id, imageProperties, imageProperties])
     },
 
     removeSource: function (sourceId, successCallback, errorCallback, id) {
