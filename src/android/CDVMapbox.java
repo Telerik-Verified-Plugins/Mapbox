@@ -1,6 +1,7 @@
 package com.telerik.plugins.mapbox;
 
 import android.app.Activity;
+import android.os.Handler;
 import android.content.res.Resources;
 import android.graphics.PointF;
 import android.view.ViewGroup;
@@ -113,8 +114,16 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
         try {
             int mapboxAccesstokenResourceId = cordova.getActivity().getResources().getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", cordova.getActivity().getPackageName());
-            String _accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
-            MapboxAccountManager.start(webView.getContext(), _accessToken);
+            final String _accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
+
+            Handler mainHandler = new Handler(_activity.getMainLooper());
+
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    MapboxAccountManager.start(webView.getContext(), _accessToken);
+                }
+            });
         } catch (Resources.NotFoundException e) {
             // we'll deal with this when the _accessToken property is read, but for now let's dump the error:
             e.printStackTrace();
@@ -225,7 +234,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            }  else if (ACTION_RESIZE.equals(action)) {
+            } else if (ACTION_RESIZE.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     public void run() {
                         map.setContainer(args, callbackContext);
@@ -625,7 +634,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_GET_MARKERS_POSITIONS.equals(action)){
+            } else if (ACTION_GET_MARKERS_POSITIONS.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -635,7 +644,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
                     }
                 });
-            } else if (ACTION_NEXT_MARKERS_POSITIONS_PREDICATE.equals(action)){
+            } else if (ACTION_NEXT_MARKERS_POSITIONS_PREDICATE.equals(action)) {
                 _activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
