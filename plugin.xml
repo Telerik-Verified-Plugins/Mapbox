@@ -37,18 +37,17 @@
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/*">
-        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
         <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
         <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
         <uses-permission android:name="android.permission.INTERNET" />
         <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
         <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     </config-file>
-    
+
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <service android:name="com.mapbox.mapboxsdk.telemetry.TelemetryService" />
     </config-file>
-    
+
     <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
     <source-file src="src/android/CDVMapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
     <source-file src="src/android/Map.java" target-dir="src/com/telerik/plugins/mapbox"/>

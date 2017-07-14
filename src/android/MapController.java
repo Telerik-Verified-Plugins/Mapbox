@@ -12,8 +12,10 @@ import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -65,7 +67,9 @@ import java.util.Set;
  * - Mapbox https://www.mapbox.com/android-sdk/examples/offline-manager/ for the offline part
  * - Anothar (@anothar) for the custom icon createIcon method
  */
-class MapController {
+class MapController extends AppCompatActivity {
+    private JSONObject mOption;
+    private ScrollView mScrollView;
     public FrameLayout.LayoutParams mapFrame;
 
     private static float _retinaFactor;
@@ -116,6 +120,7 @@ class MapController {
     MapController(final JSONObject options, Activity activity, Context context, @Nullable final ScrollView scrollView) {
 
         try {
+            mOption = options;
             mInitOptions = _createMapboxMapOptions(options);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -124,39 +129,26 @@ class MapController {
         _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
         mOfflineManager = OfflineManager.getInstance(context);
         mActivity = activity;
+        mScrollView = scrollView;
+    }
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Mapbox access token is configured here. This needs to be called either in your application
+        // object or in the same activity which contains the mapview.
+
+        // create map
         mMapView = new MapView(mActivity, mInitOptions);
+        mMapView.onCreate(savedInstanceState);
         mMapView.setLayoutParams(
                 new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT
                 ));
-
-        // need to do this to register a receiver which onPause later needs
-        mMapView.onResume();
-        mMapView.onCreate(null);
-
-        // Prevent scroll to intercept the touch when pane the map
-        if (scrollView != null) {
-            mMapView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_MOVE:
-                            scrollView.requestDisallowInterceptTouchEvent(true);
-                            break;
-                        case MotionEvent.ACTION_UP:
-                        case MotionEvent.ACTION_CANCEL:
-                            scrollView.requestDisallowInterceptTouchEvent(false);
-                            break;
-                    }
-                    return mMapView.onTouchEvent(event);
-                }
-            });
-        }
-
         mMapView.getMapAsync(new OnMapReadyCallback() {
-
+            @Override
             public void onMapReady(MapboxMap map) {
                 mMapboxMap = map;
                 mapReady.run();
@@ -164,8 +156,8 @@ class MapController {
 
                 try {
                     // drawing initial markers
-                    if (options.has("sources")) {
-                        JSONArray sources = options.getJSONArray("sources");
+                    if (mOption.has("sources")) {
+                        JSONArray sources = mOption.getJSONArray("sources");
                         for (int i = 0; i < sources.length(); i++) {
                             //todo refactor when #5626
                             if (!sources.getJSONObject(i).getJSONObject("source").getString("type").equals("geojson"))
@@ -192,6 +184,27 @@ class MapController {
 
             }
         });
+
+        // Prevent scroll to intercept the touch when pane the map
+        if (mScrollView != null) {
+            mMapView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_MOVE:
+                            mScrollView.requestDisallowInterceptTouchEvent(true);
+                            break;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            mScrollView.requestDisallowInterceptTouchEvent(false);
+                            break;
+                    }
+                    return mMapView.onTouchEvent(event);
+                }
+            });
+        }
+
+        setContentView(mMapView);
     }
 
     public LatLng getCenter() {
@@ -264,7 +277,7 @@ class MapController {
         String styleURL = mInitOptions.getStyle();
         LatLngBounds bounds = mMapboxMap.getProjection().getVisibleRegion().latLngBounds;
         double minZoom = mMapboxMap.getCameraPosition().zoom;
-        double maxZoom = mMapboxMap.getMaxZoom();
+        double maxZoom = mMapboxMap.getMaxZoomLevel();
         OfflineTilePyramidRegionDefinition definition = new OfflineTilePyramidRegionDefinition(
                 styleURL, bounds, minZoom, maxZoom, _retinaFactor);
 
@@ -470,7 +483,7 @@ class MapController {
         Marker marker = mMarkers.get(id);
         if (marker != null) {
             marker.setIcon(getIcon(imageObject));
-        } else throw new JSONException(" MapController.setMarkerPosition: unknown marker id " + id);
+        } else throw new JSONException(" MapController.setMarkerIcon: unknown marker id " + id);
     }
 
 
@@ -504,9 +517,8 @@ class MapController {
             mAnchors.put(id, properties.getString("domAnchor"));
             // Make an invisible marker
             IconFactory iconFactory = IconFactory.getInstance(mActivity);
-            Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
-            iconDrawable.setAlpha(0);
-            marker.setIcon(iconFactory.fromDrawable(iconDrawable));
+            Bitmap bmp = Bitmap.createBitmap( new int[Color.TRANSPARENT], 1, 1, Bitmap.Config.ARGB_8888 );
+            marker.setIcon(iconFactory.fromBitmap(bmp));
             marker.setTitle(null);
             marker.setSnippet(null);
         } else {
@@ -770,7 +782,7 @@ class MapController {
     // Thanks Anothar :)
     private Icon createIcon(JSONObject imageObject) throws JSONException, IOException, SVGParseException {
         InputStream istream = null;
-        BitmapDrawable bitmap;
+        BitmapDrawable bitmapDrawable;
         Icon icon = null;
         Context ctx = mActivity.getApplicationContext();
         AssetManager am = ctx.getResources().getAssets();
@@ -786,26 +798,27 @@ class MapController {
                     else istream = am.open("www/application/app/" + filePath);
 
                     if (filePath.endsWith(".svg")) {
-                        bitmap = createSVG(SVG.getFromInputStream(istream), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
+                        bitmapDrawable = createSVG(SVG.getFromInputStream(istream), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
                                 imageObject.has("height") ? _applyRetinaFactor(imageObject.getInt("height")) : 0);
                     } else {
-                        bitmap = new BitmapDrawable(ctx.getResources(), istream);
+                        bitmapDrawable = new BitmapDrawable(ctx.getResources(), istream);
                     }
                 } else if (imageObject.has("data")) {
                     byte[] decodedBytes = Base64.decode(imageObject.getString("data"), 0);
-                    bitmap = new BitmapDrawable(ctx.getResources(), BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length));
+                    bitmapDrawable = new BitmapDrawable(ctx.getResources(), BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length));
 
                 } else if (imageObject.has("svg")) {
-                    bitmap = createSVG(SVG.getFromString(imageObject.getString("svg")), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
+                    bitmapDrawable = createSVG(SVG.getFromString(imageObject.getString("svg")), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
                             imageObject.has("height") ? _applyRetinaFactor(imageObject.getInt("height")) : 0);
                 } else {
                     throw new JSONException("Not found image data");
                 }
                 if (imageObject.has("width") && imageObject.has("height")) {
-                    icon = iconFactory.fromDrawable(bitmap, _applyRetinaFactor(imageObject.getInt("width")),
-                            _applyRetinaFactor(imageObject.getInt("height")));
+                    Bitmap bitmap = bitmapDrawable.getBitmap();
+                   // bitmap.reconfigure(_applyRetinaFactor(imageObject.getInt("width")), _applyRetinaFactor(imageObject.getInt("height")), Bitmap.Config.ARGB_8888);
+                    icon = iconFactory.fromBitmap(bitmap);
                 } else {
-                    icon = iconFactory.fromDrawable(bitmap);
+                    icon = iconFactory.fromBitmap(bitmapDrawable.getBitmap());
                 }
             }
         } finally {
@@ -895,24 +908,65 @@ class MapController {
             _callback.run();
         }
     }
-/*
-    private class PanListener implements MoveGestureDetector.OnMoveGestureListener {
+    /*
+        private class PanListener implements MoveGestureDetector.OnMoveGestureListener {
 
-        @Override
-        public boolean onMove(MoveGestureDetector detector) {
-            Log.d("motion", "paning");
-            return false;
-        }
+            @Override
+            public boolean onMove(MoveGestureDetector detector) {
+                Log.d("motion", "paning");
+                return false;
+            }
 
-        @Override
-        public boolean onMoveBegin(MoveGestureDetector detector) {
-            Log.d("motion", "pan began");
-            return false;
-        }
+            @Override
+            public boolean onMoveBegin(MoveGestureDetector detector) {
+                Log.d("motion", "pan began");
+                return false;
+            }
 
-        @Override
-        public void onMoveEnd(MoveGestureDetector detector) {
-            Log.d("motion", "pan ended");
-        }
-    }*/
+            @Override
+            public void onMoveEnd(MoveGestureDetector detector) {
+                Log.d("motion", "pan ended");
+            }
+        }*/
+    @Override
+    public void onStart() {
+        super.onStart();
+        mMapView.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mMapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mMapView.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mMapView.onStop();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mMapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mMapView.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mMapView.onSaveInstanceState(outState);
+    }
 }

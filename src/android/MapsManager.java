@@ -1,6 +1,7 @@
 package com.telerik.plugins.mapbox;
 
 import android.app.Activity;
+import android.os.Bundle;
 import android.util.SparseArray;
 
 
@@ -12,7 +13,7 @@ import org.apache.cordova.CordovaArgs;
 /**
  * Created by vikti on 24/06/2016.
  */
-public class MapsManager {
+class MapsManager {
     private static MapsManager mOurInstance = new MapsManager();
     private static SparseArray<Map> mMaps = new SparseArray();
     private static CDVMapbox mPlugRef;
@@ -27,13 +28,13 @@ public class MapsManager {
         mActivity = activity;
     }
 
-    public static Map createMap(CordovaArgs args, int id, CallbackContext callbackContext){
+    static Map createMap(CordovaArgs args, int id, CallbackContext callbackContext){
         Map map = new Map(id, args, mPlugRef, mActivity, callbackContext);
         mMaps.put(id, map);
         return map;
     }
 
-    public static Map getMap(int id){
+    static Map getMap(int id){
         return mMaps.get(id);
     }
 
@@ -41,23 +42,47 @@ public class MapsManager {
         return mMaps.size();
     }
 
-    public static void removeMap(int mapId){
+    static void removeMap(int mapId){
         mMaps.delete(mapId);
     }
 
-    public static void onPause() {
+    static void onStart() {
+        for( int i = 0; i < mMaps.size(); i++){
+            mMaps.get(i).getMapCtrl().getMapView().onStart();
+        }
+    }
+
+    static void onPause() {
         for( int i = 0; i < mMaps.size(); i++){
             mMaps.get(i).getMapCtrl().getMapView().onPause();
         }
     }
 
-    public static void onResume() {
+    static void onResume() {
         for( int i = 0; i < mMaps.size(); i++){
             mMaps.get(i).getMapCtrl().getMapView().onResume();
         }
     }
 
-    public static void onDestroy() {
+    static void onStop() {
+        for( int i = 0; i < mMaps.size(); i++){
+            mMaps.get(i).getMapCtrl().getMapView().onStop();
+        }
+    }
+
+    static void onLowMemory() {
+        for( int i = 0; i < mMaps.size(); i++){
+            mMaps.get(i).getMapCtrl().getMapView().onLowMemory();
+        }
+    }
+
+    static void onSaveInstanceState(Bundle outState) {
+        for( int i = 0; i < mMaps.size(); i++){
+            mMaps.get(i).getMapCtrl().getMapView().onSaveInstanceState(outState);
+        }
+    }
+
+    static void onDestroy() {
         for( int i = 0; i < mMaps.size(); i++){
             mMaps.get(i).getMapCtrl().getMapView().onDestroy();
         }
