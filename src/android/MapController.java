@@ -68,8 +68,6 @@ import java.util.Set;
  * - Anothar (@anothar) for the custom icon createIcon method
  */
 class MapController extends AppCompatActivity {
-    private JSONObject mOption;
-    private ScrollView mScrollView;
     public FrameLayout.LayoutParams mapFrame;
 
     private static float _retinaFactor;
@@ -120,7 +118,6 @@ class MapController extends AppCompatActivity {
     MapController(final JSONObject options, Activity activity, Context context, @Nullable final ScrollView scrollView) {
 
         try {
-            mOption = options;
             mInitOptions = _createMapboxMapOptions(options);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -129,26 +126,39 @@ class MapController extends AppCompatActivity {
         _retinaFactor = Resources.getSystem().getDisplayMetrics().density;
         mOfflineManager = OfflineManager.getInstance(context);
         mActivity = activity;
-        mScrollView = scrollView;
-    }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        // Mapbox access token is configured here. This needs to be called either in your application
-        // object or in the same activity which contains the mapview.
-
-        // create map
         mMapView = new MapView(mActivity, mInitOptions);
-        mMapView.onCreate(savedInstanceState);
         mMapView.setLayoutParams(
                 new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT
                 ));
+
+        // need to do this to register a receiver which onPause later needs
+        mMapView.onResume();
+        mMapView.onCreate(null);
+
+        // Prevent scroll to intercept the touch when pane the map
+        if (scrollView != null) {
+            mMapView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_MOVE:
+                            scrollView.requestDisallowInterceptTouchEvent(true);
+                            break;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            scrollView.requestDisallowInterceptTouchEvent(false);
+                            break;
+                    }
+                    return mMapView.onTouchEvent(event);
+                }
+            });
+        }
+
         mMapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
+
             public void onMapReady(MapboxMap map) {
                 mMapboxMap = map;
                 mapReady.run();
@@ -156,8 +166,8 @@ class MapController extends AppCompatActivity {
 
                 try {
                     // drawing initial markers
-                    if (mOption.has("sources")) {
-                        JSONArray sources = mOption.getJSONArray("sources");
+                    if (options.has("sources")) {
+                        JSONArray sources = options.getJSONArray("sources");
                         for (int i = 0; i < sources.length(); i++) {
                             //todo refactor when #5626
                             if (!sources.getJSONObject(i).getJSONObject("source").getString("type").equals("geojson"))
@@ -184,27 +194,6 @@ class MapController extends AppCompatActivity {
 
             }
         });
-
-        // Prevent scroll to intercept the touch when pane the map
-        if (mScrollView != null) {
-            mMapView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_MOVE:
-                            mScrollView.requestDisallowInterceptTouchEvent(true);
-                            break;
-                        case MotionEvent.ACTION_UP:
-                        case MotionEvent.ACTION_CANCEL:
-                            mScrollView.requestDisallowInterceptTouchEvent(false);
-                            break;
-                    }
-                    return mMapView.onTouchEvent(event);
-                }
-            });
-        }
-
-        setContentView(mMapView);
     }
 
     public LatLng getCenter() {
