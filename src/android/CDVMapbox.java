@@ -115,12 +115,11 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             int mapboxAccesstokenResourceId = cordova.getActivity().getResources().getIdentifier(MAPBOX_ACCESSTOKEN_RESOURCE_KEY, "string", cordova.getActivity().getPackageName());
             final String _accessToken = cordova.getActivity().getString(mapboxAccesstokenResourceId);
 
-            Handler mainHandler = new Handler(_activity.getMainLooper());
+            Handler mainHandler = new Handler(activity.getMainLooper());
 
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    String _accessToken = activity.getString(mapboxAccesstokenResourceId);
                     Mapbox.getInstance(activity, _accessToken);
                 }
             });

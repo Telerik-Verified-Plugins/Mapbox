@@ -506,7 +506,7 @@ class MapController extends AppCompatActivity {
             mAnchors.put(id, properties.getString("domAnchor"));
             // Make an invisible marker
             IconFactory iconFactory = IconFactory.getInstance(mActivity);
-            Bitmap bmp = Bitmap.createBitmap( new int[Color.TRANSPARENT], 1, 1, Bitmap.Config.ARGB_8888 );
+            Bitmap bmp = Bitmap.createBitmap(new int[Color.TRANSPARENT], 1, 1, Bitmap.Config.ARGB_8888);
             marker.setIcon(iconFactory.fromBitmap(bmp));
             marker.setTitle(null);
             marker.setSnippet(null);
@@ -528,6 +528,7 @@ class MapController extends AppCompatActivity {
 
     /**
      * Retrun an icon if exists or create a new one.
+     *
      * @param imageObject {"image": {height: 40,width: 20,url: 'leaf-orange.png'}}
      * @return Icon
      * @throws JSONException
@@ -803,8 +804,12 @@ class MapController extends AppCompatActivity {
                     throw new JSONException("Not found image data");
                 }
                 if (imageObject.has("width") && imageObject.has("height")) {
-                    Bitmap bitmap = bitmapDrawable.getBitmap();
-                   // bitmap.reconfigure(_applyRetinaFactor(imageObject.getInt("width")), _applyRetinaFactor(imageObject.getInt("height")), Bitmap.Config.ARGB_8888);
+                    Bitmap bitmap = new BitmapDrawable(ctx.getResources(),
+                            Bitmap.createScaledBitmap(bitmapDrawable.getBitmap(),
+                                    _applyRetinaFactor(imageObject.getInt("width")),
+                                    _applyRetinaFactor(imageObject.getInt("height")),
+                                    true
+                            )).getBitmap();
                     icon = iconFactory.fromBitmap(bitmap);
                 } else {
                     icon = iconFactory.fromBitmap(bitmapDrawable.getBitmap());
@@ -897,6 +902,7 @@ class MapController extends AppCompatActivity {
             _callback.run();
         }
     }
+
     /*
         private class PanListener implements MoveGestureDetector.OnMoveGestureListener {
 
