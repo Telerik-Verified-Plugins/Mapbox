@@ -12,8 +12,10 @@ import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -65,7 +67,7 @@ import java.util.Set;
  * - Mapbox https://www.mapbox.com/android-sdk/examples/offline-manager/ for the offline part
  * - Anothar (@anothar) for the custom icon createIcon method
  */
-class MapController {
+class MapController extends AppCompatActivity {
     public FrameLayout.LayoutParams mapFrame;
 
     private static float _retinaFactor;
@@ -264,7 +266,7 @@ class MapController {
         String styleURL = mInitOptions.getStyle();
         LatLngBounds bounds = mMapboxMap.getProjection().getVisibleRegion().latLngBounds;
         double minZoom = mMapboxMap.getCameraPosition().zoom;
-        double maxZoom = mMapboxMap.getMaxZoom();
+        double maxZoom = mMapboxMap.getMaxZoomLevel();
         OfflineTilePyramidRegionDefinition definition = new OfflineTilePyramidRegionDefinition(
                 styleURL, bounds, minZoom, maxZoom, _retinaFactor);
 
@@ -470,7 +472,7 @@ class MapController {
         Marker marker = mMarkers.get(id);
         if (marker != null) {
             marker.setIcon(getIcon(imageObject));
-        } else throw new JSONException(" MapController.setMarkerPosition: unknown marker id " + id);
+        } else throw new JSONException(" MapController.setMarkerIcon: unknown marker id " + id);
     }
 
 
@@ -504,9 +506,8 @@ class MapController {
             mAnchors.put(id, properties.getString("domAnchor"));
             // Make an invisible marker
             IconFactory iconFactory = IconFactory.getInstance(mActivity);
-            Drawable iconDrawable = new ColorDrawable(Color.TRANSPARENT);
-            iconDrawable.setAlpha(0);
-            marker.setIcon(iconFactory.fromDrawable(iconDrawable));
+            Bitmap bmp = Bitmap.createBitmap(new int[Color.TRANSPARENT], 1, 1, Bitmap.Config.ARGB_8888);
+            marker.setIcon(iconFactory.fromBitmap(bmp));
             marker.setTitle(null);
             marker.setSnippet(null);
         } else {
@@ -527,6 +528,7 @@ class MapController {
 
     /**
      * Retrun an icon if exists or create a new one.
+     *
      * @param imageObject {"image": {height: 40,width: 20,url: 'leaf-orange.png'}}
      * @return Icon
      * @throws JSONException
@@ -770,7 +772,7 @@ class MapController {
     // Thanks Anothar :)
     private Icon createIcon(JSONObject imageObject) throws JSONException, IOException, SVGParseException {
         InputStream istream = null;
-        BitmapDrawable bitmap;
+        BitmapDrawable bitmapDrawable;
         Icon icon = null;
         Context ctx = mActivity.getApplicationContext();
         AssetManager am = ctx.getResources().getAssets();
@@ -786,26 +788,31 @@ class MapController {
                     else istream = am.open("www/application/app/" + filePath);
 
                     if (filePath.endsWith(".svg")) {
-                        bitmap = createSVG(SVG.getFromInputStream(istream), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
+                        bitmapDrawable = createSVG(SVG.getFromInputStream(istream), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
                                 imageObject.has("height") ? _applyRetinaFactor(imageObject.getInt("height")) : 0);
                     } else {
-                        bitmap = new BitmapDrawable(ctx.getResources(), istream);
+                        bitmapDrawable = new BitmapDrawable(ctx.getResources(), istream);
                     }
                 } else if (imageObject.has("data")) {
                     byte[] decodedBytes = Base64.decode(imageObject.getString("data"), 0);
-                    bitmap = new BitmapDrawable(ctx.getResources(), BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length));
+                    bitmapDrawable = new BitmapDrawable(ctx.getResources(), BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length));
 
                 } else if (imageObject.has("svg")) {
-                    bitmap = createSVG(SVG.getFromString(imageObject.getString("svg")), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
+                    bitmapDrawable = createSVG(SVG.getFromString(imageObject.getString("svg")), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
                             imageObject.has("height") ? _applyRetinaFactor(imageObject.getInt("height")) : 0);
                 } else {
                     throw new JSONException("Not found image data");
                 }
                 if (imageObject.has("width") && imageObject.has("height")) {
-                    icon = iconFactory.fromDrawable(bitmap, _applyRetinaFactor(imageObject.getInt("width")),
-                            _applyRetinaFactor(imageObject.getInt("height")));
+                    Bitmap bitmap = new BitmapDrawable(ctx.getResources(),
+                            Bitmap.createScaledBitmap(bitmapDrawable.getBitmap(),
+                                    _applyRetinaFactor(imageObject.getInt("width")),
+                                    _applyRetinaFactor(imageObject.getInt("height")),
+                                    true
+                            )).getBitmap();
+                    icon = iconFactory.fromBitmap(bitmap);
                 } else {
-                    icon = iconFactory.fromDrawable(bitmap);
+                    icon = iconFactory.fromBitmap(bitmapDrawable.getBitmap());
                 }
             }
         } finally {
@@ -895,24 +902,66 @@ class MapController {
             _callback.run();
         }
     }
-/*
-    private class PanListener implements MoveGestureDetector.OnMoveGestureListener {
 
-        @Override
-        public boolean onMove(MoveGestureDetector detector) {
-            Log.d("motion", "paning");
-            return false;
-        }
+    /*
+        private class PanListener implements MoveGestureDetector.OnMoveGestureListener {
 
-        @Override
-        public boolean onMoveBegin(MoveGestureDetector detector) {
-            Log.d("motion", "pan began");
-            return false;
-        }
+            @Override
+            public boolean onMove(MoveGestureDetector detector) {
+                Log.d("motion", "paning");
+                return false;
+            }
 
-        @Override
-        public void onMoveEnd(MoveGestureDetector detector) {
-            Log.d("motion", "pan ended");
-        }
-    }*/
+            @Override
+            public boolean onMoveBegin(MoveGestureDetector detector) {
+                Log.d("motion", "pan began");
+                return false;
+            }
+
+            @Override
+            public void onMoveEnd(MoveGestureDetector detector) {
+                Log.d("motion", "pan ended");
+            }
+        }*/
+    @Override
+    public void onStart() {
+        super.onStart();
+        mMapView.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mMapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mMapView.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mMapView.onStop();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mMapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mMapView.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mMapView.onSaveInstanceState(outState);
+    }
 }
