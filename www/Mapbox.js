@@ -128,11 +128,6 @@ module.exports = {
         cordova.exec(successCallback, errorCallback, "Mapbox", "setDebug", [id, debug])
     },
 
-    setAssetsDirectory: function (directory, successCallback, errorCallback, id) {
-        id = id || 0;
-        cordova.exec(successCallback, errorCallback, "Mapbox", "setAssetsDirectory", [id, directory])
-    },
-
     setClickable: function (clickable, successCallback, errorCallback, id) {
         id = id || 0;
         cordova.exec(successCallback, errorCallback, "Mapbox", "setClickable", [id, clickable])

@@ -12,6 +12,7 @@ import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -93,7 +94,6 @@ class MapController extends AppCompatActivity {
     private final static String JSON_FIELD_REGION_NAME = "FIELD_REGION_NAME";
     boolean isReady = false;
     Runnable mapReady;
-    String assetsDirectory;
 
     MapView getMapView() {
         return mMapView;
@@ -780,14 +780,33 @@ class MapController extends AppCompatActivity {
         try {
             if (imageObject != null) {
                 if (imageObject.has("url")) {
-                    String filePath = imageObject.getString("url");
-                    // We first look in the current asset bundle. It file does not exists we
-                    // get the original version in the initial asset bundle with AssetsManager
-                    File iconFile = new File(mActivity.getFilesDir(), assetsDirectory + "/app/" + filePath);
-                    if (iconFile.exists()) istream = new FileInputStream(iconFile);
-                    else istream = am.open("www/application/app/" + filePath);
+                    String stringURI = imageObject.getString("url");
 
-                    if (filePath.endsWith(".svg")) {
+                    final Uri uri = Uri.parse(stringURI);
+                    final String uriPath = uri.getPath();
+                    boolean isAsset;
+                    String path;
+                    String fileName;
+
+                    // Only accept file:/// URI
+                    if (uri.getScheme().equals("file")) {
+                        isAsset = uriPath.indexOf("/android_asset/", 0) > -1;
+                        final String filesDir = mActivity.getFilesDir().getPath();
+                        fileName = uri.getLastPathSegment();
+                        // Asset path is different from app file path.
+                        path = uriPath.substring(isAsset ? "/android_asset/".length() : filesDir.length(), uriPath.lastIndexOf('/')+1);
+                    } else throw new JSONException("createIcon: "+ uri +" URI");
+
+                    // We first look in the current asset bundle.
+                    File iconFile = new File(mActivity.getFilesDir(), path + fileName);
+                    if (iconFile.exists()) istream = new FileInputStream(iconFile);
+
+                    // If file does not exists we get the original version in the initial asset bundle with AssetsManager
+                    else {
+                        istream = am.open(path + fileName);
+                    }
+
+                    if (fileName.endsWith(".svg")) {
                         bitmapDrawable = createSVG(SVG.getFromInputStream(istream), imageObject.has("width") ? _applyRetinaFactor(imageObject.getInt("width")) : 0,
                                 imageObject.has("height") ? _applyRetinaFactor(imageObject.getInt("height")) : 0);
                     } else {
