@@ -86,11 +86,18 @@
 - (void) hide:(CDVInvokedUrlCommand*)command {
   [_mapView removeFromSuperview];
 
-  // Remove marker callback handler
-  self.markerCallbackId = nil
-
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) getCenter:(CDVInvokedUrlCommand*)command {
+    CLLocationCoordinate2D ctr = _mapView.centerCoordinate;
+    NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:
+                         [NSNumber numberWithDouble:ctr.latitude], @"lat",
+                         [NSNumber numberWithDouble:ctr.longitude], @"lng",
+                         nil];
+    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dic];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) setCenter:(CDVInvokedUrlCommand*)command {
@@ -137,14 +144,21 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void) getCenter:(CDVInvokedUrlCommand*)command {
-  CLLocationCoordinate2D ctr = _mapView.centerCoordinate;
-  NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:
-          [NSNumber numberWithDouble:ctr.latitude], @"lat",
-          [NSNumber numberWithDouble:ctr.longitude], @"lng",
-          nil];
-  CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dic];
-  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+- (void) getBounds:(CDVInvokedUrlCommand*)command {
+    MGLCoordinateBounds bounds = _mapView.visibleCoordinateBounds;
+    NSDictionary *dic = [NSDictionary dictionaryWithObjectsAndKeys:
+                         [NSNumber numberWithDouble:bounds.sw.latitude], @"sw_lat",
+                         [NSNumber numberWithDouble:bounds.sw.longitude], @"sw_lng",
+                         [NSNumber numberWithDouble:bounds.ne.latitude], @"ne_lat",
+                         [NSNumber numberWithDouble:bounds.ne.longitude], @"ne_lng",
+                         nil];
+    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dic];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) setBounds:(CDVInvokedUrlCommand*)command {
+    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"not implemented for iOS (yet)"];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void)animateCamera:(CDVInvokedUrlCommand*)command {
