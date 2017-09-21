@@ -188,6 +188,10 @@ public class Mapbox extends CordovaPlugin {
 
       } else if (ACTION_HIDE.equals(action)) {
         if (mapView != null) {
+
+          // Remove marker callback handler
+          this.markerCallbackContext = null;
+
           cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -196,9 +200,6 @@ public class Mapbox extends CordovaPlugin {
               if (vg != null) {
                 vg.removeView(mapView);
               }
-
-              // Remove marker callback handler
-              this.markerCallbackContext = null;
 
               callbackContext.success();
             }
