@@ -31,6 +31,8 @@
     <button onclick="zoomOut()">zoom -</button><br/><br/>
     <button onclick="setCenter()">set center</button>
     <button onclick="getCenter()">get center</button>
+    <button onclick="setBounds()">set bounds</button>
+    <button onclick="getBounds()">get bounds</button>
     <button onclick="setTilt()">set tilt</button>
     <button onclick="getTilt()">get tilt</button><br/><br/>
     <button onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">ctr2coords</button>
@@ -53,6 +55,22 @@
   }
 
   function getCenter() {
+    Mapbox.getCenter(function (c) {
+      alert(JSON.stringify(c))
+    });
+  }
+
+  function setBounds() {
+    Mapbox.setBounds({
+      'sw_lat': 50.2222,
+      'sw_lng': 5.2344,
+      'ne_lat': 30.2222,
+      'ne_lng': 2.2344,
+      'animated': true // default false
+    });
+  }
+
+  function getBounds() {
     Mapbox.getCenter(function (c) {
       alert(JSON.stringify(c))
     });

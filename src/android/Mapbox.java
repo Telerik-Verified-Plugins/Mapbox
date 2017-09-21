@@ -56,10 +56,12 @@ public class Mapbox extends CordovaPlugin {
   // private static final String ACTION_REMOVE_MARKER_CALLBACK = "removeMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
-  private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
-  private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
   private static final String ACTION_GET_CENTER = "getCenter";
   private static final String ACTION_SET_CENTER = "setCenter";
+  private static final String ACTION_GET_ZOOMLEVEL = "getZoomLevel";
+  private static final String ACTION_SET_ZOOMLEVEL = "setZoomLevel";
+  private static final String ACTION_GET_BOUNDS = "getBounds";
+  private static final String ACTION_SET_BOUNDS = "setBounds";
   private static final String ACTION_GET_TILT = "getTilt";
   private static final String ACTION_SET_TILT = "setTilt";
   private static final String ACTION_ANIMATE_CAMERA = "animateCamera";
@@ -203,6 +205,39 @@ public class Mapbox extends CordovaPlugin {
           });
         }
 
+      } else if (ACTION_GET_CENTER.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              final LatLng center = mapView.getLatLng();
+              Map<String, Double> result = new HashMap<String, Double>();
+              result.put("lat", center.getLatitude());
+              result.put("lng", center.getLongitude());
+              callbackContext.success(new JSONObject(result));
+            }
+          });
+        }
+
+      } else if (ACTION_SET_CENTER.equals(action)) {
+        if (mapView != null) {
+          cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                final JSONObject options = args.getJSONObject(0);
+                final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
+                final double lat = options.getDouble("lat");
+                final double lng = options.getDouble("lng");
+                mapView.setLatLng(new LatLng(lat, lng), animated);
+                callbackContext.success();
+              } catch (JSONException e) {
+                callbackContext.error(e.getMessage());
+              }
+            }
+          });
+        }
+
       } else if (ACTION_GET_ZOOMLEVEL.equals(action)) {
         if (mapView != null) {
           cordova.getActivity().runOnUiThread(new Runnable() {
@@ -236,21 +271,34 @@ public class Mapbox extends CordovaPlugin {
           });
         }
 
-      } else if (ACTION_GET_CENTER.equals(action)) {
+
+      } else if (ACTION_GET_BOUNDS.equals(action)) {
         if (mapView != null) {
           cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-              final LatLng center = mapView.getLatLng();
-              Map<String, Double> result = new HashMap<String, Double>();
-              result.put("lat", center.getLatitude());
-              result.put("lng", center.getLongitude());
+              // NOTE: need to change to this on a future release
+              // final CoordinateBounds bounds = mapView.getVisibleCoordinateBounds();
+              // final LatLng sw = bounds.getSouthWest();
+              // final LatLng ne = bounds.getNorthEast();
+              // Map<String, Double> result = new HashMap<String, Double>();
+
+              // NOTE: Workaround, see: https://github.com/mapbox/mapbox-gl-native/issues/3863#issuecomment-181825298
+              int viewportWidth = mapView.getWidth();
+              int viewportHeight = mapView.getHeight();
+              LatLng sw = mapView.fromScreenLocation(new PointF(0, viewportHeight)); // bottom left
+              LatLng ne = mapView.fromScreenLocation(new PointF(viewportWidth, 0)); // top right
+
+              result.put("sw_lat", sw.getLatitude());
+              result.put("sw_lng", sw.getLongitude());
+              result.put("ne_lat", ne.getLatitude());
+              result.put("ne_lng", ne.getLongitude());
               callbackContext.success(new JSONObject(result));
             }
           });
         }
 
-      } else if (ACTION_SET_CENTER.equals(action)) {
+      } else if (ACTION_SET_BOUNDS.equals(action)) {
         if (mapView != null) {
           cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -258,9 +306,14 @@ public class Mapbox extends CordovaPlugin {
               try {
                 final JSONObject options = args.getJSONObject(0);
                 final boolean animated = !options.isNull("animated") && options.getBoolean("animated");
-                final double lat = options.getDouble("lat");
-                final double lng = options.getDouble("lng");
-                mapView.setLatLng(new LatLng(lat, lng), animated);
+                final double sw_lat = options.getDouble("sw_lat");
+                final double sw_lng = options.getDouble("sw_lng");
+                final double ne_lat = options.getDouble("ne_lat");
+                final double ne_lng = options.getDouble("ne_lng");
+                final LatLng sw = new LatLng(sw_lat, sw_lng);
+                final LatLng ne = new LatLng(ne_lat, ne_lng);
+                final CoordinateBounds bounds = new CoordinateBounds(sw, ne);
+                mapView.setVisibleCoordinateBounds(bounds, animated)
                 callbackContext.success();
               } catch (JSONException e) {
                 callbackContext.error(e.getMessage());
