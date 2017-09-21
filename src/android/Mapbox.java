@@ -313,7 +313,7 @@ public class Mapbox extends CordovaPlugin {
                 final LatLng sw = new LatLng(sw_lat, sw_lng);
                 final LatLng ne = new LatLng(ne_lat, ne_lng);
                 final CoordinateBounds bounds = new CoordinateBounds(sw, ne);
-                mapView.setVisibleCoordinateBounds(bounds, animated)
+                mapView.setVisibleCoordinateBounds(bounds, animated);
                 callbackContext.success();
               } catch (JSONException e) {
                 callbackContext.error(e.getMessage());
