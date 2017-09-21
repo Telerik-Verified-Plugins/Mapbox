@@ -9,6 +9,7 @@ import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.graphics.PointF;
 
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -18,6 +19,7 @@ import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngZoom;
+import com.mapbox.mapboxsdk.geometry.CoordinateBounds;
 import com.mapbox.mapboxsdk.views.MapView;
 
 import org.apache.cordova.CallbackContext;
@@ -278,11 +280,10 @@ public class Mapbox extends CordovaPlugin {
           cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-              // NOTE: need to change to this on a future release
+              // NOTE: need to change to this on a future release           
               // final CoordinateBounds bounds = mapView.getVisibleCoordinateBounds();
               // final LatLng sw = bounds.getSouthWest();
               // final LatLng ne = bounds.getNorthEast();
-              // Map<String, Double> result = new HashMap<String, Double>();
 
               // NOTE: Workaround, see: https://github.com/mapbox/mapbox-gl-native/issues/3863#issuecomment-181825298
               int viewportWidth = mapView.getWidth();
@@ -290,6 +291,7 @@ public class Mapbox extends CordovaPlugin {
               LatLng sw = mapView.fromScreenLocation(new PointF(0, viewportHeight)); // bottom left
               LatLng ne = mapView.fromScreenLocation(new PointF(viewportWidth, 0)); // top right
 
+              Map<String, Double> result = new HashMap<String, Double>();
               result.put("sw_lat", sw.getLatitude());
               result.put("sw_lng", sw.getLongitude());
               result.put("ne_lat", ne.getLatitude());
