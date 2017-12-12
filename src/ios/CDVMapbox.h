@@ -20,6 +20,7 @@
 - (void) animateCamera:(CDVInvokedUrlCommand*)command;
 
 - (void) addPolygon:(CDVInvokedUrlCommand*)command;
+- (void) addPolyline:(CDVInvokedUrlCommand*)command;
 
 - (void) addGeoJSON:(CDVInvokedUrlCommand*)command;
 

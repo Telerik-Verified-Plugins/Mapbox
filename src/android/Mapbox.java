@@ -17,6 +17,7 @@ import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
+import com.mapbox.mapboxsdk.annotations.PolylineOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngZoom;
 import com.mapbox.mapboxsdk.geometry.CoordinateBounds;
@@ -57,6 +58,7 @@ public class Mapbox extends CordovaPlugin {
   // TODO:
   // private static final String ACTION_REMOVE_MARKER_CALLBACK = "removeMarkerCallback";
   private static final String ACTION_ADD_POLYGON = "addPolygon";
+  private static final String ACTION_ADD_POLYLINE = "addPolyline";
   private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
   private static final String ACTION_GET_CENTER = "getCenter";
   private static final String ACTION_SET_CENTER = "setCenter";
@@ -393,6 +395,29 @@ public class Mapbox extends CordovaPlugin {
             }
           });
         }
+
+      } else if (ACTION_ADD_POLYLINE.equals(action)) {
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              final PolylineOptions polygon = new PolylineOptions();
+              final JSONObject options = args.getJSONObject(0);
+              final JSONArray points = options.getJSONArray("points");
+              for (int i = 0; i < points.length(); i++) {
+                final JSONObject marker = points.getJSONObject(i);
+                final double lat = marker.getDouble("lat");
+                final double lng = marker.getDouble("lng");
+                polygon.add(new LatLng(lat, lng));
+              }
+              mapView.addPolyline(polygon);
+
+              callbackContext.success();
+            } catch (JSONException e) {
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
 
       } else if (ACTION_ADD_POLYGON.equals(action)) {
         cordova.getActivity().runOnUiThread(new Runnable() {
