@@ -24,7 +24,8 @@
     <button onclick="addMarkers()">Markers</button>
     <button onclick="removeAllMarkers()">Remove All Markers</button>
     <!--button onclick="addGeoJSON()">Add GeoJSON</button-->
-    <button onclick="addPolygon()">Poly</button>
+    <button onclick="addPolygon()">Polygon</button>
+    <button onclick="addPolyline()">Polyline</button>
     <button onclick="hideMap()">hide</button><br/><br/>
     <button onclick="getZoomLevel()">getZoom</button>
     <button onclick="zoomIn()">zoom +</button>
@@ -188,6 +189,25 @@
 
   function addPolygon() {
     Mapbox.addPolygon({
+      points: [
+        {
+          'lat': 52.3832160,
+          'lng': 4.8991680
+        },
+        {
+          'lat': 52.3632160,
+          'lng': 4.9011680
+        },
+        {
+          'lat': 52.3932160,
+          'lng': 4.8911680
+        }
+      ]
+    });
+  }
+
+  function addPolyline() {
+    Mapbox.addPolyline({
       points: [
         {
           'lat': 52.3832160,
