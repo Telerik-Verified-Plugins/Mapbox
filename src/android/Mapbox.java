@@ -401,16 +401,17 @@ public class Mapbox extends CordovaPlugin {
           @Override
           public void run() {
             try {
-              final PolylineOptions polygon = new PolylineOptions();
+              final PolylineOptions polyline = new PolylineOptions();
               final JSONObject options = args.getJSONObject(0);
               final JSONArray points = options.getJSONArray("points");
               for (int i = 0; i < points.length(); i++) {
                 final JSONObject marker = points.getJSONObject(i);
                 final double lat = marker.getDouble("lat");
                 final double lng = marker.getDouble("lng");
-                polygon.add(new LatLng(lat, lng));
+                polyline.add(new LatLng(lat, lng));
               }
-              mapView.addPolyline(polygon);
+              polyline.alpha((float)options.getDouble("alpha"));
+              mapView.addPolyline(polyline);
 
               callbackContext.success();
             } catch (JSONException e) {
@@ -433,6 +434,7 @@ public class Mapbox extends CordovaPlugin {
                 final double lng = marker.getDouble("lng");
                 polygon.add(new LatLng(lat, lng));
               }
+              polygon.alpha((float)options.getDouble("alpha"));
               mapView.addPolygon(polygon);
 
               callbackContext.success();
