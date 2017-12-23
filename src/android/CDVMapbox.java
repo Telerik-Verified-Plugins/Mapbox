@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.content.res.Resources;
 import android.graphics.PointF;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
@@ -30,45 +31,47 @@ import java.util.ArrayList;
 public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrollChangedListener {
 
     private FrameLayout mapsGroup;
+
+    private static final String ADD_GEOJSON = "ADD_GEOJSON"; // todo in JS
+    private static final String ADD_MARKER = "ADD_MARKER";
+    private static final String ADD_MARKER_CALLBACK = "ADD_MARKER_CALLBACK";
+    private static final String ADD_MARKERS = "ADD_MARKERS"; // todo in JS
+    private static final String ADD_ON_MAP_CHANGE_LISTENER = "ADD_ON_MAP_CHANGE_LISTENER";
+    private static final String CONVERT_COORDINATES = "CONVERT_COORDINATES";
+    private static final String CONVERT_POINT = "CONVERT_POINT";
+    private static final String DELETE_OFFLINE_REGION = "DELETE_OFFLINE_REGION";
+    private static final String DESTROY = "DESTROY";
+    private static final String DOWNLOAD_CURRENT_MAP = "DOWNLOAD_CURRENT_MAP";
+    private static final String FLY_TO = "FLY_TO";
+    private static final String GET_BOUNDS = "GET_BOUNDS";
+    private static final String GET_CAMERA_POSITION = "GET_CAMERA_POSITION";
+    private static final String GET_CENTER = "GET_CENTER";
+    private static final String GET_MARKERS_POSITIONS = "GET_MARKERS_POSITIONS";
+    private static final String GET_OFFLINE_REGIONS_LIST = "GET_OFFLINE_REGIONS_LIST";
+    private static final String GET_PITCH = "GET_PITCH";
+    private static final String GET_ZOOM = "GET_ZOOM";
+    private static final String HIDE = "HIDE";
+    private static final String MARKER__SET_ICON = "MARKER__SET_ICON";
+    private static final String MARKER__SET_LNG_LAT = "MARKER__SET_LNG_LAT";
+    private static final String NEXT_MARKERS_POSITIONS_PREDICATE = "NEXT_MARKERS_POSITIONS_PREDICATE";
+    private static final String PAUSE_DOWNLOAD = "PAUSE_DOWNLOAD";
+    private static final String REMOVE_MARKER = "REMOVE_MARKER";
+    private static final String REMOVE_MARKERS = "REMOVE_MARKERS"; // todo in JS
+    private static final String RESIZE = "RESIZE";
+    private static final String SCROLL_MAP = "SCROLL_MAP";
+    private static final String SET_CENTER = "SET_CENTER";
+    private static final String SET_CLICKABLE = "SET_CLICKABLE";
+    private static final String SET_CONTAINER = "SET_CONTAINER";
+    private static final String SET_DEBUG = "SET_DEBUG";
+    private static final String SET_PITCH = "SET_PITCH";
+    private static final String SET_ZOOM = "SET_ZOOM";
+    private static final String SHOW = "SHOW";
+    private static final String ZOOM_TO = "ZOOM_TO";
+
     private static final String MAPBOX_ACCESSTOKEN_RESOURCE_KEY = "mapbox_accesstoken";
-    private static final String ACTION_SHOW = "show";
-    private static final String ACTION_HIDE = "hide";
-    private static final String ACTION_RESIZE = "resize";
-    private static final String ACTION_SET_CLICKABLE = "setClickable";
-    private static final String ACTION_SET_DEBUG = "setDebug";
-    private static final String ACTION_ADD_MARKERS = "addMarkers";
-    private static final String ACTION_ADD_MARKER = "addMarker";
-    private static final String MARKER__SET_ICON = "Marker.setIcon";
-    private static final String MARKER__SET_LNG_LAT = "Marker.setLngLat";
-    private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
-    private static final String ACTION_REMOVE_MARKERS = "removeMarkers";
-    private static final String ACTION_REMOVE_MARKER = "removeMarker";
-    private static final String ACTION_DOWNLOAD_CURRENT_MAP = "downloadCurrentMap";
-    private static final String ACTION_PAUSE_DOWNLOAD = "pauseDownload";
-    private static final String ACTION_GET_OFFLINE_REGIONS_LIST = "getOfflineRegionsList";
-    private static final String ACTION_DELETE_OFFLINE_REGION = "deleteOfflineRegion";
-    private static final String ACTION_ADD_GEOJSON = "addGeoJSON";
-    private static final String ACTION_GET_ZOOM = "getZoom";
-    private static final String ACTION_SET_ZOOM = "setZoom";
-    private static final String ACTION_ZOOM_TO = "zoomTo";
-    private static final String ACTION_GET_BOUNDS = "getBounds";
-    private static final String ACTION_GET_CAMERA_POSITION = "getCameraPosition";
-    private static final String ACTION_GET_CENTER = "getCenter";
-    private static final String ACTION_SET_CENTER = "setCenter";
-    private static final String ACTION_SCROLL_MAP = "scrollMap";
-    private static final String ACTION_GET_PITCH = "getPitch";
-    private static final String ACTION_SET_PITCH = "setPitch";
-    private static final String ACTION_FLY_TO = "flyTo";
-    private static final String ACTION_CONVERT_COORDINATES = "convertCoordinates";
-    private static final String ACTION_CONVERT_POINT = "convertPoint";
-    private static final String ACTION_NEXT_MARKERS_POSITIONS_PREDICATE = "nextMarkersPositionsPredicate";
-    private static final String ACTION_GET_MARKERS_POSITIONS = "getMarkersPositions";
-    private static final String ACTION_ADD_ON_MAP_CHANGE_LISTENER = "addOnMapChangeListener";
-    private static final String ACTION_SET_CONTAINER = "setContainer";
     private CordovaWebView _webView;
     private Activity activity;
 
-    public CordovaInterface _cordova;
     public PluginLayout pluginLayout;
 
     @Override
@@ -158,10 +161,19 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             final int id = args.getInt(0);
             final Map map = MapsManager.getMap(id);
 
-            if (ACTION_SHOW.equals(action)) {
+            if (SHOW.equals(action)) {
                 if (map != null) {
-                    callbackContext.error("Map is already displayed");
-                    return false;
+                    if (map.getMapCtrl().getMapView().getVisibility() == View.GONE) {
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                map.getMapCtrl().getMapView().setVisibility(View.VISIBLE);
+                            }
+                        });
+                    } else {
+                        callbackContext.error("Map is already displayed");
+                        return false;
+                    }
                 } else {
                     activity.runOnUiThread(new Runnable() {
                         @Override
@@ -208,7 +220,14 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
             final MapController mapCtrl = map.getMapCtrl();
 
-            if (ACTION_HIDE.equals(action)) {
+            if (HIDE.equals(action)) {
+                activity.runOnUiThread(new Runnable() {
+                    public void run() {
+                        map.getMapCtrl().getMapView().setVisibility(View.GONE);
+                        if (mapCtrl.isDownloading()) mapCtrl.pauseDownload();
+                    }
+                });
+            } else if (DESTROY.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     public void run() {
                         if (mapCtrl.isDownloading()) mapCtrl.pauseDownload();
@@ -219,14 +238,14 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_RESIZE.equals(action)) {
+            } else if (RESIZE.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     public void run() {
                         map.setContainer(args, callbackContext);
                     }
                 });
 
-            } else if (ACTION_GET_ZOOM.equals(action)) {
+            } else if (GET_ZOOM.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
 
                     @Override
@@ -239,7 +258,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_SET_ZOOM.equals(action)) {
+            } else if (SET_ZOOM.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
 
                     @Override
@@ -259,7 +278,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_ZOOM_TO.equals(action)) { //todo allow AnimationOptions
+            } else if (ZOOM_TO.equals(action)) { //todo allow AnimationOptions
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -278,7 +297,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_GET_CENTER.equals(action)) {
+            } else if (GET_CENTER.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -296,7 +315,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_SET_CENTER.equals(action)) {
+            } else if (SET_CENTER.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -314,7 +333,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_SCROLL_MAP.equals(action)) {
+            } else if (SCROLL_MAP.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -332,7 +351,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_SET_PITCH.equals(action)) {
+            } else if (SET_PITCH.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -349,7 +368,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_GET_PITCH.equals(action)) {
+            } else if (GET_PITCH.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -363,7 +382,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_FLY_TO.equals(action)) {
+            } else if (FLY_TO.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -382,7 +401,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_ADD_GEOJSON.equals(action)) {
+            } else if (ADD_GEOJSON.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -390,7 +409,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_ADD_MARKER_CALLBACK.equals(action)) {
+            } else if (ADD_MARKER_CALLBACK.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -413,7 +432,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         });
                     }
                 });
-            } else if (ACTION_ADD_MARKER.equals(action)) {
+            } else if (ADD_MARKER.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -444,7 +463,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_ADD_MARKERS.equals(action)) {
+            } else if (ADD_MARKERS.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -532,7 +551,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     }
                 });
 
-            } else if (ACTION_REMOVE_MARKER.equals(action)) {
+            } else if (REMOVE_MARKER.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -544,7 +563,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_REMOVE_MARKERS.equals(action)) {
+            } else if (REMOVE_MARKERS.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -561,7 +580,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_SET_CLICKABLE.equals(action)) {
+            } else if (SET_CLICKABLE.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -573,7 +592,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_SET_DEBUG.equals(action)) {
+            } else if (SET_DEBUG.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -585,7 +604,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_CONVERT_COORDINATES.equals(action)) {
+            } else if (CONVERT_COORDINATES.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -602,7 +621,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_CONVERT_POINT.equals(action)) {
+            } else if (CONVERT_POINT.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -619,7 +638,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_GET_MARKERS_POSITIONS.equals(action)) {
+            } else if (GET_MARKERS_POSITIONS.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -629,7 +648,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
 
                     }
                 });
-            } else if (ACTION_NEXT_MARKERS_POSITIONS_PREDICATE.equals(action)) {
+            } else if (NEXT_MARKERS_POSITIONS_PREDICATE.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -642,7 +661,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_ADD_ON_MAP_CHANGE_LISTENER.equals(action)) {
+            } else if (ADD_ON_MAP_CHANGE_LISTENER.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -671,14 +690,14 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_SET_CONTAINER.equals(action)) {
+            } else if (SET_CONTAINER.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         map.setContainer(args, callbackContext);
                     }
                 });
-            } else if (ACTION_DOWNLOAD_CURRENT_MAP.equals(action)) {
+            } else if (DOWNLOAD_CURRENT_MAP.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -745,7 +764,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         mapCtrl.downloadRegion("" + id, startedCallback, progressCallback, finishedCallback);
                     }
                 });
-            } else if (ACTION_PAUSE_DOWNLOAD.equals(action)) {
+            } else if (PAUSE_DOWNLOAD.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -753,7 +772,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         callbackContext.success();
                     }
                 });
-            } else if (ACTION_GET_OFFLINE_REGIONS_LIST.equals(action)) {
+            } else if (GET_OFFLINE_REGIONS_LIST.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -766,7 +785,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         });
                     }
                 });
-            } else if (ACTION_DELETE_OFFLINE_REGION.equals(action)) {
+            } else if (DELETE_OFFLINE_REGION.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -789,7 +808,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_GET_BOUNDS.equals(action)) {
+            } else if (GET_BOUNDS.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -812,7 +831,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                         }
                     }
                 });
-            } else if (ACTION_GET_CAMERA_POSITION.equals(action)) {
+            } else if (GET_CAMERA_POSITION.equals(action)) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
