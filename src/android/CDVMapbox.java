@@ -170,6 +170,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                                 map.getMapCtrl().getMapView().setVisibility(View.VISIBLE);
                             }
                         });
+                        return true;
                     } else {
                         callbackContext.error("Map is already displayed");
                         return false;
