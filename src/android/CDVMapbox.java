@@ -168,6 +168,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                             @Override
                             public void run() {
                                 map.getMapCtrl().getMapView().setVisibility(View.VISIBLE);
+                                callbackContext.success();
                             }
                         });
                         return true;
@@ -216,6 +217,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
             // need a map for all following actions
             if (map == null || !map.getMapCtrl().isReady) {
                 callbackContext.error(action + " map is not ready");
+                callbackContext.success();
                 return false;
             }
 
@@ -226,6 +228,7 @@ public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrol
                     public void run() {
                         map.getMapCtrl().getMapView().setVisibility(View.GONE);
                         if (mapCtrl.isDownloading()) mapCtrl.pauseDownload();
+                        callbackContext.success();
                     }
                 });
             } else if (DESTROY.equals(action)) {
