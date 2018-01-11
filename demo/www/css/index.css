@@ -1,19 +1,19 @@
 body{
-	background:none !important;
+    background-color: transparent !important;
+}
+.mapContainer, #mapId {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
-.fill{
-	min-height: 100%;
-	height: 100%;
+#actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
 }
 
-.mapContainer{
-	/*position:relative;*/
-}
-
-#mapId{
-	/*position: absolute;
-	top:0;
-	height: 100%;*/
-	height: 300px;
+.mainButton {
+    margin: 1rem 0 !important;
 }

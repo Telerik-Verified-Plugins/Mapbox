@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8"/>
-    <meta name="format-detection" content="telephone=no"/>
-    <meta name="msapplication-tap-highlight" content="no"/>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
     <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
-    <meta name="viewport"
-          content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"/>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap-theme.min.css"/>
-    <link rel="stylesheet" type="text/css" href="css/index.css"/>
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"
+    />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
 
     <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
     <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
@@ -17,336 +18,332 @@
 
     <title>Mapbox test</title>
 </head>
-<body class="fill">
-<div class="app container-fluid fill">
 
-    <ons-page id=container>
-        <ons-toolbar>
-            <div class="center">Mapbox Cordova plugin</div>
-        </ons-toolbar>
+<body>
+    <div class="app container-fluid fill">
 
-        <div id="deviceready" class="blink">
-            <p class="event listening">Connecting to Device</p>
-            <p class="event received">Device is Ready</p>
-            <div class="mapContainer fill">
-                <div id="mapId">
+        <ons-page id=container>
+            <ons-toolbar>
+                <div class="center">Mapbox Cordova plugin</div>
+            </ons-toolbar>
+
+            <div id="deviceready" style="height: 100%; display: flex; flex-direction: column" class="blink">
+                <p class="event listening">Connecting to Device</p>
+                <div class="mapContainer event received" style="display: none;">
+                    <div id="mapId">
+                        <div id="actions">
+                            <ons-button class="mainButton" onclick="showBottomSheet('mapActions')">Map actions</ons-button>
+                            <ons-button class="mainButton" onclick="showBottomSheet('markerActions')">Marker actions</ons-button>
+                            <ons-button class="mainButton" onclick="showBottomSheet('offlineActions')">Marker actions</ons-button>
+                            <ons-button class="mainButton" onclick="showBottomSheet('cameraActions')">Camera actions</ons-button>
+                            <ons-button class="mainButton" onclick="showBottomSheet('utils')">Utils</ons-button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <ons-button onclick="showBottomSheet('mapActions')">Map actions</ons-button>
-                <ons-button onclick="showBottomSheet('markerActions')">Marker actions</ons-button>
-                <ons-button onclick="showBottomSheet('offlineActions')">Marker actions</ons-button>
-                <ons-button onclick="showBottomSheet('cameraActions')">Camera actions</ons-button>
-                <ons-button onclick="showBottomSheet('utils')">Utils</ons-button>
-            </div>
 
-        </div>
+        </ons-page>
 
+        <template id="mapActions.html">
+            <ons-action-sheet id="sheet" cancelable title="Map actions">
+                <ons-action-sheet-button icon="md-square-o" onclick="showMap(document.getElementById('mapId')); hideBottomSheet('mapActions');">Show</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="hideMap(); hideBottomSheet('mapActions');">Hide</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="taller();">Size +</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="smaller();">Size -</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="toggleClickable();">Set map clickable</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="toggleMinimap(); hideBottomSheet('mapActions');">Toggle minimap</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('mapActions');">Cancel</ons-action-sheet-button>
+            </ons-action-sheet>
+        </template>
 
-    </ons-page>
+        <template id="markerActions.html">
+            <ons-action-sheet id="sheet" cancelable title="Marker actions">
+                <ons-action-sheet-button icon="md-square-o" onclick="addMarker();" modifier="destructive">Add Marker</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="setMarkerLngLat();">Move Marker</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="deleteMarker();">Delete Marker</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('markerActions');">Cancel</ons-action-sheet-button>
+            </ons-action-sheet>
+        </template>
 
-    <template id="mapActions.html">
-        <ons-action-sheet id="sheet" cancelable title="Map actions">
-            <ons-action-sheet-button icon="md-square-o" onclick="showMap(document.getElementById('mapId')); hideBottomSheet('mapActions');">Show</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-square-o" onclick="hideMap(); hideBottomSheet('mapActions');">Hide</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-square-o" onclick="taller();">Size +</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="smaller();">Size -</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="toggleClickable();">Set map clickable</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-square-o" onclick="toggleMinimap(); hideBottomSheet('mapActions');">Toggle minimap</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('mapActions');">Cancel</ons-action-sheet-button>
-        </ons-action-sheet>
-    </template>
-
-    <template id="markerActions.html">
-        <ons-action-sheet id="sheet" cancelable title="Marker actions">
-            <ons-action-sheet-button icon="md-square-o" onclick="addMarker();" modifier="destructive">Add Marker</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="setMarkerLngLat();">Move Marker</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="deleteMarker();">Delete Marker</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('markerActions');">Cancel</ons-action-sheet-button>
-        </ons-action-sheet>
-    </template>
-
-    <template id="offlineActions.html">
-        <ons-action-sheet id="sheet" cancelable title="Map actions">
-            <ons-action-sheet-button icon="md-square-o" onclick="getOfflineRegionsList(); hideBottomSheet('offlineActions');">Get regions</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-square-o" onclick="downloadArea();">Go Offline</ons-action-sheet-button>
-            <div style="display:none" id="dProgress" class="progress">
-                <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
-                     aria-valuemax="100"
-                     style="min-width: 2em;">
-                    0%
+        <template id="offlineActions.html">
+            <ons-action-sheet id="sheet" cancelable title="Map actions">
+                <ons-action-sheet-button icon="md-square-o" onclick="getOfflineRegionsList(); hideBottomSheet('offlineActions');">Get regions</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="downloadArea();">Go Offline</ons-action-sheet-button>
+                <div style="display:none" id="dProgress" class="progress">
+                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em;">
+                        0%
+                    </div>
                 </div>
-            </div>
-            <ons-action-sheet-button icon="md-square-o" onclick="cancelDownload();">Cancel download</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="deleteOffline();" modifier="destructive">Delete offline</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('offlineActions');">Cancel</ons-action-sheet-button>
-        </ons-action-sheet>
-    </template>
+                <ons-action-sheet-button icon="md-square-o" onclick="cancelDownload();">Cancel download</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="deleteOffline();" modifier="destructive">Delete offline</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('offlineActions');">Cancel</ons-action-sheet-button>
+            </ons-action-sheet>
+        </template>
 
-    <template id="cameraActions.html">
-        <ons-action-sheet id="sheet" cancelable title="Map actions">
-            <ons-action-sheet-button icon="md-square-o" onclick="flyTo(); hideBottomSheet('cameraActions');">Camera</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-square-o" onclick="zoomIn(); hideBottomSheet('cameraActions');">Zoom +</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-square-o" onclick="zoomOut();">Zoom -</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="setCenter();">Set center</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="setPitch();">Set pitch</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="getZoom();">Get zoom</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="getCenter();">Get center</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="getPitch();">Get pitch</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('cameraActions');">Cancel</ons-action-sheet-button>
-        </ons-action-sheet>
-    </template>
+        <template id="cameraActions.html">
+            <ons-action-sheet id="sheet" cancelable title="Map actions">
+                <ons-action-sheet-button icon="md-square-o" onclick="flyTo(); hideBottomSheet('cameraActions');">Camera</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="zoomIn(); hideBottomSheet('cameraActions');">Zoom +</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="zoomOut();">Zoom -</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="setCenter();">Set center</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="setPitch();">Set pitch</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="getZoom();">Get zoom</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="getCenter();">Get center</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="getPitch();">Get pitch</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('cameraActions');">Cancel</ons-action-sheet-button>
+            </ons-action-sheet>
+        </template>
 
-    <template id=utils.html>`
-        <ons-action-sheet id="sheet" cancelable title="Map actions">
-            <ons-action-sheet-button icon="md-close" onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">Screen to coords</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">Coords to screen</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="getBounds();">Get bounds</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="getCameraPosition();">Get camera position</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="addOverlayElement();">Add new DOM overlay element</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="deleteOverlayElement();">Remove a DOM overlay element</ons-action-sheet-button>
-            <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('utils');">Cancel</ons-action-sheet-button>
-        </ons-action-sheet>
-    </template>
-</div>
-<script type="text/javascript" src="js/jquery-2.2.4.min.js"></script>
-<script type="text/javascript" src="js/bootstrap.min.js"></script>
-<script type="text/javascript" src="cordova.js"></script>
-<script type="text/javascript" src="js/index.js"></script>
+        <template id=utils.html>`
+            <ons-action-sheet id="sheet" cancelable title="Map actions">
+                <ons-action-sheet-button icon="md-close" onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">Screen to coords</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">Coords to screen</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="getBounds();">Get bounds</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="getCameraPosition();">Get camera position</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="addOverlayElement();">Add new DOM overlay element</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="deleteOverlayElement();">Remove a DOM overlay element</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('utils');">Cancel</ons-action-sheet-button>
+            </ons-action-sheet>
+        </template>
+    </div>
+    <script type="text/javascript" src="js/jquery-2.2.4.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
 
-<script>
-    var zoom = 10;
-    var debug = false;
-    var clickable = true;
-    var actionSheets = new Map();
-    var container, backgroud;
+    <script>
+        var zoom = 10;
+        var debug = false;
+        var clickable = true;
+        var actionSheets = new Map();
+        var container, backgroud;
 
-    ons.ready(function () {
-        container = document.getElementById("container");
-        background = container.getElementsByClassName("page__background")[0];
-    });
-
-    function showBottomSheet(id) {
-        actionSheets.get(id).show();
-        Mapbox.setClickable(false);
-    }
-
-    function hideBottomSheet(id) {
-        actionSheets.get(id).hide();
-        Mapbox.setClickable(true);
-    }
-
-    ons.ready(function () {
-        ons.createElement('mapActions.html', { append: true })
-        .then(function (sheet) {
-            actionSheets.set("mapActions", sheet)
+        ons.ready(function () {
+            container = document.getElementById("container");
+            background = container.getElementsByClassName("page__background")[0];
         });
-    });
 
-    ons.ready(function () {
-        ons.createElement('markerActions.html', { append: true })
-        .then(function (sheet) {
-            actionSheets.set("markerActions", sheet)
+        function showBottomSheet(id) {
+            actionSheets.get(id).show();
+            Mapbox.setClickable(false);
+        }
+
+        function hideBottomSheet(id) {
+            actionSheets.get(id).hide();
+            Mapbox.setClickable(true);
+        }
+
+        ons.ready(function () {
+            ons.createElement('mapActions.html', { append: true })
+                .then(function (sheet) {
+                    actionSheets.set("mapActions", sheet)
+                });
         });
-    });
 
-    ons.ready(function () {
-        ons.createElement('offlineActions.html', { append: true })
-        .then(function (sheet) {
-            actionSheets.set("offlineActions")
+        ons.ready(function () {
+            ons.createElement('markerActions.html', { append: true })
+                .then(function (sheet) {
+                    actionSheets.set("markerActions", sheet)
+                });
         });
-    });
 
-    ons.ready(function () {
-        ons.createElement('cameraActions.html', { append: true })
-        .then(function (sheet) {
-            actionSheets.set("cameraActions", sheet)
+        ons.ready(function () {
+            ons.createElement('offlineActions.html', { append: true })
+                .then(function (sheet) {
+                    actionSheets.set("offlineActions")
+                });
         });
-    });
 
-    ons.ready(function () {
-        ons.createElement('utils.html', { append: true })
-        .then(function (sheet) {
-            actionSheets.set("utils", sheet)
+        ons.ready(function () {
+            ons.createElement('cameraActions.html', { append: true })
+                .then(function (sheet) {
+                    actionSheets.set("cameraActions", sheet)
+                });
         });
-    });
+
+        ons.ready(function () {
+            ons.createElement('utils.html', { append: true })
+                .then(function (sheet) {
+                    actionSheets.set("utils", sheet)
+                });
+        });
 
 
-    function toggleClickable() {
-        clickable ^= true;
-        Mapbox.setClickable(clickable)
-    }
+        function toggleClickable() {
+            clickable ^= true;
+            Mapbox.setClickable(clickable)
+        }
 
-    function toggleDebug() {
-        debug ^= true;
-        Mapbox.setDebug(debug)
-    }
+        function toggleDebug() {
+            debug ^= true;
+            Mapbox.setDebug(debug)
+        }
 
-    function taller() {
-        $("#mapId").height($("#mapId").height() + 50)
-        Mapbox.setContainer({domElement: document.getElementById("mapId")});
-    }
+        function taller() {
+            $("#mapId").height($("#mapId").height() + 50)
+            Mapbox.setContainer({ domElement: document.getElementById("mapId") });
+        }
 
-    function smaller() {
-        $("#mapId").height($("#mapId").height() - 50)
-        Mapbox.setContainer({domElement: document.getElementById("mapId")});
-    }
+        function smaller() {
+            $("#mapId").height($("#mapId").height() - 50)
+            Mapbox.setContainer({ domElement: document.getElementById("mapId") });
+        }
 
-    function deleteOffline() {
-        //        Mapbox.getOfflineRegionsList(0,
-        //            function(r){
-        /*               if(r.length)*/
-        Mapbox.deleteOfflineRegion(0, 0, function (r) {
-            alert(JSON.stringify(r));
-        })
-//              }
-        //        );
-    }
+        function deleteOffline() {
+            //        Mapbox.getOfflineRegionsList(0,
+            //            function(r){
+            /*               if(r.length)*/
+            Mapbox.deleteOfflineRegion(0, 0, function (r) {
+                alert(JSON.stringify(r));
+            })
+            //              }
+            //        );
+        }
 
-    function downloadArea() {
-        var dButton = $("#dButton");
-        var dCancelButton = $("#dCancelButton");
-        var progressBar = $("#dProgress");
+        function downloadArea() {
+            var dButton = $("#dButton");
+            var dCancelButton = $("#dCancelButton");
+            var progressBar = $("#dProgress");
 
-        dButton.css("display", "none");
-        dCancelButton.css("display", "inline");
-        progressBar.css("display", "block");
+            dButton.css("display", "none");
+            dCancelButton.css("display", "inline");
+            progressBar.css("display", "block");
 
-        Mapbox.setContainer({domElement: document.getElementById('mapId')});
+            Mapbox.setContainer({ domElement: document.getElementById('mapId') });
 
-        Mapbox.downloadCurrentMap(0,
-            function (d) {
-                if (d.mapDownloadStatus.started) {
-                    console.log("started");
-                    return;
-                } else if (d.mapDownloadStatus.downloading) {
-                    progressBar
-                        .attr("aria-valuenow", d.mapDownloadStatus.progress)
-                        .width(d.mapDownloadStatus.progress + "%")
-                        .first(".progress-bar").text(d.mapDownloadStatus.progress + "%");
+            Mapbox.downloadCurrentMap(0,
+                function (d) {
+                    if (d.mapDownloadStatus.started) {
+                        console.log("started");
+                        return;
+                    } else if (d.mapDownloadStatus.downloading) {
+                        progressBar
+                            .attr("aria-valuenow", d.mapDownloadStatus.progress)
+                            .width(d.mapDownloadStatus.progress + "%")
+                            .first(".progress-bar").text(d.mapDownloadStatus.progress + "%");
 
-                } else if (d.mapDownloadStatus.finished) {
-                    console.log("finished");
+                    } else if (d.mapDownloadStatus.finished) {
+                        console.log("finished");
+                        dButton.css("display", "inline");
+                        dCancelButton.css("display", "none");
+                        progressBar
+                            .attr("aria-valuenow", d.mapDownloadStatus.progress)
+                            .css("min-width: 2em; width: 2%;")
+                            .first(".progress-bar").text("0%");
+                        progressBar.css("display", "none");
+                    }
+                },
+                function (e) {
+                    console.log(e);
+                }
+            );
+        }
+
+        function cancelDownload() {
+            var dButton = $("#dButton");
+            var dCancelButton = $("#dCancelButton");
+            var progressBar = $("#dProgress");
+
+            Mapbox.pauseDownload(0,
+                function () {
                     dButton.css("display", "inline");
                     dCancelButton.css("display", "none");
                     progressBar
-                        .attr("aria-valuenow", d.mapDownloadStatus.progress)
-                        .css("min-width: 2em; width: 2%;")
-                        .first(".progress-bar").text("0%");
+                        .attr("aria-valuenow", 0)
+                        .css("min-width: 2em; width: 2%;");
+                    progressBar.first(".progress-bar").text("0%");
                     progressBar.css("display", "none");
+
+                    Mapbox.setContainer({ domElement: document.getElementById('mapId') });
+
                 }
-            },
-            function (e) {
-                console.log(e);
-            }
-        );
-    }
-
-    function cancelDownload() {
-        var dButton = $("#dButton");
-        var dCancelButton = $("#dCancelButton");
-        var progressBar = $("#dProgress");
-
-        Mapbox.pauseDownload(0,
-            function () {
-                dButton.css("display", "inline");
-                dCancelButton.css("display", "none");
-                progressBar
-                    .attr("aria-valuenow", 0)
-                    .css("min-width: 2em; width: 2%;");
-                progressBar.first(".progress-bar").text("0%");
-                progressBar.css("display", "none");
-
-                Mapbox.setContainer({domElement: document.getElementById('mapId')});
-
-            }
-        );
-    }
-
-    function getOfflineRegionsList() {
-        Mapbox.getOfflineRegionsList(0,
-            function (r) {
-                alert(JSON.stringify(r))
-            });
-    }
-
-    function getBounds() {
-        Mapbox.getBounds(function (r) {
-            alert(JSON.stringify(r));
-        });
-    }
-
-    function getCameraPosition() {
-        Mapbox.getCameraPosition(function (r) {
-            alert(JSON.stringify(r));
-        });
-    }
-
-    function addOverlayElement() {
-        var newDummy = document.createElement("span");
-        newDummy.className = "dummy";
-        newDummy.setAttribute("style", "float:left;width:20px;height:20px;background-color:red");
-
-        var lastDummy = document.getElementsByClassName("dummy")[0];
-
-        if (lastDummy) {
-            lastDummy.parentElement.appendChild(newDummy);
-        } else {
-            document.getElementById('mapId').appendChild(newDummy);
+            );
         }
 
-        Mapbox.setContainer({domElement: document.getElementById('mapId')});
-    }
+        function getOfflineRegionsList() {
+            Mapbox.getOfflineRegionsList(0,
+                function (r) {
+                    alert(JSON.stringify(r))
+                });
+        }
 
-    function deleteOverlayElement() {
-        var elem = document.getElementsByClassName('dummy')[0];
-        if (!elem) return;
-        elem.parentNode.removeChild(elem);
-        Mapbox.setContainer({domElement: document.getElementById('mapId')});
-    }
+        function getBounds() {
+            Mapbox.getBounds(function (r) {
+                alert(JSON.stringify(r));
+            });
+        }
 
-    function setCenter() {
-        Mapbox.setCenter([2.8912, 52.3702160]); //[long, lat]
-    }
+        function getCameraPosition() {
+            Mapbox.getCameraPosition(function (r) {
+                alert(JSON.stringify(r));
+            });
+        }
 
-    function getCenter() {
-        Mapbox.getCenter(function (c) {
+        function addOverlayElement() {
+            var newDummy = document.createElement("span");
+            newDummy.className = "dummy";
+            newDummy.setAttribute("style", "float:left;width:20px;height:20px;background-color:red");
+
+            var lastDummy = document.getElementsByClassName("dummy")[0];
+
+            if (lastDummy) {
+                lastDummy.parentElement.appendChild(newDummy);
+            } else {
+                document.getElementById('mapId').appendChild(newDummy);
+            }
+
+            Mapbox.setContainer({ domElement: document.getElementById('mapId') });
+        }
+
+        function deleteOverlayElement() {
+            var elem = document.getElementsByClassName('dummy')[0];
+            if (!elem) return;
+            elem.parentNode.removeChild(elem);
+            Mapbox.setContainer({ domElement: document.getElementById('mapId') });
+        }
+
+        function setCenter() {
+            Mapbox.setCenter([2.8912, 52.3702160]); //[long, lat]
+        }
+
+        function getCenter() {
+            Mapbox.getCenter(function (c) {
                 alert(c)
             },
-            function (err) {
-                alert(err)
+                function (err) {
+                    alert(err)
+                });
+        }
+
+        function setPitch() {
+            Mapbox.setPitch(45);
+        }
+
+        function getPitch() {
+            Mapbox.getPitch(function (p) {
+                alert(JSON.stringify(p))
             });
-    }
+        }
 
-    function setPitch() {
-        Mapbox.setPitch(45);
-    }
+        function getZoom() {
+            Mapbox.getZoom(function (z) {
+                alert(JSON.stringify(z))
+            });
+        }
 
-    function getPitch() {
-        Mapbox.getPitch(function (p) {
-            alert(JSON.stringify(p))
-        });
-    }
+        function zoomIn() {
+            Mapbox.zoomTo(++zoom);
+        }
 
-    function getZoom() {
-        Mapbox.getZoom(function (z) {
-            alert(JSON.stringify(z))
-        });
-    }
+        function zoomOut() {
+            Mapbox.setZoom(--zoom);
+        }
 
-    function zoomIn() {
-        Mapbox.zoomTo(++zoom);
-    }
+        function toggleMinimap() { }
 
-    function zoomOut() {
-        Mapbox.setZoom(--zoom);
-    }
-
-    function toggleMinimap() {}
-
-    function showMap(div) {
-        Mapbox.show({
+        function showMap(div) {
+            Mapbox.show({
                 domElement: div || null,
                 style: 'mapbox://styles/vikti/ciqi9isrt002ve1njkb6la458',
                 cameraPosition: {
@@ -433,64 +430,64 @@
                 disableZoom: false, // default false
                 disablePitch: false, // default false
             },
-            function (result) {
-                // Set the container background transparent to show the map
-                console.log(background)
-                background.style.backgroundColor = "transparent";
+                function (result) {
+                    // Set the container background transparent to show the map
+                    background.style.backgroundColor = "transparent";
 
-                Mapbox.addMarkerCallback(0, function (r) {
-                    console.log(r + "was touched")
-                });
-                // let's add callbacks for region changing
-                //
-                // - invoked when the map is about to moved (animated or not).
-                Mapbox.addOnMapChangeListener("REGION_WILL_CHANGE", function (cameraPosition) {
-                    console.log("Camera will move from: ", cameraPosition);
-                });
-                // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
-                Mapbox.addOnMapChangeListener("REGION_IS_CHANGING", function (cameraPosition) {
-                    console.log("Camera map center is: ", cameraPosition);
-                });
-                // - invoked after the map has moved (animated or not).
-                Mapbox.addOnMapChangeListener("REGION_DID_CHANGE", function (cameraPosition) {
-                    console.log("Camera as finished to move to : ", cameraPosition);
-                });
-            },
-            function (error) {
-                alert(error);
-            })
-    }
-
-    function hideMap() {
-        Mapbox.hide(0,
-            function (result) {
-                background.style.backgroundColor = "#eceff1";
-            },
-            function (error) {
-                alert(error);
-            }
-        )
-    }
-
-    function flyTo() {
-        zoom = 20;
-        Mapbox.flyTo({
-            cameraPosition: {
-                // Sets the center of the map to Maracanã
-                target: {
-                    lat: 52.3632160,
-                    lng: 4.9011680
+                    Mapbox.addMarkerCallback(0, function (r) {
+                        console.log(r + "was touched")
+                    });
+                    // let's add callbacks for region changing
+                    //
+                    // - invoked when the map is about to moved (animated or not).
+                    Mapbox.addOnMapChangeListener("REGION_WILL_CHANGE", function (cameraPosition) {
+                        console.log("Camera will move from: ", cameraPosition);
+                    });
+                    // - invoked at each tick (so 60 per second) when the map moves. So don't do any heavy computing here.
+                    Mapbox.addOnMapChangeListener("REGION_IS_CHANGING", function (cameraPosition) {
+                        console.log("Camera map center is: ", cameraPosition);
+                    });
+                    // - invoked after the map has moved (animated or not).
+                    Mapbox.addOnMapChangeListener("REGION_DID_CHANGE", function (cameraPosition) {
+                        console.log("Camera as finished to move to : ", cameraPosition);
+                    });
                 },
-                zoom: 20, // Android, zoomLevel
-                bearing: 270, // Sets the orientation of the camera to look west
-                tilt: 40, // // Sets the tilt of the camera to 30 degrees
-                duration: 4000 // in seconds
-            }
-        });
-    }
+                function (error) {
+                    alert(error);
+                })
+        }
 
-    function addMarker() {
-        Mapbox.addSource("3", {
+        function hideMap() {
+            Mapbox.hide(0,
+                function (result) {
+                    // Reset the container background
+                    background.style.backgroundColor = "#eceff1";
+                },
+                function (error) {
+                    alert(error);
+                }
+            )
+        }
+
+        function flyTo() {
+            zoom = 20;
+            Mapbox.flyTo({
+                cameraPosition: {
+                    // Sets the center of the map to Maracanã
+                    target: {
+                        lat: 52.3632160,
+                        lng: 4.9011680
+                    },
+                    zoom: 20, // Android, zoomLevel
+                    bearing: 270, // Sets the orientation of the camera to look west
+                    tilt: 40, // // Sets the tilt of the camera to 30 degrees
+                    duration: 4000 // in seconds
+                }
+            });
+        }
+
+        function addMarker() {
+            Mapbox.addSource("3", {
                 "type": "geojson",
                 "data": {
                     "type": "Feature",
@@ -509,53 +506,54 @@
                     }
                 }
             },
-            console.log,
-            console.error
-        );
-    }
+                console.log,
+                console.error
+            );
+        }
 
-    function setMarkerLngLat() {
-        Mapbox.setMarkerLngLat("3", [2.8912, 52.3702160],
-            console.log,
-            console.error
-        );
-    }
+        function setMarkerLngLat() {
+            Mapbox.setMarkerLngLat("3", [2.8912, 52.3702160],
+                console.log,
+                console.error
+            );
+        }
 
-    function deleteMarker() {
-        Mapbox.removeSource("3");
-    }
+        function deleteMarker() {
+            Mapbox.removeSource("3");
+        }
 
-    function coords2Screen(coords) {
-        Mapbox.convertCoordinates(coords,
-            function (point) {
-                try {
-                    alert(JSON.stringify(point))
-                } catch (e) {
-                    alert(e);
-                    console.error(e);
-                }
-            }, alert)
-    }
+        function coords2Screen(coords) {
+            Mapbox.convertCoordinates(coords,
+                function (point) {
+                    try {
+                        alert(JSON.stringify(point))
+                    } catch (e) {
+                        alert(e);
+                        console.error(e);
+                    }
+                }, alert)
+        }
 
-    function screen2Coords(point) {
-        Mapbox.convertPoint({
+        function screen2Coords(point) {
+            Mapbox.convertPoint({
                 'x': point.x,
                 'y': point.y
             },
-            function (latLng) {
-                try {
-                    alert(JSON.stringify(latLng))
-                } catch (e) {
-                    alert(e);
-                    console.error(e);
-                }
-            }, alert)
-    }
+                function (latLng) {
+                    try {
+                        alert(JSON.stringify(latLng))
+                    } catch (e) {
+                        alert(e);
+                        console.error(e);
+                    }
+                }, alert)
+        }
 
 
 
 
 
-</script>
+    </script>
 </body>
+
 </html>
