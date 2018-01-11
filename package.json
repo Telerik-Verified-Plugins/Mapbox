@@ -15,6 +15,9 @@
     "cordova-android",
     "cordova-ios"
   ],
+  "scripts": {
+    "browserSync": "browser-sync start --files demo/www/*"
+  },
   "platforms": [
     "android",
     "ios"
@@ -24,5 +27,8 @@
       "name": "cordova",
       "version": ">=3.5.0"
     }
-  ]
+  ],
+  "devDependencies": {
+    "browser-sync": "^2.23.3"
+  }
 }
