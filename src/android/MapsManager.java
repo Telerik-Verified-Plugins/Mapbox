@@ -54,13 +54,15 @@ class MapsManager {
 
     static void onPause() {
         for( int i = 0; i < mMaps.size(); i++){
-            mMaps.get(i).getMapCtrl().getMapView().onPause();
+            mMaps.get(i).getMapCtrl().getMapView().onStop();
         }
     }
 
     static void onResume() {
         for( int i = 0; i < mMaps.size(); i++){
-            mMaps.get(i).getMapCtrl().getMapView().onResume();
+            mMaps.get(i).getMapCtrl().getMapView().onStart();
+            mPlugRef.mapsGroup.removeView(mMaps.get(i).getViewGroup());
+            mPlugRef.mapsGroup.addView(mMaps.get(i).getViewGroup());
         }
     }
 

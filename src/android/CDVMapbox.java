@@ -30,7 +30,7 @@ import java.util.ArrayList;
 
 public class CDVMapbox extends CordovaPlugin implements ViewTreeObserver.OnScrollChangedListener {
 
-    private FrameLayout mapsGroup;
+    public FrameLayout mapsGroup;
 
     private static final String ADD_GEOJSON = "ADD_GEOJSON"; // todo in JS
     private static final String ADD_MARKER = "ADD_MARKER";
