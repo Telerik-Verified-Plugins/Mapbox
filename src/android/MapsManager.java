@@ -60,9 +60,15 @@ class MapsManager {
 
     static void onResume() {
         for( int i = 0; i < mMaps.size(); i++){
-            mMaps.get(i).getMapCtrl().getMapView().onStart();
-            mPlugRef.mapsGroup.removeView(mMaps.get(i).getViewGroup());
-            mPlugRef.mapsGroup.addView(mMaps.get(i).getViewGroup());
+            Map map = mMaps.get(i);
+            if (map != null) {
+                ViewGroup viewGroup = map.getViewGroup();
+                mMaps.get(i).getMapCtrl().getMapView().onStart();
+                mPlugRef.mapsGroup.removeView(viewGroup);
+                if (viewGroup.getParent() != null)
+                    ((ViewGroup) viewGroup.getParent()).removeView(viewGroup);
+                mPlugRef.mapsGroup.addView(viewGroup);
+            }
         }
     }
 
