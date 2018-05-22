@@ -3,7 +3,7 @@ package com.telerik.plugins.mapbox;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.SparseArray;
-
+import android.view.ViewGroup;
 
 import com.mapbox.mapboxsdk.maps.MapView;
 
