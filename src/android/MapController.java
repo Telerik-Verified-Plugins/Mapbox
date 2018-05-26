@@ -205,9 +205,21 @@ class MapController extends AppCompatActivity {
 
     public void setCenter(double... coords) {
         CameraPosition cameraPosition = mMapboxMap.getCameraPosition();
-        double lng = coords.length > 0 ? coords[0] : cameraPosition.target.getLongitude();
-        double lat = coords.length > 1 ? coords[1] : cameraPosition.target.getLatitude();
-        double alt = coords.length > 2 ? coords[2] : cameraPosition.target.getAltitude(); //todo alt or zoom ????
+        double lng = coords.length > 0
+                ? coords[0]
+                : cameraPosition.target != null
+                ? cameraPosition.target.getLongitude()
+                : 0;
+        double lat = coords.length > 1
+                ? coords[1]
+                : cameraPosition.target != null
+                ? cameraPosition.target.getLatitude()
+                : 0;
+        double alt = coords.length > 2
+                ? coords[2]
+                : cameraPosition.target != null
+                ? cameraPosition.target.getAltitude()
+                : 1000;
 
         mMapboxMap.moveCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder()
@@ -794,14 +806,14 @@ class MapController extends AppCompatActivity {
                         final String filesDir = mActivity.getFilesDir().getPath();
                         fileName = uri.getLastPathSegment();
                         // Asset path is different from app file path.
-                        path = uriPath.substring(isAsset ? "/android_asset/".length() : filesDir.length(), uriPath.lastIndexOf('/')+1);
-                    } else throw new JSONException("createIcon: "+ uri +" URI");
+                        path = uriPath.substring(isAsset ? "/android_asset/".length() : filesDir.length(), uriPath.lastIndexOf('/') + 1);
+                    } else throw new JSONException("createIcon: " + uri + " URI");
 
                     // We first look in the current asset bundle.
                     File iconFile = new File(mActivity.getFilesDir(), path + fileName);
                     if (iconFile.exists()) istream = new FileInputStream(iconFile);
 
-                    // If file does not exists we get the original version in the initial asset bundle with AssetsManager
+                        // If file does not exists we get the original version in the initial asset bundle with AssetsManager
                     else {
                         istream = am.open(path + fileName);
                     }
