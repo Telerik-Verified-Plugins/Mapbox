@@ -748,11 +748,12 @@ class MapController extends AppCompatActivity {
 
     JSONObject getJSONCameraGeoPosition() throws JSONException {
         CameraPosition position = mMapboxMap.getCameraPosition();
+
         try {
             return new JSONObject()
                     .put("zoom", position.zoom)
-                    .put("long", position.target.getLongitude())
-                    .put("alt", position.target.getAltitude())
+                    .put("long", position.target != null ? position.target.getLongitude() : 0)
+                    .put("alt", position.target != null ? position.target.getAltitude() : 0)
                     .put("tilt", position.tilt)
                     .put("bearing", position.bearing);
         } catch (JSONException e) {
