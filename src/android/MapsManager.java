@@ -93,6 +93,7 @@ class MapsManager {
     static void onDestroy() {
         for( int i = 0; i < mMaps.size(); i++){
             mMaps.get(i).getMapCtrl().getMapView().onDestroy();
+            mMaps.clear();
         }
     }
 }
