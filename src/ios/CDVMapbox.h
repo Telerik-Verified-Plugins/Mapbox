@@ -30,6 +30,9 @@
 - (void) getZoomLevel:(CDVInvokedUrlCommand*)command;
 - (void) setZoomLevel:(CDVInvokedUrlCommand*)command;
 
+- (void) getBounds:(CDVInvokedUrlCommand*)command;
+- (void) setBounds:(CDVInvokedUrlCommand*)command;
+
 - (void) getTilt:(CDVInvokedUrlCommand*)command;
 - (void) setTilt:(CDVInvokedUrlCommand*)command;
 

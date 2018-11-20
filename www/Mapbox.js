@@ -63,6 +63,14 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "setZoomLevel", [options]);
   },
 
+  getBounds: function (successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "getBounds", []);
+  },
+
+  setBounds: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "setBounds", [options]);
+  },
+
   addPolygon: function (options, successCallback, errorCallback) {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addPolygon", [options]);
   },
