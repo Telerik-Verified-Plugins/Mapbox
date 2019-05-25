@@ -6,17 +6,16 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="msapplication-tap-highlight" content="no" />
     <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"
-    />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"/>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="css/bootstrap-theme.min.css" />
     <link rel="stylesheet" type="text/css" href="css/index.css" />
 
-    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
-    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
-    <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/onsenui@2.10.6/css/onsenui.css">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui@2.10.6/css/onsen-css-components.min.css">
+    <script src="https://unpkg.com/onsenui@2.10.6/js/onsenui.min.js"></script>
 
-    <title>Mapbox test</title>
+    <title>Mapbox Cordova plugin</title>
 </head>
 
 <body>
@@ -47,63 +46,133 @@
 
         <template id="mapActions.html">
             <ons-action-sheet id="sheet" cancelable title="Map actions">
-                <ons-action-sheet-button icon="md-square-o" onclick="showMap(document.getElementById('mapId')); hideBottomSheet('mapActions');">Show</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-square-o" onclick="hideMap(); hideBottomSheet('mapActions');">Hide</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-square-o" onclick="taller();">Size +</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="smaller();">Size -</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="toggleClickable();">Set map clickable</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-square-o" onclick="toggleMinimap(); hideBottomSheet('mapActions');">Toggle minimap</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('mapActions');">Cancel</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    showMap(document.getElementById('mapId'));
+                    hideBottomSheet('mapActions');
+                ">Show</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    shideMap();
+                    hideBottomSheet('mapActions');
+                ">Hide</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    taller();
+                ">Size +</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    smaller();
+                ">Size -</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    toggleClickable();
+                ">Set map clickable</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    toggleMinimap();
+                    hideBottomSheet('mapActions');
+                ">Toggle minimap</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    hideBottomSheet('mapActions');
+                ">Cancel</ons-action-sheet-button>
             </ons-action-sheet>
         </template>
 
         <template id="markerActions.html">
             <ons-action-sheet id="sheet" cancelable title="Marker actions">
-                <ons-action-sheet-button icon="md-square-o" onclick="addMarker();" modifier="destructive">Add Marker</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="setMarkerLngLat();">Move Marker</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="deleteMarker();">Delete Marker</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('markerActions');">Cancel</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    addMarker();
+                " modifier="destructive">Add Marker</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    setMarkerLngLat();
+                ">Move Marker</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    deleteMarker();
+                ">Delete Marker</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    hideBottomSheet('markerActions');
+                ">Cancel</ons-action-sheet-button>
             </ons-action-sheet>
         </template>
 
         <template id="offlineActions.html">
-            <ons-action-sheet id="sheet" cancelable title="Map actions">
-                <ons-action-sheet-button icon="md-square-o" onclick="getOfflineRegionsList(); hideBottomSheet('offlineActions');">Get regions</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-square-o" onclick="downloadArea();">Go Offline</ons-action-sheet-button>
+            <ons-action-sheet id="sheet" cancelable title="Offline actions">
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    getOfflineRegionsList();
+                    hideBottomSheet('offlineActions');
+                ">Get regions</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    downloadArea();
+                ">Go Offline</ons-action-sheet-button>
                 <div style="display:none" id="dProgress" class="progress">
                     <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em;">
                         0%
                     </div>
                 </div>
-                <ons-action-sheet-button icon="md-square-o" onclick="cancelDownload();">Cancel download</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="deleteOffline();" modifier="destructive">Delete offline</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('offlineActions');">Cancel</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    cancelDownload();
+                ">Cancel download</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    deleteOffline();
+                " modifier="destructive">Delete offline</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    hideBottomSheet('offlineActions');
+                ">Cancel</ons-action-sheet-button>
             </ons-action-sheet>
         </template>
 
         <template id="cameraActions.html">
-            <ons-action-sheet id="sheet" cancelable title="Map actions">
-                <ons-action-sheet-button icon="md-square-o" onclick="flyTo(); hideBottomSheet('cameraActions');">Camera</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-square-o" onclick="zoomIn(); hideBottomSheet('cameraActions');">Zoom +</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-square-o" onclick="zoomOut();">Zoom -</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="setCenter();">Set center</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="setPitch();">Set pitch</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="getZoom();">Get zoom</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="getCenter();">Get center</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="getPitch();">Get pitch</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('cameraActions');">Cancel</ons-action-sheet-button>
+            <ons-action-sheet id="sheet" cancelable title="Camera actions">
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    flyTo();
+                    hideBottomSheet('cameraActions');
+                ">Camera</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    zoomIn();
+                    hideBottomSheet('cameraActions');
+                ">Zoom +</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-square-o" onclick="
+                    zoomOut();
+                ">Zoom -</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    setCenter();
+                ">Set center</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    setPitch();
+                ">Set pitch</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    getZoom();
+                ">Get zoom</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    getCenter();
+                ">Get center</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    getPitch();
+                ">Get pitch</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    hideBottomSheet('cameraActions');
+                ">Cancel</ons-action-sheet-button>
             </ons-action-sheet>
         </template>
 
         <template id=utils.html>`
-            <ons-action-sheet id="sheet" cancelable title="Map actions">
-                <ons-action-sheet-button icon="md-close" onclick="screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})">Screen to coords</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="coords2Screen({'lat': 52.3732160,'lng': 4.8941680})">Coords to screen</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="getBounds();">Get bounds</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="getCameraPosition();">Get camera position</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="addOverlayElement();">Add new DOM overlay element</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="deleteOverlayElement();">Remove a DOM overlay element</ons-action-sheet-button>
-                <ons-action-sheet-button icon="md-close" onclick="hideBottomSheet('utils');">Cancel</ons-action-sheet-button>
+            <ons-action-sheet id="sheet" cancelable title="Utils actions">
+                <ons-action-sheet-button icon="md-close" onclick="
+                    screen2Coords({'x': window.innerWidth/2,'y': window.innerHeight/2})
+                ">Screen to coords</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    coords2Screen({'lat': 52.3732160,'lng': 4.8941680})
+                ">Coords to screen</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    getBounds();
+                ">Get bounds</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    getCameraPosition();
+                ">Get camera position</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    addOverlayElement();
+                ">Add new DOM overlay element</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    deleteOverlayElement();
+                ">Remove a DOM overlay element</ons-action-sheet-button>
+                <ons-action-sheet-button icon="md-close" onclick="
+                    hideBottomSheet('utils');
+                ">Cancel</ons-action-sheet-button>
             </ons-action-sheet>
         </template>
     </div>
@@ -117,7 +186,7 @@
         var debug = false;
         var clickable = true;
         var actionSheets = new Map();
-        var container, backgroud;
+        var container, background;
 
         ons.ready(function () {
             container = document.getElementById("container");
@@ -135,38 +204,35 @@
         }
 
         ons.ready(function () {
-            ons.createElement('mapActions.html', { append: true })
-                .then(function (sheet) {
-                    actionSheets.set("mapActions", sheet)
-                });
-        });
+          ons
+            .createElement('mapActions.html', { append: true })
+            .then(function (sheet) {
+                actionSheets.set("mapActions", sheet)
+            });
 
-        ons.ready(function () {
-            ons.createElement('markerActions.html', { append: true })
-                .then(function (sheet) {
-                    actionSheets.set("markerActions", sheet)
-                });
-        });
+            ons
+            .createElement('markerActions.html', { append: true })
+            .then(function (sheet) {
+                actionSheets.set("markerActions", sheet)
+            });
 
-        ons.ready(function () {
-            ons.createElement('offlineActions.html', { append: true })
-                .then(function (sheet) {
-                    actionSheets.set("offlineActions")
-                });
-        });
+            ons
+            .createElement('offlineActions.html', { append: true })
+            .then(function (sheet) {
+                actionSheets.set("offlineActions")
+            });
 
-        ons.ready(function () {
-            ons.createElement('cameraActions.html', { append: true })
-                .then(function (sheet) {
-                    actionSheets.set("cameraActions", sheet)
-                });
-        });
+            ons
+            .createElement('cameraActions.html', { append: true })
+            .then(function (sheet) {
+                actionSheets.set("cameraActions", sheet)
+            });
 
-        ons.ready(function () {
-            ons.createElement('utils.html', { append: true })
-                .then(function (sheet) {
-                    actionSheets.set("utils", sheet)
-                });
+            ons
+            .createElement('utils.html', { append: true })
+            .then(function (sheet) {
+                actionSheets.set("utils", sheet)
+            });
         });
 
 
