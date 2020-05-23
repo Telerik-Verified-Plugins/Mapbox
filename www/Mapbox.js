@@ -65,6 +65,10 @@ module.exports = {
     cordova.exec(successCallback, errorCallback, "Mapbox", "addPolygon", [options]);
   },
 
+  addPolyline: function (options, successCallback, errorCallback) {
+    cordova.exec(successCallback, errorCallback, "Mapbox", "addPolyline", [options]);
+  },
+
   convertCoordinate: function(options, successCallback, errorCallback){
     cordova.exec(successCallback, errorCallback, "Mapbox", "convertCoordinate", [options]);
   },

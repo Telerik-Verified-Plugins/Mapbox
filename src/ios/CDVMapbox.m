@@ -200,6 +200,30 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)addPolyline:(CDVInvokedUrlCommand*)command {
+  NSDictionary *args = [command.arguments objectAtIndex:0];
+  NSArray* points = [args objectForKey:@"points"];
+  if (points != nil) {
+    [self.commandDelegate runInBackground:^{
+        CLLocationCoordinate2D *coordinates = malloc(points.count * sizeof(CLLocationCoordinate2D));
+        for (int i=0; i<points.count; i++) {
+          NSDictionary* point = points[i];
+          NSNumber *lat = [point valueForKey:@"lat"];
+          NSNumber *lng = [point valueForKey:@"lng"];
+          coordinates[i] = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
+        }
+        NSUInteger numberOfCoordinates = points.count; // sizeof(coordinates) / sizeof(CLLocationCoordinate2D);
+        MGLPolyline *shape = [MGLPolyline polylineWithCoordinates:coordinates count:numberOfCoordinates];
+        [_mapView addAnnotation:shape];
+        CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
+  } else {
+    CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }
+}
+
 - (void)addPolygon:(CDVInvokedUrlCommand*)command {
   NSDictionary *args = [command.arguments objectAtIndex:0];
   NSArray* points = [args objectForKey:@"points"];
