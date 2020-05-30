@@ -48,7 +48,7 @@
 
     <framework src="src/android/mapbox.gradle" custom="true" type="gradleReference"/>
     <source-file src="src/android/Mapbox.java" target-dir="src/com/telerik/plugins/mapbox"/>
-
+    <source-file src="src/android/libs/androidsvg-1.2.1.jar" target-dir="libs" framework="true"  />
     <!-- This leads to trouble in AppBuilder when compiling for Cordova-Android 4 -->
     <!--source-file src="src/android/res/values/mapboxstrings.xml" target-dir="res/values" />
     <config-file target="res/values/mapboxstrings.xml" parent="/*">
@@ -80,7 +80,7 @@
 
     <header-file src="src/ios/CDVMapbox.h" />
     <source-file src="src/ios/CDVMapbox.m" />
-
+	<source-file src="src/ios/UIImageExtensions.m" />
     <!-- Downloaded iOS SDK version 3.0.1 from https://github.com/mapbox/mapbox-gl-native/releases -->
     <header-file src="src/ios/Headers/Mapbox.h" />
     <header-file src="src/ios/Headers/MGLAccountManager.h" />
@@ -99,12 +99,34 @@
     <header-file src="src/ios/Headers/MGLStyle.h" />
     <header-file src="src/ios/Headers/MGLTypes.h" />
     <header-file src="src/ios/Headers/MGLUserLocation.h" />
+	
+	<header-file src="src/ios/Headers/GHButton.h" />
+    <header-file src="src/ios/Headers/GHControl.h" />
+    <header-file src="src/ios/Headers/GHControlFactory.h" />
+    <header-file src="src/ios/Headers/GHCSSStyle.h" />
+    <header-file src="src/ios/Headers/GHImageCache.h" />
+    <header-file src="src/ios/Headers/GHRenderable.h" />
+    <header-file src="src/ios/Headers/GHSegmentedControl.h" />
+    <header-file src="src/ios/Headers/SVGContext.h" />
+    <header-file src="src/ios/Headers/SVGDocumentView.h" />
+    <header-file src="src/ios/Headers/SVGgh.h" />
+    <header-file src="src/ios/Headers/SVGghLoader.h" />
+    <header-file src="src/ios/Headers/SVGParser.h" />
+    <header-file src="src/ios/Headers/SVGPathGenerator.h" />
+    <header-file src="src/ios/Headers/SVGPrinter.h" />
+    <header-file src="src/ios/Headers/SVGRenderer.h" />
+    <header-file src="src/ios/Headers/SVGRendererLayer.h" />
+    <header-file src="src/ios/Headers/SVGTabBarItem.h" />
+	<header-file src="src/ios/Headers/SVGtoPDFConverter.h" />
 
     <source-file src="src/ios/libs/libMapbox.a" framework="true"/>
+	<source-file src="src/ios/libs/libSVGghLib.a" framework="true"/>
+
     <resource-file src="src/ios/libs/Mapbox.bundle" />
     <!-- This bundle adds a mandatory opt-out switch for Mapbox Metrics to the iOS Settings app  -->
     <resource-file src="src/ios/libs/Settings.bundle" />
-
+	
+	
     <framework src="GLKit.framework" weak="true" />
     <framework src="ImageIO.framework" weak="true" />
     <framework src="MobileCoreServices.framework" weak="true" />

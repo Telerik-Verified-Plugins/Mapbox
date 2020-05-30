@@ -1,6 +1,20 @@
 #import "CDVMapbox.h"
+#import "UIImageExtensions.m"
+@implementation MapboxPointAnnotationWithImage:MGLPointAnnotation
+@synthesize imageData;
+
+@end
+
 
 @implementation CDVMapbox
+
++(void) initialize
+{
+    [super initialize];
+    MakeSureSVGghLinks(); // classes only used in Storyboards might not link otherwise
+    [GHControlFactory setDefaultScheme:kColorSchemeClear];
+    [GHControlFactory setDefaultTextColor:[UIColor greenColor]];
+}
 
 - (void) show:(CDVInvokedUrlCommand*)command {
   NSDictionary *args = [command.arguments objectAtIndex:0];
@@ -85,7 +99,6 @@
 
 - (void) hide:(CDVInvokedUrlCommand*)command {
   [_mapView removeFromSuperview];
-
   CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -255,20 +268,158 @@
   self.markerCallbackId = command.callbackId;
 }
 
+- (void) sendMarkerError:(NSString*) error{
+    if(self.markerCallbackId){
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error];
+        [self.commandDelegate sendPluginResult:result callbackId:self.markerCallbackId];
+    }
+}
+
 - (void) putMarkersOnTheMap:(NSArray *)markers {
   [self.commandDelegate runInBackground:^{
       for (int i = 0; i < markers.count; i++) {
         NSDictionary* marker = markers[i];
-        MGLPointAnnotation *point = [[MGLPointAnnotation alloc] init];
+        MapboxPointAnnotationWithImage *point = [[MapboxPointAnnotationWithImage alloc] init];
         NSNumber *lat = [marker valueForKey:@"lat"];
         NSNumber *lng = [marker valueForKey:@"lng"];
         point.coordinate = CLLocationCoordinate2DMake(lat.doubleValue, lng.doubleValue);
         point.title = [marker valueForKey:@"title"];
         point.subtitle = [marker valueForKey:@"subtitle"];
+        NSObject *imageData=[marker valueForKey:@"image"];
+          if(imageData)
+          {
+        if([imageData isKindOfClass:[NSString class]])
+        {
+            NSDictionary *imageValues=[[NSDictionary alloc] init];
+            [imageValues setValue:imageData forKey:@"url"];
+            imageData=imageValues;
+        }
+        point.imageData=(NSDictionary*)imageData;
+          }
         [_mapView addAnnotation:point];
       }
   }];
 }
+
+-(NSData *)dataFromBase64EncodedString:(NSString *)string{
+    if (string.length > 0) {
+        
+        //the iPhone has base 64 decoding built in but not obviously. The trick is to
+        //create a data url that's base 64 encoded and ask an NSData to load it.
+        NSString *data64URLString = [NSString stringWithFormat:@"data:;base64,%@", string];
+        NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:data64URLString]];
+        return data;
+    }
+    return nil;
+}
+
+//create image for marker
+- (MGLAnnotationImage *)mapView:(MGLMapView *)mapView imageForAnnotation:(id <MGLAnnotation>)annotation{
+    if([annotation conformsToProtocol:@protocol(MapboxAnnotationWithImage)]){
+        MapboxPointAnnotationWithImage <MapboxAnnotationWithImage> *imageAnnotation=(MapboxPointAnnotationWithImage <MapboxAnnotationWithImage> *)annotation;
+        //no data for image-will be default
+        if(! imageAnnotation || !imageAnnotation.imageData)
+            return nil;
+        else{
+            //parsing image settings
+            NSDictionary *data=imageAnnotation.imageData;
+            NSString* url=[data valueForKey:@"url"];
+            NSNumber *height=[data valueForKey:@"height"];
+            NSNumber *width=[data valueForKey:@"width"];
+            //base64 encoded image instead of url if specified
+            NSString *encodedImage=[data valueForKey:@"data"];
+            //svg image instead of url if specified
+            NSString *svgImage=[data valueForKey:@"svg"];
+            
+            NSString *reuseIdentifier=[data valueForKey:@"reuseIdentifier"];
+            //checking and creating caching identifier
+            if(!reuseIdentifier){
+                if(url)
+                reuseIdentifier=[NSString stringWithFormat:@"%@_%@_%@", url, width, height];
+                else
+                {
+                    reuseIdentifier=[[NSUUID UUID] UUIDString];
+                    [data setValue:reuseIdentifier forKey:@"reuseIdentifier"];
+                }
+            }
+            if(reuseIdentifier)
+            {
+                //if image already cached
+                MGLAnnotationImage *annotationImage = [mapView dequeueReusableAnnotationImageWithIdentifier:reuseIdentifier];
+                if(annotationImage)
+                    return annotationImage;
+            }
+            
+            UIImage *image;
+            if(url){
+                if([url hasSuffix:@".svg"])
+                {
+                    NSBundle *bundle=[NSBundle bundleForClass:[self class]];
+                    NSURL *rurl=[bundle URLForResource:url withExtension:nil];
+                    if(!rurl)
+                    {
+                        [self sendMarkerError:[NSString stringWithFormat:@"File '%@' not found", url]];
+                        return nil;
+                    }
+                    SVGRenderer *rendederer=[[SVGRenderer alloc] initWithContentsOfURL:rurl];
+                    if(!height)
+                        height=@([rendederer viewRect].size.height);
+                    if(!width)
+                        width=@([rendederer viewRect].size.width);
+                    image=[rendederer asImageWithSize:CGSizeMake([width floatValue],[height floatValue]) andScale:1.0];
+                }else
+                {
+                    image=[UIImage imageNamed:url];
+                    if(!image)
+                    {
+                        [self sendMarkerError:[NSString stringWithFormat:@"File '%@' not found", url]];
+                        return nil;
+                    }
+                    if(!height)
+                        height=@(image.size.height);
+                    if(!width)
+                        width=@(image.size.width);
+                    image = [image scaleToSize:CGSizeMake([width floatValue],[height floatValue])];
+                }
+            }else{
+                if(encodedImage)
+                {
+                    NSData *data = [[NSData alloc] initWithData:[self dataFromBase64EncodedString: encodedImage]];
+                    image = [UIImage imageWithData:data];
+                    if(!height)
+                        height=@(image.size.height);
+                    if(!width)
+                        width=@(image.size.width);
+                    image = [image scaleToSize:CGSizeMake([width floatValue],[height floatValue])];
+
+                }else if (svgImage){
+                    SVGRenderer *rendederer=[[SVGRenderer alloc] initWithString:svgImage];
+                    if(!height)
+                        height=@([rendederer viewRect].size.height);
+                    if(!width)
+                        width=@([rendederer viewRect].size.width);
+                    image=[rendederer asImageWithSize:CGSizeMake([width floatValue],[height floatValue]) andScale:1.0];
+                }else{
+                        [self sendMarkerError:@"No image data"];
+                        return nil;
+                }
+            }
+            // The anchor point of an annotation is currently always the center. To
+            // shift the anchor point to the bottom of the annotation, the image
+            // asset includes transparent bottom padding equal to the original image
+            // height.
+            //
+            // To make this padding non-interactive, we create another image object
+            // with a custom alignment rect that excludes the padding.
+            image = [image imageWithAlignmentRectInsets:UIEdgeInsetsMake(0, 0, image.size.height/2, 0)];
+            
+            return [MGLAnnotationImage annotationImageWithImage:image reuseIdentifier:reuseIdentifier];
+        }
+    }
+        return nil;
+    
+}
+
 
 - (void) convertCoordinate:(CDVInvokedUrlCommand *)command {
   NSDictionary *args = command.arguments[0];

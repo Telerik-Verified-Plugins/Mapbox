@@ -1,4 +1,4 @@
-﻿/// <reference path="../../libs/typings/tsd.d.ts" />
+/// <reference path="../../libs/typings/tsd.d.ts" />
 declare var Mapbox: mapbox.IMap;
 
 declare module mapbox {
