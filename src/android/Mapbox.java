@@ -8,6 +8,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.DisplayMetrics;
 import android.view.ViewGroup;
+import android.view.KeyEvent;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.graphics.PointF;
 
@@ -51,6 +53,7 @@ public class Mapbox extends CordovaPlugin {
 
   private static final String ACTION_SHOW = "show";
   private static final String ACTION_HIDE = "hide";
+  private static final String ACTION_ADD_BACKBUTTON_CALLBACK = "addBackButtonCallback";
   private static final String ACTION_ADD_MARKERS = "addMarkers";
   private static final String ACTION_REMOVE_ALL_MARKERS = "removeAllMarkers";
   private static final String ACTION_ADD_MARKER_CALLBACK = "addMarkerCallback";
@@ -80,6 +83,7 @@ public class Mapbox extends CordovaPlugin {
   private String accessToken;
   private CallbackContext callback;
   private CallbackContext markerCallbackContext;
+  private CallbackContext backbuttonCallbackContext;
 
   private boolean showUserLocation;
 
@@ -182,7 +186,6 @@ public class Mapbox extends CordovaPlugin {
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(webViewWidth - left - right, webViewHeight - top - bottom);
             params.setMargins(left, top, right, bottom);
             mapView.setLayoutParams(params);
-
             layout.addView(mapView);
             callbackContext.success();
           }
@@ -454,6 +457,11 @@ public class Mapbox extends CordovaPlugin {
         this.markerCallbackContext = callbackContext;
         mapView.setOnInfoWindowClickListener(new MarkerClickListener());
 
+      } else if(ACTION_ADD_BACKBUTTON_CALLBACK.equals(action)){
+        if (mapView != null) {
+          mapView.setOnKeyListener(new BackbuttonListener(callbackContext));
+        }
+
       } else if (ACTION_ON_REGION_WILL_CHANGE.equals(action)) {
         if (mapView != null) {
           mapView.addOnMapChangedListener(new RegionWillChangeListener(callbackContext));
@@ -487,6 +495,30 @@ public class Mapbox extends CordovaPlugin {
       mo.snippet(marker.isNull("subtitle") ? null : marker.getString("subtitle"));
       mo.position(new LatLng(marker.getDouble("lat"), marker.getDouble("lng")));
       mapView.addMarker(mo);
+    }
+  }
+
+  private class BackbuttonListener implements View.OnKeyListener {
+    private CallbackContext callback;
+
+    public BackbuttonListener(CallbackContext providedCallback) {
+      this.callback = providedCallback;
+    }
+
+    @Override
+    public void onKey(View v, int keyCode, KeyEvent event) {
+      if ( Integer.parseInt(android.os.Build.VERSION.SDK) > 5 && keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0 ) {
+
+        if ( event.getAction() != KeyEvent.ACTION_DOWN ) {
+          PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+          pluginResult.setKeepCallback(true);
+          callback.sendPluginResult(pluginResult);
+        }
+
+        return true;
+      }
+
+      return false;
     }
   }
 

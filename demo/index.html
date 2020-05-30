@@ -46,6 +46,12 @@
 <script>
   var zoom = 10;
 
+  document.addEventListener("backbutton", onBackKeyDown, false);
+
+  function onBackKeyDown() {
+    alert('back button pressed');
+  }
+
   function setCenter() {
     Mapbox.setCenter({
       'lat': 50.2222,
