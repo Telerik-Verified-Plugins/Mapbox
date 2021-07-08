@@ -81,29 +81,9 @@
     <header-file src="src/ios/CDVMapbox.h" />
     <source-file src="src/ios/CDVMapbox.m" />
 
-    <!-- Downloaded iOS SDK version 3.0.1 from https://github.com/mapbox/mapbox-gl-native/releases -->
-    <header-file src="src/ios/Headers/Mapbox.h" />
-    <header-file src="src/ios/Headers/MGLAccountManager.h" />
-    <header-file src="src/ios/Headers/MGLAnnotation.h" />
-    <header-file src="src/ios/Headers/MGLAnnotationImage.h" />
-    <header-file src="src/ios/Headers/MGLGeometry.h" />
-    <header-file src="src/ios/Headers/MGLMapCamera.h" />
-    <header-file src="src/ios/Headers/MGLMapView+IBAdditions.h" />
-    <header-file src="src/ios/Headers/MGLMapView.h" />
-    <header-file src="src/ios/Headers/MGLMultiPoint.h" />
-    <header-file src="src/ios/Headers/MGLOverlay.h" />
-    <header-file src="src/ios/Headers/MGLPointAnnotation.h" />
-    <header-file src="src/ios/Headers/MGLPolygon.h" />
-    <header-file src="src/ios/Headers/MGLPolyline.h" />
-    <header-file src="src/ios/Headers/MGLShape.h" />
-    <header-file src="src/ios/Headers/MGLStyle.h" />
-    <header-file src="src/ios/Headers/MGLTypes.h" />
-    <header-file src="src/ios/Headers/MGLUserLocation.h" />
-
-    <source-file src="src/ios/libs/libMapbox.a" framework="true"/>
-    <resource-file src="src/ios/libs/Mapbox.bundle" />
     <!-- This bundle adds a mandatory opt-out switch for Mapbox Metrics to the iOS Settings app  -->
     <resource-file src="src/ios/libs/Settings.bundle" />
+    <framework src="src/ios/libs/Mapbox.framework" custom="true" weak="true" />
 
     <framework src="GLKit.framework" weak="true" />
     <framework src="ImageIO.framework" weak="true" />
